@@ -1,0 +1,13 @@
+/home/formlesstree4/Repositories/Eileen/source/Bot/bin/Debug/netcoreapp3.1/Bot
+/home/formlesstree4/Repositories/Eileen/source/Bot/bin/Debug/netcoreapp3.1/Bot.deps.json
+/home/formlesstree4/Repositories/Eileen/source/Bot/bin/Debug/netcoreapp3.1/Bot.runtimeconfig.json
+/home/formlesstree4/Repositories/Eileen/source/Bot/bin/Debug/netcoreapp3.1/Bot.runtimeconfig.dev.json
+/home/formlesstree4/Repositories/Eileen/source/Bot/bin/Debug/netcoreapp3.1/Bot.dll
+/home/formlesstree4/Repositories/Eileen/source/Bot/bin/Debug/netcoreapp3.1/Bot.pdb
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.csprojAssemblyReference.cache
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.AssemblyInfoInputs.cache
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.AssemblyInfo.cs
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.csproj.CoreCompileInputs.cache
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.dll
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.pdb
+/home/formlesstree4/Repositories/Eileen/source/Bot/obj/Debug/netcoreapp3.1/Bot.genruntimeconfig.cache

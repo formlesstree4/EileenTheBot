@@ -1,0 +1,8 @@
+{
+  "runtimeOptions": {
+    "additionalProbingPaths": [
+      "/home/formlesstree4/.dotnet/store/|arch|/|tfm|",
+      "/home/formlesstree4/.nuget/packages"
+    ]
+  }
+}
