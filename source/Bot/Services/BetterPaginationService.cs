@@ -69,7 +69,6 @@ namespace Bot.Services
         /// <returns>A promise of the <see cref="IUserMessage"/></returns>
         public async Task<IUserMessage> Send(IMessageChannel channel, BetterPaginationMessage message)
         {
-
             await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Sending paginated message to {channel.Name}"));
             try
             {
@@ -101,7 +100,12 @@ namespace Bot.Services
             var message = await (messageParam.GetOrDownloadAsync());
 
             if (!await HandleMessageValidation(message, reaction)) return;
-            if (!_messages.TryGetValue(message.Id, out BetterPaginationMessage betterMessage)) return;
+            if (!_messages.TryGetValue(message.Id, out BetterPaginationMessage betterMessage)) 
+            {
+                await WriteLog(new LogMessage(LogSeverity.Warning, nameof(BetterPaginationService), "An expired message was reacted to. Discarding / ignoring for the time being"));
+                await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
+                return;
+            }
 
             try
             {

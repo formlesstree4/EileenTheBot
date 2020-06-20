@@ -50,6 +50,8 @@ namespace Bot
 
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
+                .AddSingleton<CredentialsService>()
+                .AddSingleton<DanbooruService>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<BetterPaginationService>()
