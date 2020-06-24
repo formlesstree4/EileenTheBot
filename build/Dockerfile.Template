@@ -2,9 +2,6 @@
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS build
 WORKDIR /source
 
-# copy csproj and restore as distinct layers
-
-
 # copy and publish app and libraries
 COPY . .
 RUN dotnet restore -r linux-musl-x64
@@ -24,21 +21,4 @@ COPY --from=build /app .
 ENV DiscordApiToken $(DiscordApiToken)
 ENV Credentials $(Credentials)
 
-
 ENTRYPOINT ["./Bot"]
-
-# FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS build
-# WORKDIR /source
-
-# FROM mcr.microsoft.com/dotnet/core/runtime:3.1-alpine
-# WORKDIR /output
-# ADD ./* $HOME/output/
-
-# Uncomment to enable globalization APIs (or delete)
-#ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT false
-#RUN apk add --no-cache icu-libs
-#ENV LC_ALL en_US.UTF-8
-#ENV LANG en_US.UTF-8
-
-
-# ENTRYPOINT ["dotnet", "output/Bots.dll"]

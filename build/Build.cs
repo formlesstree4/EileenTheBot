@@ -59,6 +59,16 @@ sealed class Build : NukeBuild
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
         });
+
+    // Target SetEnvironmentVariables => _ => _
+    //     .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
+    //     .Executes(() =>
+    //     {
+    //         var credentials = File.ReadAllText(Path.Combine("build", "resources", "credentials.json"));
+    //         System.Environment.SetEnvironmentVariable("DiscordApiToken", DiscordApiToken, EnvironmentVariableTarget.Machine);
+    //         System.Environment.SetEnvironmentVariable("Credentials", credentials, EnvironmentVariableTarget.Machine);
+    //     });
+
     Target GenerateManifestFile => _ => _
         .DependsOn(Clean)
         .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
