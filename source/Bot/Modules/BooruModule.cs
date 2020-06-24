@@ -11,7 +11,7 @@ namespace Bot.Modules
     public sealed class BooruModule : ModuleBase<SocketCommandContext>
     {
 
-        private readonly int count = 10;
+        private readonly int count = 5;
         
         public BetterPaginationService PaginationService { get; set; }
 
@@ -39,14 +39,16 @@ namespace Bot.Modules
                 {
                     var eBuilder = new EmbedBuilder()
                         .WithAuthor(new EmbedAuthorBuilder()
-                            .WithName($"Created By: {booruPost.tag_string_artist}"))
+                            .WithName($"Created By: {booruPost.tag_string_artist}")
+                            .WithIconUrl(Context.User.GetAvatarUrl())
+                            .WithUrl(booruPost.GetArtistUrl()))
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithDescription($"Uploaded by: {booruPost.uploader_name}")
                         .WithImageUrl(booruPost.GetDownloadUrl)
-                        .WithTitle($"Arist: {booruPost.tag_string_artist})")
+                        .WithTitle($"Artists(s): {booruPost.tag_string_artist})")
                         .WithUrl(booruPost.GetPostUrl);
-                    eBuilder.AddField("All Tags", $"`{booruPost.tag_string.Replace("`", @"\`")}`");
+                    eBuilder.AddField("All Tags", $"`{booruPost.tag_string.Replace("`", @"\`")}`", true);
                     messages.Add(eBuilder.Build());
                 }
                 await Context.Message.DeleteAsync();
