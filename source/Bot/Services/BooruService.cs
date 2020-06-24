@@ -67,7 +67,7 @@ namespace Bot.Services
         /// <returns><see cref="MemoryStream"/></returns>
         public async Task<HttpResponseMessage> DownloadPostAsync(Post p)
         {
-            return await _clientAsync.GetAsync(p.GetDownloadUrl);
+            return await _clientAsync.GetAsync(p.GetDownloadUrl());
         }
 
     }
@@ -166,9 +166,9 @@ namespace Bot.Services
         public string large_file_url { get; set; }
         public string preview_file_url { get; set; }
 
-        public string GetPostUrl => $"https://danbooru.donmai.us/posts/{ID}";
-        public string GetDownloadUrl => $"https://danbooru.donmai.us{file_url ?? large_file_url}";
-        public string GetRenderName => Path.GetFileNameWithoutExtension(preview_file_url.Substring(preview_file_url.LastIndexOf('/') + 1));
+        public string GetPostUrl() => $"https://danbooru.donmai.us/posts/{ID}";
+        public string GetDownloadUrl() => $"https://danbooru.donmai.us{file_url ?? large_file_url}";
+        public string GetRenderName() => Path.GetFileNameWithoutExtension(preview_file_url.Substring(preview_file_url.LastIndexOf('/') + 1));
         public string GetArtistUrl()
         {
             switch(tag_count_artist)

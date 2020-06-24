@@ -42,12 +42,12 @@ namespace Bot.Modules
                             .WithName($"Created By: {booruPost.tag_string_artist}")
                             .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
                             .WithUrl(booruPost.GetArtistUrl()))
-                        .WithColor(new Color(152, 201, 124))
+                        // .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithDescription($"Uploaded by: {booruPost.uploader_name}")
-                        .WithImageUrl(booruPost.GetDownloadUrl)
+                        .WithImageUrl(booruPost.GetDownloadUrl())
                         .WithTitle($"Artists(s): {booruPost.tag_string_artist})")
-                        .WithUrl(booruPost.GetPostUrl);
+                        .WithUrl(booruPost.GetPostUrl());
                     eBuilder.AddField("All Tags", $"`{booruPost.tag_string.Replace("`", @"\`")}`", true);
                     messages.Add(eBuilder.Build());
                 }
