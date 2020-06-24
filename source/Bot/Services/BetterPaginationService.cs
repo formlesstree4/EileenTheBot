@@ -84,6 +84,7 @@ namespace Bot.Services
             {
                 await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService),
                     $"An error occurred sending the paginated message. The message has thus been discarded. Error: {httpEx.Message}. Reason Provided: {httpEx.Reason}", httpEx));
+                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService), $"{Newtonsoft.Json.JsonConvert.SerializeObject(message.CurrentPage)}"));
                 return null;
             }
         }
