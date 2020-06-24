@@ -52,7 +52,7 @@ namespace Bot.Modules
                     messages.Add(eBuilder.Build());
                 }
                 await Context.Message.DeleteAsync();
-                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User) { IsNsfw = true });
+                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, false, Context.User) { IsNsfw = true });
             }
         }
 
