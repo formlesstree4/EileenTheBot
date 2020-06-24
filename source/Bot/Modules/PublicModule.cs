@@ -34,6 +34,12 @@ namespace Bot.Modules
         public Task ListAsync(params string[] objects)
             => ReplyAsync("You listed: " + string.Join("; ", objects));
 
+
+        [Command("embed")]
+        public Task EmbedAsync(params string[] items)
+            => ReplyAsync(embed: new EmbedBuilder()
+                .AddField("test", string.Join(", ", items)).Build());
+
         // // Setting a custom ErrorMessage property will help clarify the precondition error
         // [Command("guild_only")]
         // [RequireContext(ContextType.Guild, ErrorMessage = "Sorry, this command must be ran from within a server, not a DM!")]

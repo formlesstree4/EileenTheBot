@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Services
@@ -72,7 +73,8 @@ namespace Bot.Services
             await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Sending paginated message to {channel.Name}"));
             try
             {
-                var paginatedMessage = await channel.SendMessageAsync("", false, message.CurrentPage, RequestOptions.Default);
+                await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message}"));
+                var paginatedMessage = await channel.SendMessageAsync(embed: message.CurrentPage);
                 await EnsureMessageHasReactions(paginatedMessage);
                 await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
                 _messages.TryAdd(paginatedMessage.Id, message);
@@ -80,7 +82,8 @@ namespace Bot.Services
             }
             catch (Discord.Net.HttpException httpEx)
             {
-                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService), $"An error occurred sending the paginated message. The message has thus been discarded. Error: {httpEx.Message}. Reason Provided: {httpEx.Reason}", httpEx));
+                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService),
+                    $"An error occurred sending the paginated message. The message has thus been discarded. Error: {httpEx.Message}. Reason Provided: {httpEx.Reason}", httpEx));
                 return null;
             }
         }
@@ -370,6 +373,15 @@ namespace Bot.Services
 
             _pages = embedList;
             
+        }
+
+        public override string ToString()
+        {
+            var sBuilder = new StringBuilder();
+            sBuilder.AppendLine($"Pages: {_pages.Count}");
+            sBuilder.AppendLine($"Current Page: {CurrentPageIndex}");
+            sBuilder.AppendLine($"IsNsfw: {IsNsfw}");
+            return sBuilder.ToString();
         }
 
     }
