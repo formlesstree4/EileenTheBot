@@ -80,13 +80,10 @@ namespace Bot.Services
             }
             catch (Discord.Net.HttpException httpEx)
             {
-                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService), $"An error occurred sending the paginated message: {httpEx.Message}", httpEx));
-                await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"Embed Payload: {Newtonsoft.Json.JsonConvert.SerializeObject(message.CurrentPage)}"));
+                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService), $"An error occurred sending the paginated message. The message has thus been discarded. Error: {httpEx.Message}. Reason Provided: {httpEx.Reason}", httpEx));
                 return null;
             }
         }
-
-
 
         /// <summary>
         ///     Handles incoming reaction additions.
