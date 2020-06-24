@@ -14,4 +14,9 @@
     <PackageDownload Include="GitVersion.Tool" Version="[5.1.1]" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Dockerfile.Template" CopyToOutputDirectory="PreserveNewest"/>
+    <None Update="resources/credentials.json" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
 </Project>

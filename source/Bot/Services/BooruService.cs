@@ -20,7 +20,6 @@ namespace Bot.Services
     public sealed class DanbooruService
     {
 
-        private readonly CredentialsWebClient _clientSync;
         private readonly HttpClient _clientAsync;
         private readonly string _user;
         private readonly string _apiKey;
@@ -37,7 +36,6 @@ namespace Bot.Services
             var configuration = credentials.Credentials.First(c => c.Name.Equals("danbooru"));
             _user = configuration.Username;
             _apiKey = configuration.ApiKey;
-            _clientSync = new CredentialsWebClient($"Basic {Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_user}:{_apiKey}"))}");
             _clientAsync = new HttpClient();
             _clientAsync.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_user}:{_apiKey}")));
@@ -63,24 +61,6 @@ namespace Bot.Services
         }
 
         /// <summary>
-        ///     Performs a search against the Danbooru API.
-        /// </summary>
-        /// <param name="limit">The number of images that can be returned</param>
-        /// <param name="page">The page offset for pagination support</param>
-        /// <param name="searchTags">A string array of tags that should be searched</param>
-        /// <returns>A collection of <see cref="Post"/> objects</returns>
-        public IEnumerable<Post> Search(int limit, int page, params string[] searchTags)
-        {
-            var tags = WebUtility.UrlEncode(string.Join(" ", searchTags));
-            var url = $"https://danbooru.donmai.us/posts.json?limit={limit}&page={page}&tags={tags}";
-            var resp = _clientSync.DownloadString(url);
-            var posts = JsonConvert.DeserializeObject<Post[]>(resp);
-            return posts;
-        }
-
-
-
-        /// <summary>
         ///     Asynchronously downloads a post.
         /// </summary>
         /// <param name="p">The <see cref="Post"/> to download</param>
@@ -88,41 +68,6 @@ namespace Bot.Services
         public async Task<HttpResponseMessage> DownloadPostAsync(Post p)
         {
             return await _clientAsync.GetAsync(p.GetDownloadUrl);
-        }
-
-
-        /// <summary>
-        ///     A custom subclass of <see cref="WebClient"/> specifically for handling Basic Authentication Credentials.
-        /// </summary>
-        private sealed class CredentialsWebClient : WebClient
-        {
-            private readonly string _authentication;
-
-
-
-            /// <summary>
-            ///     Creates a new instance of the <see cref="CredentialsWebClient"/>.
-            /// </summary>
-            /// <param name="authentication">The full Base64 encoded Authenticaion Http Headers to include in the request.</param>
-            public CredentialsWebClient(string authentication)
-            {
-                _authentication = authentication;
-            }
-
-
-
-            /// <summary>
-            ///     An overridden implementation of <see cref="GetWebRequest(Uri)"/> that adds in Basic Authentication.
-            /// </summary>
-            /// <param name="address">The <see cref="Uri"/> to make the request out to</param>
-            /// <returns><see cref="WebRequest"/></returns>
-            protected override WebRequest GetWebRequest(Uri address)
-            {
-                var req = (HttpWebRequest)base.GetWebRequest(address);
-                req.Headers.Add(HttpRequestHeader.Authorization, _authentication);
-                return req;
-            }
-
         }
 
     }

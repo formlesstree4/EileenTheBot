@@ -351,3 +351,6 @@ MigrationBackup/
 
 # Customized directories to ignore
 resources/*
+build/resources/*
+output/*
+Dockerfile

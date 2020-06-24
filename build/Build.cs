@@ -1,13 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
+
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
+using static Nuke.Common.Tools.Docker.DockerTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [CheckBuildProjectConfigurations]
@@ -26,7 +33,7 @@ sealed class Build : NukeBuild
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Parameter("The Discord Bot Token to use when building the Docker file")]
-    readonly string Token;
+    readonly string DiscordApiToken;
 
 
     [Solution] readonly Solution Solution;
@@ -53,9 +60,53 @@ sealed class Build : NukeBuild
                 .SetProjectFile(Solution));
         });
 
+    // Target SetEnvironmentVariables => _ => _
+    //     .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
+    //     .Executes(() =>
+    //     {
+    //         var credentials = File.ReadAllText(Path.Combine("build", "resources", "credentials.json"));
+    //         System.Environment.SetEnvironmentVariable("DiscordApiToken", DiscordApiToken, EnvironmentVariableTarget.Machine);
+    //         System.Environment.SetEnvironmentVariable("Credentials", credentials, EnvironmentVariableTarget.Machine);
+    //     });
+
+    Target GenerateManifestFile => _ => _
+        .DependsOn(Clean)
+        .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
+        .Executes(() => 
+        {
+            // Generate a Dockerfile
+            var rootDirectory = Solution.Path.ToString();
+            
+            var dockerTemplate = File.ReadAllText(Path.Combine("build", "Dockerfile.Template"));
+            var credentials = File.ReadAllText(Path.Combine("build", "resources", "credentials.json"));
+            var tokenSource = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                {"DiscordApiToken", DiscordApiToken},
+                {"Credentials", credentials}
+            };
+            var dockerFile = Regex.Replace(dockerTemplate, @"\$\((.*?)\)", (match) =>
+            {
+                var pMatch = match.Groups[1];
+                return tokenSource.ContainsKey(pMatch.Value) ?
+                    tokenSource[pMatch.Value].Replace("\"", "\\\"") :
+                    match.Value;
+            });
+            File.WriteAllText("Dockerfile", dockerFile);
+        });
+
+    Target BuildDockerImage => _ => _
+        .DependsOn(GenerateManifestFile)
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            DockerBuild(o => o
+                .SetTag("eileen")
+                .SetPath(Solution.Path.Parent));
+        });
+
     Target Compile => _ => _
         .DependsOn(Restore)
-        .Requires(() => !string.IsNullOrWhiteSpace(Token))
+        .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
         .Executes(() =>
         {
             DotNetBuild(s => s
@@ -64,6 +115,7 @@ sealed class Build : NukeBuild
                 .SetAssemblyVersion(GitVersion.AssemblySemVer)
                 .SetFileVersion(GitVersion.AssemblySemFileVer)
                 .SetInformationalVersion(GitVersion.InformationalVersion)
+                .SetOutputDirectory(OutputDirectory)
                 .EnableNoRestore());
         });
 

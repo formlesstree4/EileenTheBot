@@ -14,10 +14,14 @@ namespace Bot.Services
 
         public CredentialsService()
         {
-            var configurationLocation = Environment.GetEnvironmentVariable("EILEEN_CONFIG");
+            var configurationLocation = Environment.GetEnvironmentVariable("Credentials");
             if (File.Exists(configurationLocation))
             {
                 LoadConfigurationFromFile(configurationLocation);
+            }
+            else
+            {
+                LoadConfigurationFromString(configurationLocation);
             }
 
         }
@@ -26,7 +30,12 @@ namespace Bot.Services
         private void LoadConfigurationFromFile(string file)
         {
             var credString = File.ReadAllText(file);
-            var localCredentials = JsonConvert.DeserializeObject<Bot.Models.CredentialsEntry[]>(credString);
+            LoadConfigurationFromString(credString);
+        }
+
+        private void LoadConfigurationFromString(string text)
+        {
+            var localCredentials = JsonConvert.DeserializeObject<Bot.Models.CredentialsEntry[]>(text);
             Credentials = new List<Bot.Models.CredentialsEntry>(localCredentials).AsReadOnly();
         }
 

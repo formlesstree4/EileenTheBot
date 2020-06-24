@@ -18,13 +18,13 @@ namespace Bot.Modules
         public DanbooruService BooruService { get; set; }
 
 
-        [Command("e621")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
-        public async Task FurrySearchAsync(params string[] criteria)
-        {
+        // [Command("e621")]
+        // [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        // [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
+        // public async Task FurrySearchAsync(params string[] criteria)
+        // {
             
-        }
+        // }
 
         [Command("booru")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
