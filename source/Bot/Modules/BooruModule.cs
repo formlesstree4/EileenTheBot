@@ -40,7 +40,7 @@ namespace Bot.Modules
                     var eBuilder = new EmbedBuilder()
                         .WithAuthor(new EmbedAuthorBuilder()
                             .WithName($"Created By: {booruPost.tag_string_artist}")
-                            .WithIconUrl(Context.User.GetAvatarUrl())
+                            .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
                             .WithUrl(booruPost.GetArtistUrl()))
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
