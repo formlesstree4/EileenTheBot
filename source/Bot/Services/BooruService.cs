@@ -169,6 +169,15 @@ namespace Bot.Services
         public string GetPostUrl => $"http://danbooru.donmai.us/posts/{ID}";
         public string GetDownloadUrl => $"https://danbooru.donmai.us{file_url ?? large_file_url}";
         public string GetRenderName => Path.GetFileNameWithoutExtension(preview_file_url.Substring(preview_file_url.LastIndexOf('/') + 1));
+        public string GetArtistUrl()
+        {
+            switch(tag_count_artist)
+            {
+                case 0: return "";
+                default: return $"https://danbooru.donmai.us/posts.json?page=1&tags={tag_string_artist}";
+            }
+        }
+
 
     }
 
