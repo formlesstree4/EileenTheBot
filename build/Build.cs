@@ -100,7 +100,7 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             DockerBuild(o => o
-                .SetTag("eileen")
+                .SetTag($"eileen:{GitVersion.Sha}")
                 .SetPath(Solution.Path.Parent));
         });
 
