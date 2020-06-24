@@ -72,7 +72,7 @@ namespace Bot.Services
             await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Sending paginated message to {channel.Name}"));
             try
             {
-                var paginatedMessage = await channel.SendMessageAsync("", embed: message.CurrentPage);
+                var paginatedMessage = await channel.SendMessageAsync("", false, message.CurrentPage, RequestOptions.Default);
                 await EnsureMessageHasReactions(paginatedMessage);
                 await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
                 _messages.TryAdd(paginatedMessage.Id, message);
@@ -80,7 +80,7 @@ namespace Bot.Services
             }
             catch (Discord.Net.HttpException httpEx)
             {
-                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService), $"An error occurred sending the paginated message: {httpEx.Message}"));
+                await WriteLog(new LogMessage(LogSeverity.Critical, nameof(BetterPaginationService), $"An error occurred sending the paginated message: {httpEx.Message}", httpEx));
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"Embed Payload: {Newtonsoft.Json.JsonConvert.SerializeObject(message.CurrentPage)}"));
                 return null;
             }
@@ -132,20 +132,27 @@ namespace Bot.Services
         /// <returns>A promise to react to the deletion</returns>
         private async Task OnMessageDeleted(Cacheable<IMessage, ulong> messageParam, ISocketMessageChannel channel)
         {
-            var message = await messageParam.GetOrDownloadAsync();
-            if (ReferenceEquals(message, null))
+            try
             {
-                await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was not found in cache and could not be downloaded. Disregard."));
+                var message = await messageParam.GetOrDownloadAsync();
+                if (ReferenceEquals(message, null))
+                {
+                    await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was not found in cache and could not be downloaded. Disregard."));
+                    return;
+                }
+                var removed = _messages.TryRemove(messageParam.Id, out BetterPaginationMessage betterMessage);
+                if (!removed)
+                {
+                    await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was not a tracked message. Disregard."));
+                    return;
+                }
+                await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was removed from the internal tracking system."));
                 return;
             }
-            var removed = _messages.TryRemove(messageParam.Id, out BetterPaginationMessage betterMessage);
-            if (!removed)
+            catch (System.Exception e)
             {
-                await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was not a tracked message. Disregard."));
-                return;
+                await WriteLog(new LogMessage(LogSeverity.Warning, nameof(BetterPaginationService), $"Captured a generic error while executing {nameof(OnMessageDeleted)}", e));
             }
-            await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was removed from the internal tracking system."));
-            return;
         }
 
         /// <summary>
@@ -261,45 +268,6 @@ namespace Bot.Services
 
             }
 
-        }
-
-        /// <summary>
-        ///     Generates a <see cref="IUserMessage"/> for the <see cref="IDMChannel"/>
-        /// </summary>
-        /// <param name="channel">The instance of <see cref="IDMChannel"/></param>
-        /// <returns>A promise of the <see cref="IUserMessage"/></returns>
-        private async Task<IUserMessage> GenerateDirectMessageEmbed(IMessageChannel channel)
-        {
-            var eBuilder = new EmbedBuilder()
-                .WithColor(ErrorColor)
-                .WithDescription("A paginated message cannot be requested in a Private Message.");
-            await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"{channel.Name} is an instance of {nameof(IDMChannel)}. Reactions are not properly supported."));
-            return await channel.SendMessageAsync("", embed: eBuilder.Build());
-        }
-
-        /// <summary>
-        ///     Generates a tracked NSFW embed message.
-        /// </summary>
-        /// <param name="channel">An implementation of <see cref="IMessageChannel"/></param>
-        /// <param name="message">An instance of <see cref="BetterPaginationMessage"/> to send</param>
-        /// <returns>A promise of the <see cref="IUserMessage"/></returns>
-        private async Task<IUserMessage> GenerateNsfwEmbedWarning(IMessageChannel channel, BetterPaginationMessage message)
-        {
-            var eBuilder = new EmbedBuilder()
-                .WithAuthor(new EmbedAuthorBuilder()
-                    .WithName(_client.CurrentUser.Username))
-                .WithColor(ErrorColor)
-                .WithCurrentTimestamp()
-                .WithDescription($"This pagination message contains NSFW content. <#{channel.Id}> is not flagged for NSFW content. If you agree to render this content, please hit {AGREE}. Otherwise, please hit {DISAGREE}")
-                .WithThumbnailUrl(_client.CurrentUser.GetAvatarUrl(ImageFormat.Png))
-                .WithTitle("Warning!");
-            await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"{channel.Name} is not marked for NSFW content. Asking for room to agree..."));
-            var paginatedMessage = await channel.SendMessageAsync("", embed: eBuilder.Build());
-            await paginatedMessage.AddReactionAsync(new Emoji(AGREE));
-            await paginatedMessage.AddReactionAsync(new Emoji(DISAGREE));
-            await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
-            _messages.TryAdd(paginatedMessage.Id, message);
-            return paginatedMessage;
         }
 
     }
