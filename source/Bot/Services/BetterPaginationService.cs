@@ -332,13 +332,10 @@ namespace Bot.Services
                 {
                     var embed = embedList[pg];
                     var eBuilder = new EmbedBuilder();
-                    eBuilder.AddField("Page", $"{pg + 1}/{embedList.Count:N0}");
+                    eBuilder.AddField("Page", $"{pg + 1}/{embedList.Count:N0}", true);
                     foreach (var field in embed.Fields)
                     {
-                        if (field.Inline)
-                            eBuilder.AddField(field.Name, field.Value);
-                        else
-                            eBuilder.AddField(field.Name, field.Value);
+                        eBuilder.AddField(field.Name, field.Value, field.Inline);
                     }
 
                     if(embed.Author != null)
