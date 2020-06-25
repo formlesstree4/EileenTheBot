@@ -104,7 +104,9 @@ namespace Bot.Models.Danbooru
             switch (tag_count_artist)
             {
                 case 0: return "";
-                default: return $"https://danbooru.donmai.us/posts.json?page=1&tags={tag_string_artist}";
+                default:
+                    var artists = tag_string_artist.Split(',');
+                    return $"https://danbooru.donmai.us/posts?tags={artists[0]}}";
             }
         }
 
