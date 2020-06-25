@@ -45,7 +45,7 @@ namespace Bot.Modules
                 {
                     var eBuilder = new EmbedBuilder()
                         .AddField("Criteria", string.Join(", ", criteria), true)
-                        .AddField("Artist(s)", booruPost.tag_string_artist, true)
+                        .AddField("Artist(s)", booruPost.tag_string_artist ?? "N/A", true)
                         .WithAuthor(new EmbedAuthorBuilder()
                             .WithName("Search Results")
                             .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
