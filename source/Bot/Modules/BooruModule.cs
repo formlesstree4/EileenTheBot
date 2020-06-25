@@ -17,25 +17,43 @@ namespace Bot.Modules
 
         public DanbooruService BooruService { get; set; }
 
-
-        // [Command("e621")]
-        // [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        // [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
-        // public async Task FurrySearchAsync(params string[] criteria)
-        // {
-            
-        // }
-
-        [Command("booru")]
+        [Command("db")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
         [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
         public async Task DanbooruSearchAsync(params string[] criteria)
         {
+            string[] ExpandCriteria(string[] c)
+            {
+                var results = new List<string>();
+                foreach (var i in c)
+                {
+                    switch (i.ToLowerInvariant())
+                    {
+                        case "-r":
+                            results.Add("order:random");
+                            break;
+                        case "-e":
+                            results.Add("rating:explicit");
+                            break;
+                        case "-q":
+                            results.Add("rating:questionable");
+                            break;
+                        case "-s":
+                            results.Add("rating:safe");
+                            break;
+                        default:
+                            results.Add(i);
+                            break;
+                    }   
+                }
+                return results.ToArray();
+            }
+            
+            var newCriteria = ExpandCriteria(criteria);
             var messages = new List<Embed>();
-            var results = (await BooruService.SearchAsync(count, 1, criteria)).ToList();
+            var results = (await BooruService.SearchAsync(count, 1, newCriteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
-                // await Context.Message.DeleteAsync();
                 if (results.Count == 0)
                 {
                     await Context.Channel.SendMessageAsync("I didn't find any good stuff. Try again.");
@@ -45,7 +63,7 @@ namespace Bot.Modules
                 {
                     var artistName = !string.IsNullOrWhiteSpace(booruPost.tag_string_artist) ? booruPost.tag_string_artist : "N/A";
                     var eBuilder = new EmbedBuilder()
-                        .AddField("Criteria", string.Join(", ", criteria), true)
+                        .AddField("Criteria", string.Join(", ", newCriteria), true)
                         .AddField("Artist(s)", artistName, true)
                         .WithAuthor(new EmbedAuthorBuilder()
                             .WithName("Search Results")
