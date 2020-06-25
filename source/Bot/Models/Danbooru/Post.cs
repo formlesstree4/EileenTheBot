@@ -106,7 +106,7 @@ namespace Bot.Models.Danbooru
                 case 0: return "";
                 default:
                     var artists = tag_string_artist.Split(',');
-                    return $"https://danbooru.donmai.us/posts?tags={artists[0]}}";
+                    return $"https://danbooru.donmai.us/posts?tags={artists[0]}";
             }
         }
 
