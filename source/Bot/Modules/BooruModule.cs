@@ -43,9 +43,10 @@ namespace Bot.Modules
                 }
                 foreach (var booruPost in results)
                 {
+                    var artistName = !string.IsNullOrWhiteSpace(booruPost.tag_string_artist) ? booruPost.tag_string_artist : "N/A";
                     var eBuilder = new EmbedBuilder()
                         .AddField("Criteria", string.Join(", ", criteria), true)
-                        .AddField("Artist(s)", booruPost.tag_string_artist ?? "N/A", true)
+                        .AddField("Artist(s)", artistName, true)
                         .WithAuthor(new EmbedAuthorBuilder()
                             .WithName("Search Results")
                             .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
