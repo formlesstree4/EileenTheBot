@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Bot.Services;
 using Discord;
 using Discord.Commands;
 
@@ -7,6 +8,8 @@ namespace Bot.Modules
     // Modules must be public and inherit from an IModuleBase
     public class PublicModule : ModuleBase<SocketCommandContext>
     {
+
+        public CommandService Commands { get; set; }
 
         [Command("ping")]
         [Alias("pong", "hello")]
@@ -39,6 +42,13 @@ namespace Bot.Modules
         public Task EmbedAsync(params string[] items)
             => ReplyAsync(embed: new EmbedBuilder()
                 .AddField("test", string.Join(", ", items)).Build());
+
+        [Command("help")]
+        public Task HelpAsync()
+        {
+            return ReplyAsync("I'm working on it");
+        }
+
 
         // // Setting a custom ErrorMessage property will help clarify the precondition error
         // [Command("guild_only")]
