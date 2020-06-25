@@ -11,7 +11,7 @@ namespace Bot.Modules
     public sealed class BooruModule : ModuleBase<SocketCommandContext>
     {
 
-        private readonly int count = 5;
+        private readonly int count = 50;
         
         public BetterPaginationService PaginationService { get; set; }
 
@@ -32,26 +32,29 @@ namespace Bot.Modules
         public async Task DanbooruSearchAsync(int page, params string[] criteria)
         {
             var messages = new List<Embed>();
-            var results = (await BooruService.SearchAsync(count, 1, criteria)).ToList();
+            var results = (await BooruService.SearchAsync(count, page, criteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
+                await Context.Message.DeleteAsync();
+                if (results.Count == 0)
+                {
+                    await Context.Channel.SendMessageAsync("I didn't find any good stuff. Try again.");
+                    return;
+                }
                 foreach (var booruPost in results)
                 {
                     var eBuilder = new EmbedBuilder()
                         .WithAuthor(new EmbedAuthorBuilder()
-                            .WithName($"Created By: {booruPost.tag_string_artist}")
+                            .WithName($"Search By: {Context.User.Username}")
                             .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
                             .WithUrl(booruPost.GetArtistUrl()))
-                        // .WithColor(new Color(152, 201, 124))
+                        .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
-                        .WithDescription($"Uploaded by: {booruPost.uploader_name}")
                         .WithImageUrl(booruPost.GetDownloadUrl())
-                        .WithTitle($"Artists(s): {booruPost.tag_string_artist})")
                         .WithUrl(booruPost.GetPostUrl());
-                    eBuilder.AddField("All Tags", $"`{booruPost.tag_string.Replace("`", @"\`")}`", true);
+                    eBuilder.AddField("Criteria", string.Join(", ", criteria), true);
                     messages.Add(eBuilder.Build());
                 }
-                await Context.Message.DeleteAsync();
                 await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User) { IsNsfw = true });
             }
         }
