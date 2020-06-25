@@ -29,13 +29,13 @@ namespace Bot.Modules
         [Command("booru")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
         [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
-        public async Task DanbooruSearchAsync(int page, params string[] criteria)
+        public async Task DanbooruSearchAsync(params string[] criteria)
         {
             var messages = new List<Embed>();
-            var results = (await BooruService.SearchAsync(count, page, criteria)).ToList();
+            var results = (await BooruService.SearchAsync(count, 1, criteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
-                await Context.Message.DeleteAsync();
+                // await Context.Message.DeleteAsync();
                 if (results.Count == 0)
                 {
                     await Context.Channel.SendMessageAsync("I didn't find any good stuff. Try again.");
@@ -45,12 +45,14 @@ namespace Bot.Modules
                 {
                     var eBuilder = new EmbedBuilder()
                         .WithAuthor(new EmbedAuthorBuilder()
-                            .WithName($"Search By: {Context.User.Username}")
+                            .WithName($"More by {booruPost.tag_string_artist}")
                             .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
                             .WithUrl(booruPost.GetArtistUrl()))
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithImageUrl(booruPost.GetDownloadUrl())
+                        .WithTitle($"Load Post")
+                        .WithFooter($"Requested By: {Context.User.Username}")
                         .WithUrl(booruPost.GetPostUrl());
                     eBuilder.AddField("Criteria", string.Join(", ", criteria), true);
                     messages.Add(eBuilder.Build());
