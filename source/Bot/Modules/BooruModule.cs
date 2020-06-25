@@ -44,17 +44,18 @@ namespace Bot.Modules
                 foreach (var booruPost in results)
                 {
                     var eBuilder = new EmbedBuilder()
-                        .WithAuthor(new EmbedAuthorBuilder()
-                            .WithName($"More by {booruPost.tag_string_artist}")
-                            .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
-                            .WithUrl(booruPost.GetArtistUrl()))
+                        .AddField("Criteria", string.Join(", ", criteria), true)
+                        .AddField("Artist(s)", booruPost.tag_string_artist, true)
+                        // .WithAuthor(new EmbedAuthorBuilder()
+                        //     .WithName($"More by {booruPost.tag_string_artist}")
+                        //     .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
+                        //     .WithUrl(booruPost.GetArtistUrl()))
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithImageUrl(booruPost.GetDownloadUrl())
                         .WithTitle($"Load Post")
                         .WithFooter($"Requested By: {Context.User.Username}")
                         .WithUrl(booruPost.GetPostUrl());
-                    eBuilder.AddField("Criteria", string.Join(", ", criteria), true);
                     messages.Add(eBuilder.Build());
                 }
                 await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User) { IsNsfw = true });
