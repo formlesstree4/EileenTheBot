@@ -62,6 +62,21 @@ namespace Bot.Services
         }
 
         /// <summary>
+        ///     Asynchronously performs a search against the Danbooru API using the 'random' endpoint
+        /// </summary>
+        /// <param name="searchTags">A string array of tags that should be searched</param>
+        /// <returns><see cref="Post"/></returns>
+        public async Task<Post> SearchRandom(params string[] searchTags)
+        {
+            var tags = WebUtility.UrlEncode(string.Join(" ", searchTags));
+            var url = $"https://danbooru.donmai.us/posts/random.json?tags={tags}";
+            var resp = await _clientAsync.GetAsync(url);
+            var respString = await resp.Content.ReadAsStringAsync();
+            var post = JsonConvert.DeserializeObject<Post>(respString);
+            return post;
+        }
+
+        /// <summary>
         ///     Asynchronously downloads a post.
         /// </summary>
         /// <param name="p">The <see cref="Post"/> to download</param>
