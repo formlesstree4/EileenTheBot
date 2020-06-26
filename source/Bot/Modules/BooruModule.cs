@@ -12,10 +12,23 @@ namespace Bot.Modules
     {
 
         private readonly int count = 50;
-        
+
+        private static IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
+        {
+            ["-r"] = "order:random",
+            ["-e"] = "rating:explicit",
+            ["-q"] = "rating:questionable",
+            ["-s"] = "rating:safe",
+        };
+
         public BetterPaginationService PaginationService { get; set; }
 
         public DanbooruService BooruService { get; set; }
+
+        [Command("aliases")]
+        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        public Task ListTagAliasesAsync() => ReplyAsync(tagAliases.Aggregate("",
+            (acc, next) => acc += $"|{next.Key} {next.Value}"));
 
         [Command("db")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
@@ -27,24 +40,8 @@ namespace Bot.Modules
                 var results = new List<string>();
                 foreach (var i in c)
                 {
-                    switch (i.ToLowerInvariant())
-                    {
-                        case "-r":
-                            results.Add("order:random");
-                            break;
-                        case "-e":
-                            results.Add("rating:explicit");
-                            break;
-                        case "-q":
-                            results.Add("rating:questionable");
-                            break;
-                        case "-s":
-                            results.Add("rating:safe");
-                            break;
-                        default:
-                            results.Add(i);
-                            break;
-                    }   
+                    if (tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias))
+                        results.Add(alias);
                 }
                 return results.ToArray();
             }
