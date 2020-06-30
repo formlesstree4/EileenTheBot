@@ -27,8 +27,8 @@ namespace Bot.Modules
 
         [Command("aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public Task ListTagAliasesAsync() => ReplyAsync(tagAliases.Aggregate("",
-            (acc, next) => acc += $"|{next.Key} {next.Value}"));
+        public Task ListTagAliasesAsync() =>
+            ReplyAsync(string.Join("|", tagAliases.ToList()));
 
         [Command("db")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
