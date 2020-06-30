@@ -42,6 +42,8 @@ namespace Bot.Modules
                 {
                     if (tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias))
                         results.Add(alias);
+                    else
+                        results.Add(i);
                 }
                 return results.ToArray();
             }
