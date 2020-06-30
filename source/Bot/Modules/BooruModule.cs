@@ -56,11 +56,11 @@ namespace Bot.Modules
         public async Task DanbooruSearchAsync(params string[] criteria)
         {            
             var newCriteria = ExpandCriteria(criteria);
+            var parameters = GetSkipAndTake(ref criteria);
             var messages = new List<Embed>();
-            var parameters = GetSkipAndTake(newCriteria);
 
             var pageNumber = parameters["skip"];
-            var pageSize = parameters["skip"];
+            var pageSize = parameters["take"];
 
             var results = (await BooruService.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
@@ -102,8 +102,9 @@ namespace Bot.Modules
             return results.ToArray();
         }
 
-        private IReadOnlyDictionary<string, int> GetSkipAndTake(string[] c)
+        private IReadOnlyDictionary<string, int> GetSkipAndTake(ref string[] c)
         {
+            var updated = new List<string>();
             var results = new Dictionary<string, int>
             {
                 ["take"] = 50,
@@ -118,15 +119,21 @@ namespace Bot.Modules
                         {
                             results["take"] = t;
                         }
+                        index++;
                         break;
                     case "--skip":
                         if (int.TryParse(c[index + 1], out var s))
                         {
                             results["skip"] = s;
                         }
+                        index++;
+                        break;
+                    default:
+                        updated.Add(c[index]);
                         break;
                 }
             }
+            c = updated.ToArray();
             return results;
         }
 
