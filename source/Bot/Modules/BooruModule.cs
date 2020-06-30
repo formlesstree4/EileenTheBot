@@ -56,7 +56,7 @@ namespace Bot.Modules
         public async Task DanbooruSearchAsync(params string[] criteria)
         {            
             var newCriteria = ExpandCriteria(criteria);
-            var parameters = GetSkipAndTake(ref criteria);
+            var parameters = GetSkipAndTake(ref newCriteria);
             var messages = new List<Embed>();
 
             var pageNumber = parameters["skip"];
@@ -67,7 +67,7 @@ namespace Bot.Modules
             {
                 if (results.Count == 0)
                 {
-                    await Context.Channel.SendMessageAsync("I didn't find the good stuff.");
+                    await Context.Channel.SendMessageAsync($"I didn't find the good stuff. (Searched using: {string.Join(", ", newCriteria)})");
                     return;
                 }
                 foreach (var booruPost in results)
