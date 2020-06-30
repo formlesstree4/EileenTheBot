@@ -35,6 +35,9 @@ sealed class Build : NukeBuild
     [Parameter("The Discord Bot Token to use when building the Docker file")]
     readonly string DiscordApiToken;
 
+    [Parameter("Overrides the command prefix used to fire off commands for the bot")]
+    readonly string CommandPrefix = "!";
+
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
@@ -60,15 +63,6 @@ sealed class Build : NukeBuild
                 .SetProjectFile(Solution));
         });
 
-    // Target SetEnvironmentVariables => _ => _
-    //     .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
-    //     .Executes(() =>
-    //     {
-    //         var credentials = File.ReadAllText(Path.Combine("build", "resources", "credentials.json"));
-    //         System.Environment.SetEnvironmentVariable("DiscordApiToken", DiscordApiToken, EnvironmentVariableTarget.Machine);
-    //         System.Environment.SetEnvironmentVariable("Credentials", credentials, EnvironmentVariableTarget.Machine);
-    //     });
-
     Target GenerateManifestFile => _ => _
         .DependsOn(Clean)
         .Requires(() => !string.IsNullOrWhiteSpace(DiscordApiToken))
@@ -82,7 +76,8 @@ sealed class Build : NukeBuild
             var tokenSource = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 {"DiscordApiToken", DiscordApiToken},
-                {"Credentials", credentials}
+                {"Credentials", credentials},
+                {"CommandPrefix", CommandPrefix}
             };
             var dockerFile = Regex.Replace(dockerTemplate, @"\$\((.*?)\)", (match) =>
             {

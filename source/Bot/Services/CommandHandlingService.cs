@@ -13,6 +13,7 @@ namespace Bot.Services
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
+        private readonly char _prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
 
         public CommandHandlingService(IServiceProvider services)
         {
@@ -44,7 +45,7 @@ namespace Bot.Services
             // Perform prefix check. You may want to replace this with
             // (!message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             // for a less traditional command format like @bot help.
-            if (!message.HasCharPrefix('!', ref argPos)) return;
+            if (!message.HasCharPrefix(_prefix, ref argPos)) return;
 
             var context = new SocketCommandContext(_discord, message);
             // Perform the execution of the command. In this method,

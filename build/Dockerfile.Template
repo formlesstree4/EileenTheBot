@@ -20,5 +20,6 @@ COPY --from=build /app .
 #ENV LANG en_US.UTF-8
 ENV DiscordApiToken $(DiscordApiToken)
 ENV Credentials $(Credentials)
+ENV CommandPrefix $(CommandPrefix)
 
 ENTRYPOINT ["./Bot"]
