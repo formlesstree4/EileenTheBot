@@ -323,7 +323,7 @@ namespace Bot.Services
         ///     Creates a new instance of the <see cref="BetterPaginationMessage"/> class for rendering a set of paginated messages.
         /// </summary>
         /// <param name="pages">The collection of <see cref="Embed"/> messages</param>
-        public BetterPaginationMessage(IEnumerable<Embed> pages, bool pageCountAsInline = true, IUser user = null)
+        public BetterPaginationMessage(IEnumerable<Embed> pages, bool pageCountAsInline = true, IUser user = null, string pageText = "Page")
         {
             var embedList = new List<Embed>(pages);
             User = user;
@@ -336,7 +336,7 @@ namespace Bot.Services
                 {
                     var embed = embedList[pg];
                     var eBuilder = new EmbedBuilder();
-                    eBuilder.AddField("Page", $"{pg + 1}/{embedList.Count:N0}", true);
+                    eBuilder.AddField(pageText, $"{pg + 1}/{embedList.Count:N0}", true);
                     foreach (var field in embed.Fields)
                     {
                         eBuilder.AddField(field.Name, field.Value, field.Inline);

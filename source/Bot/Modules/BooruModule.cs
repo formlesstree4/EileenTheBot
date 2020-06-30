@@ -87,7 +87,7 @@ namespace Bot.Modules
                         .WithUrl(booruPost.GetPostUrl());
                     messages.Add(eBuilder.Build());
                 }
-                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User) { IsNsfw = true });
+                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
             }
         }
 
