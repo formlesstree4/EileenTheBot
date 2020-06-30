@@ -67,7 +67,7 @@ namespace Bot.Modules
             {
                 if (results.Count == 0)
                 {
-                    await Context.Channel.SendMessageAsync($"I didn't find the good stuff. (Searched using: {string.Join(", ", newCriteria)})");
+                    await Context.Channel.SendMessageAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", newCriteria)})");
                     return;
                 }
                 foreach (var booruPost in results)
