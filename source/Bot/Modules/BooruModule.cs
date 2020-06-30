@@ -59,7 +59,10 @@ namespace Bot.Modules
             var messages = new List<Embed>();
             var parameters = GetSkipAndTake(newCriteria);
 
-            var results = (await BooruService.SearchAsync(parameters["take"], parameters["skip"], newCriteria)).ToList();
+            var pageNumber = parameters["skip"];
+            var pageSize = parameters["skip"];
+
+            var results = (await BooruService.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
                 if (results.Count == 0)
