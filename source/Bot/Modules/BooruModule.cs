@@ -3,6 +3,7 @@ using Discord.Commands;
 using Bot.Services;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 using Discord;
 
 namespace Bot.Modules
@@ -18,7 +19,17 @@ namespace Bot.Modules
             ["-r"] = "order:random",
             ["-e"] = "rating:explicit",
             ["-q"] = "rating:questionable",
-            ["-s"] = "rating:safe",
+            ["-s"] = "rating:safe"
+        };
+
+        private static IReadOnlyDictionary<string, string> tagAliasesDesc = new Dictionary<string, string>
+        {
+            ["-r"] = "Adds a random order flag",
+            ["-e"] = "Enforces explicit only",
+            ["-q"] = "Enforces questionable only",
+            ["-s"] = "Enforces safe only",
+            ["--skip"] = "Skip 'n' number of pages",
+            ["--take"] = "Take 'n' number of posts on said page"
         };
 
         public BetterPaginationService PaginationService { get; set; }
@@ -27,35 +38,33 @@ namespace Bot.Modules
 
         [Command("aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public Task ListTagAliasesAsync() =>
-            ReplyAsync(string.Join("|", tagAliases.ToList()));
+        public Task ListTagAliasesAsync() 
+        {
+            var messageBuilder = new StringBuilder();
+            messageBuilder.AppendLine("The following aliases are available");
+            foreach(var c in tagAliasesDesc)
+            {
+                messageBuilder.AppendLine($"\t{c}");
+            }
+            return ReplyAsync(messageBuilder.ToString());
+        }
+            
 
         [Command("db")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
         [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
         public async Task DanbooruSearchAsync(params string[] criteria)
-        {
-            string[] ExpandCriteria(string[] c)
-            {
-                var results = new List<string>();
-                foreach (var i in c)
-                {
-                    if (tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias))
-                        results.Add(alias);
-                    else
-                        results.Add(i);
-                }
-                return results.ToArray();
-            }
-            
+        {            
             var newCriteria = ExpandCriteria(criteria);
             var messages = new List<Embed>();
-            var results = (await BooruService.SearchAsync(count, 1, newCriteria)).ToList();
+            var parameters = GetSkipAndTake(newCriteria);
+
+            var results = (await BooruService.SearchAsync(parameters["take"], parameters["skip"], newCriteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
                 if (results.Count == 0)
                 {
-                    await Context.Channel.SendMessageAsync("I didn't find any good stuff. Try again.");
+                    await Context.Channel.SendMessageAsync("I didn't find the good stuff.");
                     return;
                 }
                 foreach (var booruPost in results)
@@ -70,13 +79,52 @@ namespace Bot.Modules
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithImageUrl(booruPost.GetDownloadUrl())
-                        .WithTitle($"Load Post")
-                        .WithFooter($"Requested By: {Context.User.Username}")
+                        .WithTitle($"The Good Stuff")
+                        .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
                         .WithUrl(booruPost.GetPostUrl());
                     messages.Add(eBuilder.Build());
                 }
                 await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User) { IsNsfw = true });
             }
+        }
+
+
+        private string[] ExpandCriteria(string[] c)
+        {
+            var results = new List<string>();
+            foreach (var i in c)
+            {
+                results.Add(tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias) ? alias : i);
+            }
+            return results.ToArray();
+        }
+
+        private IReadOnlyDictionary<string, int> GetSkipAndTake(string[] c)
+        {
+            var results = new Dictionary<string, int>
+            {
+                ["take"] = 50,
+                ["skip"] = 1
+            };
+            for (var index = 0; index < c.Length; index++)
+            {
+                switch(c[index].ToLowerInvariant())
+                {
+                    case "--take":
+                        if (int.TryParse(c[index + 1], out var t))
+                        {
+                            results["take"] = t;
+                        }
+                        break;
+                    case "--skip":
+                        if (int.TryParse(c[index + 1], out var s))
+                        {
+                            results["skip"] = s;
+                        }
+                        break;
+                }
+            }
+            return results;
         }
 
     }
