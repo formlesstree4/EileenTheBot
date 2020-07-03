@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Bot.Models.Danbooru;
 using Newtonsoft.Json;
 
-namespace Bot.Services
+namespace Bot.Services.Booru
 {
 
 
@@ -18,7 +18,7 @@ namespace Bot.Services
     /// <summary>
     ///     A simplified querying engine for Danbooru.
     /// </summary>
-    public sealed class DanbooruService
+    public sealed class DanbooruService : IBooruProvider<Post>
     {
 
         private readonly HttpClient _clientAsync;
