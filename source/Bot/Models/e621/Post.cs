@@ -69,5 +69,12 @@ namespace Bot.Models.e621
 
         [JsonProperty("is_favorited")]
         public bool IsFavorited { get; set; }
+
+
+        public string GetPostUrl()
+        {
+            return $"https://e621.net/posts/{Id}";
+        }
+
     }
 }

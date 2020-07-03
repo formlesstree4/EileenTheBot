@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Discord;
+using Bot.Services.Booru;
 
 namespace Bot.Modules
 {
@@ -35,6 +36,8 @@ namespace Bot.Modules
         public BetterPaginationService PaginationService { get; set; }
 
         public DanbooruService BooruService { get; set; }
+
+        public e621Service e621Service { get; set; }
 
         [Command("aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
@@ -82,6 +85,48 @@ namespace Bot.Modules
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithImageUrl(booruPost.GetDownloadUrl())
+                        .WithTitle($"The Good Stuff")
+                        .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
+                        .WithUrl(booruPost.GetPostUrl());
+                    messages.Add(eBuilder.Build());
+                }
+                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
+            }
+        }
+
+        [Command("fur")]
+        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
+        public async Task e621SearchAsync(params string[] criteria)
+        {
+            var newCriteria = ExpandCriteria(criteria);
+            var parameters = GetSkipAndTake(ref newCriteria);
+            var messages = new List<Embed>();
+
+            var pageNumber = parameters["skip"];
+            var pageSize = parameters["take"];
+
+            var results = (await e621Service.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
+            using (var ts = Context.Channel.EnterTypingState())
+            {
+                if (results.Count == 0)
+                {
+                    await Context.Channel.SendMessageAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", newCriteria)})");
+                    return;
+                }
+                foreach (var booruPost in results)
+                {
+                    
+                    var artistName = booruPost.Tags.Artist.Any() ? string.Join(",", booruPost.Tags.Artist) : "N/A";
+                    var eBuilder = new EmbedBuilder()
+                        .AddField("Criteria", string.Join(", ", newCriteria), true)
+                        .AddField("Artist(s)", artistName, true)
+                        .WithAuthor(new EmbedAuthorBuilder()
+                            .WithName("Search Results")
+                            .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
+                        .WithColor(new Color(152, 201, 124))
+                        .WithCurrentTimestamp()
+                        .WithImageUrl(booruPost.File.Url)
                         .WithTitle($"The Good Stuff")
                         .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
                         .WithUrl(booruPost.GetPostUrl());

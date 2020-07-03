@@ -6,6 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Bot.Services;
 using System.Threading;
+using Bot.Services.Booru;
 
 namespace Bot
 {
@@ -52,6 +53,7 @@ namespace Bot
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
                 .AddSingleton<CredentialsService>()
                 .AddSingleton<DanbooruService>()
+                .AddSingleton<e621Service>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<BetterPaginationService>()

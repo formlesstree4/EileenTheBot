@@ -29,9 +29,7 @@ namespace Bot.Services.Booru
 
         /// <summary>
         ///     Creates a new instance of the <see cref="DanbooruService"/>.
-        /// </summary>
-        /// <param name="user">The username to login with</param>
-        /// <param name="apiKey">The API key to use for validation</param>
+        /// </summary>1
         public DanbooruService(CredentialsService credentials)
         {
             var configuration = credentials.Credentials.First(c => c.Name.Equals("danbooru"));
