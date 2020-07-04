@@ -34,6 +34,8 @@ namespace Bot.Services.Booru
             _apiKey = configuration.ApiKey;
             _clientAsync = new HttpClient();
             _clientAsync.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _clientAsync.DefaultRequestHeaders.UserAgent.Clear();
+            _clientAsync.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue($"The Erector - A Discord Bot for querying Booru sites (by {configuration.Username})", "1.1"));
             _clientAsync.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_user}:{_apiKey}")));
         }
