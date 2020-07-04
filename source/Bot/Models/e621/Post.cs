@@ -14,7 +14,7 @@ namespace Bot.Models.e621
         public DateTime CreatedAt { get; set; }
 
         [JsonProperty("updated_at")]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         [JsonProperty("file")]
         public File File { get; set; }
