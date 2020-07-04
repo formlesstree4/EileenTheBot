@@ -30,12 +30,12 @@ namespace Bot.Services.Booru
         public e621Service(CredentialsService credentials)
         {
             var configuration = credentials.Credentials.First(c => c.Name.Equals("e621"));
+            var userAgent = new ProductHeaderValue($"The Erector by {configuration.Username}");
             _user = configuration.Username;
             _apiKey = configuration.ApiKey;
             _clientAsync = new HttpClient();
             _clientAsync.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _clientAsync.DefaultRequestHeaders.UserAgent.Clear();
-            _clientAsync.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue($"The Erector - A Discord Bot for querying Booru sites (by {configuration.Username})", "1.1"));
+            _clientAsync.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(userAgent));
             _clientAsync.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_user}:{_apiKey}")));
         }
