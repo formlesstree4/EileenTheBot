@@ -33,6 +33,7 @@ namespace Bot.Services.Booru
             _user = configuration.Username;
             _apiKey = configuration.ApiKey;
             _clientAsync = new HttpClient();
+            _clientAsync.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _clientAsync.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_user}:{_apiKey}")));
         }
@@ -43,6 +44,7 @@ namespace Bot.Services.Booru
             var url = $"https://e621.net/posts.json?limit={limit}&page={page}&tags={tags}";
             var resp = await _clientAsync.GetAsync(url);
             var respString = await resp.Content.ReadAsStringAsync();
+            Console.WriteLine(respString);
             var posts = JsonConvert.DeserializeObject<PostResponse>(respString);
             return posts.Posts;
         }
