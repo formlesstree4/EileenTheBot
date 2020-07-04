@@ -30,7 +30,7 @@ namespace Bot.Services.Booru
         public e621Service(CredentialsService credentials)
         {
             var configuration = credentials.Credentials.First(c => c.Name.Equals("e621"));
-            var userAgent = new ProductHeaderValue($"The Erector by {configuration.Username}");
+            var userAgent = new ProductHeaderValue($"The-Erector-by-{configuration.Username}", "1.0");
             _user = configuration.Username;
             _apiKey = configuration.ApiKey;
             _clientAsync = new HttpClient();
