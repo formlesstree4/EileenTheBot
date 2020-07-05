@@ -13,7 +13,7 @@ namespace Bot.Modules
     public sealed class BooruModule : ModuleBase<SocketCommandContext>
     {
 
-        private readonly int count = 50;
+        private const string NsfwErrorMessage = "uwu oopsie-woopsie you made a lil fucksy-wucksy and twied to be lewdie in pubwic";
 
         private static IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
         {
@@ -55,7 +55,7 @@ namespace Bot.Modules
 
         [Command("db")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
+        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task DanbooruSearchAsync(params string[] criteria)
         {            
             var newCriteria = ExpandCriteria(criteria);
@@ -96,7 +96,7 @@ namespace Bot.Modules
 
         [Command("fur")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = "Hey. You can't post this in a non-lewd channel. Do you wanna get yelled at?")]
+        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task e621SearchAsync(params string[] criteria)
         {
             var newCriteria = ExpandCriteria(criteria);
@@ -136,6 +136,14 @@ namespace Bot.Modules
             }
         }
 
+
+        [Command("gb")]
+        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
+        public async Task GelbooruSearchAsync(params string[] criteria)
+        {
+
+        }
 
         private string[] ExpandCriteria(string[] c)
         {

@@ -19,13 +19,6 @@ namespace Bot.Services.Booru
         /// <returns>A collection of post objects (as type T)</returns>
         Task<IEnumerable<T>> SearchAsync(int limit, int page, params string[] searchTags);
 
-        /// <summary>
-        ///     Asynchronously performs a search and returns a random post, if the service implements a randomized search function
-        /// </summary>
-        /// <param name="searchTags">A string array of tags that should be searched</param>
-        /// <returns><see cref="Post"/></returns>
-        Task<T> SearchRandom(params string[] searchTags);
-
     }
 
 }
