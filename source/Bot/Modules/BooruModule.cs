@@ -35,9 +35,11 @@ namespace Bot.Modules
 
         public BetterPaginationService PaginationService { get; set; }
 
-        public DanbooruService BooruService { get; set; }
+        public Danbooru Danbooru { get; set; }
 
-        public e621Service e621Service { get; set; }
+        public e621 e621 { get; set; }
+
+        public Gelbooru Gelbooru { get; set; }
 
         [Command("aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
@@ -65,7 +67,7 @@ namespace Bot.Modules
             var pageNumber = parameters["skip"];
             var pageSize = parameters["take"];
 
-            var results = (await BooruService.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
+            var results = (await Danbooru.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
                 if (results.Count == 0)
@@ -106,7 +108,7 @@ namespace Bot.Modules
             var pageNumber = parameters["skip"];
             var pageSize = parameters["take"];
 
-            var results = (await e621Service.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
+            var results = (await e621.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             using (var ts = Context.Channel.EnterTypingState())
             {
                 if (results.Count == 0)
