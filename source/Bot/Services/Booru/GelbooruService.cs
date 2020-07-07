@@ -1,20 +1,21 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Bot.Models.Gelbooru;
 
 namespace Bot.Services.Booru
 {
 
-    public class GelbooruService : IBooruProvider<Post>
+    public sealed class Gelbooru : BooruService<Post[], Post>
     {
-        public async Task<IEnumerable<Post>> SearchAsync(int limit, int page, params string[] searchTags)
-        {
-            throw new System.NotImplementedException();
-        }
+        public Gelbooru(CredentialsService credentials) : base(credentials) { }
 
-        public async Task<Post> SearchRandom(params string[] searchTags)
+        protected override IEnumerable<Post> ConvertResponseAsEnumerable(Post[] response) => response;
+
+        protected override string GetCredentialsKey() => "gelbooru";
+
+        protected override string GetSearchString(int limit, int page, string searchTags)
         {
-            throw new System.NotImplementedException();
+            var c = GetCredentials();
+            return $"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit={limit}&tags={searchTags}&json=1&api_key={c.ApiKey}&user_id={c.Username}";
         }
     }
 

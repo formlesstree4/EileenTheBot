@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -23,14 +24,14 @@ namespace Bot.Services.Booru
         public BooruService(CredentialsService credentials)
         {
             _credentialsService = credentials;
-            _credentials = GetCredentials(_credentialsService);
+            _credentials = _credentialsService.Credentials.FirstOrDefault(c => c.Name.Equals(GetCredentialsKey(), StringComparison.OrdinalIgnoreCase));
             _clientAsync = InternalCreateClient();
         }
 
 
         public async Task<IEnumerable<T>> SearchAsync(int limit, int page, params string[] searchTags)
         {
-            var tags = WebUtility.UrlEncode(string.Join(" ", searchTags));
+            var tags = EncodeText(string.Join(" ", searchTags));
             var url = GetSearchString(limit, page, tags);
             using (var getResponse = await _clientAsync.GetAsync(url))
             {
@@ -51,21 +52,21 @@ namespace Bot.Services.Booru
             return BuildHttpClient(c);
         }
 
-        protected abstract CredentialsEntry GetCredentials(CredentialsService service);
+        protected abstract string GetCredentialsKey();
 
         protected abstract string GetSearchString(int limit, int page, string searchTags);
-
-        protected abstract string GetRandomString(int limit, int page, string searchTags);
-
-        protected abstract T ConvertResponse(TResponse response);
 
         protected abstract IEnumerable<T> ConvertResponseAsEnumerable(TResponse response);
 
 
-
+        /// <summary>Applies any additional transformations on the built HttpClient</summary>
         protected virtual HttpClient BuildHttpClient(HttpClient client) => client;
 
+        /// <summary>Gets the User Agent that will be used by the API</summary>
         protected virtual string GetUserAgent => $"The-Erector-by-{_credentials.Username}";
+
+        /// <summary>Gets the current credentials for the API</summary>
+        protected internal CredentialsEntry GetCredentials() => _credentials;
 
 
 

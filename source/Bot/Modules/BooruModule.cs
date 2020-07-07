@@ -144,7 +144,41 @@ namespace Bot.Modules
         [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task GelbooruSearchAsync(params string[] criteria)
         {
+            var newCriteria = ExpandCriteria(criteria);
+            var parameters = GetSkipAndTake(ref newCriteria);
+            var messages = new List<Embed>();
 
+            var pageNumber = parameters["skip"];
+            var pageSize = parameters["take"];
+
+            var results = (await Gelbooru.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
+            using (var ts = Context.Channel.EnterTypingState())
+            {
+                if (results.Count == 0)
+                {
+                    await Context.Channel.SendMessageAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", newCriteria)})");
+                    return;
+                }
+                foreach (var booruPost in results)
+                {
+                    
+                    var artistName = booruPost.Owner ?? "N/A";
+                    var eBuilder = new EmbedBuilder()
+                        .AddField("Criteria", string.Join(", ", newCriteria), true)
+                        .AddField("Artist(s)", artistName, true)
+                        .WithAuthor(new EmbedAuthorBuilder()
+                            .WithName("Search Results")
+                            .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
+                        .WithColor(new Color(152, 201, 124))
+                        .WithCurrentTimestamp()
+                        .WithImageUrl(booruPost.FileUrl)
+                        .WithTitle($"The Good Stuff")
+                        .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
+                        .WithUrl(booruPost.Source);
+                    messages.Add(eBuilder.Build());
+                }
+                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
+            }
         }
 
         private string[] ExpandCriteria(string[] c)
