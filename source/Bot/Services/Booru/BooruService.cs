@@ -36,8 +36,11 @@ namespace Bot.Services.Booru
             using (var getResponse = await _clientAsync.GetAsync(url))
             {
                 var response = await getResponse.Content.ReadAsStringAsync();
+                if (response is null) return Enumerable.Empty<T>();
                 var responseObject = JsonConvert.DeserializeObject<TResponse>(response);
-                return ConvertResponseAsEnumerable(responseObject);
+                var x = ConvertResponseAsEnumerable(responseObject);
+                if (x is null) x = Enumerable.Empty<T>();
+                return x;
             }
         }
 
