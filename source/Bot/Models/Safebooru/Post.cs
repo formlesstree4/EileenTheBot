@@ -1,12 +1,10 @@
 using Newtonsoft.Json;
 
-namespace Bot.Models.Gelbooru
+namespace Bot.Models.Safebooru
 {
+
     public sealed class Post
     {
-
-        [JsonProperty("source")]
-        public string Source { get; set; }
 
         [JsonProperty("directory")]
         public string Directory { get; set; }
@@ -36,7 +34,7 @@ namespace Bot.Models.Gelbooru
         public string Rating { get; set; }
 
         [JsonProperty("sample")]
-        public int Sample { get; set; }
+        public bool? Sample { get; set; }
 
         [JsonProperty("sample_height")]
         public int SampleHeight { get; set; }
@@ -53,15 +51,11 @@ namespace Bot.Models.Gelbooru
         [JsonProperty("width")]
         public int Width { get; set; }
 
-        [JsonProperty("file_url")]
-        public string FileUrl { get; set; }
 
-        [JsonProperty("created_at")]
-        public string CreatedAt { get; set; }
+        public string GetPageUrl() => $"https://safebooru.com/index.php?page=post&s=view&id={Id}";
 
+        public string GetImageUrl() => $"https://safebooru.org/images/{Directory}/image";
 
-        public string GetPageUrl() => $"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
-        
     }
 
 }

@@ -15,7 +15,7 @@ namespace Bot.Services.Booru
         protected override string GetSearchString(int limit, int page, string searchTags)
         {
             var c = GetCredentials();
-            return $"https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit={limit}&tags={searchTags}&json=1&api_key={c.ApiKey}&user_id={c.Username}";
+            return $"https://gelbooru.com/index.php?page=dapi&s=post&q=index&pid={page}&limit={limit}&tags={searchTags}&json=1&api_key={c.ApiKey}&user_id={c.Username}";
         }
     }
 
