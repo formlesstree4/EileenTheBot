@@ -58,6 +58,9 @@ namespace Bot.Models.Gelbooru
 
         [JsonProperty("created_at")]
         public string CreatedAt { get; set; }
+
+
+        public string GetPageUrl() => $"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
         
     }
 
