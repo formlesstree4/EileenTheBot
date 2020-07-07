@@ -9,6 +9,7 @@ using Bot.Services.Booru;
 using AutoMapper;
 using AutoMapper.Collection;
 using Bot.Models;
+using Newtonsoft.Json;
 
 namespace Bot.Modules
 {
@@ -98,6 +99,7 @@ namespace Bot.Modules
 
             var results = (await service.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             var posts = results.Select(c => Mapper.Map<T, Models.EmbedPost>(c));
+            System.Console.WriteLine(JsonConvert.SerializeObject(posts, Formatting.Indented));
             await PostAsync(posts, newCriteria, pageNumber, pageSize);
         }
 
