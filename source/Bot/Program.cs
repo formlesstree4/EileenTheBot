@@ -7,6 +7,8 @@ using Discord.WebSocket;
 using Bot.Services;
 using System.Threading;
 using Bot.Services.Booru;
+using AutoMapper;
+using System.Reflection;
 
 namespace Bot
 {
@@ -48,7 +50,7 @@ namespace Bot
         private ServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
-
+                .AddAutoMapper(Assembly.GetExecutingAssembly())
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
                 .AddSingleton<CredentialsService>()
