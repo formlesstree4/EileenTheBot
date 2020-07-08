@@ -7,9 +7,8 @@ using System.Text;
 using Discord;
 using Bot.Services.Booru;
 using AutoMapper;
-using AutoMapper.Collection;
 using Bot.Models;
-using Newtonsoft.Json;
+using System;
 
 namespace Bot.Modules
 {
@@ -137,20 +136,28 @@ namespace Bot.Modules
                 }
                 foreach (var booruPost in results)
                 {
-                    var artistName = booruPost.ArtistName;
-                    var eBuilder = new EmbedBuilder()
-                        .AddField("Criteria", string.Join(", ", criteria), true)
-                        .AddField("Artist(s)", artistName, true)
-                        .WithAuthor(new EmbedAuthorBuilder()
-                            .WithName("Search Results")
-                            .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
-                        .WithColor(new Color(152, 201, 124))
-                        .WithCurrentTimestamp()
-                        .WithImageUrl(booruPost.ImageUrl)
-                        .WithTitle($"The Good Stuff")
-                        .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
-                        .WithUrl(booruPost.PageUrl);
-                    messages.Add(eBuilder.Build());
+                    try
+                    {
+                        var artistName = booruPost.ArtistName;
+                        var eBuilder = new EmbedBuilder()
+                            .AddField("Criteria", string.Join(", ", criteria), true)
+                            .AddField("Artist(s)", artistName, true)
+                            .WithAuthor(new EmbedAuthorBuilder()
+                                .WithName("Search Results")
+                                .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
+                            .WithColor(new Color(152, 201, 124))
+                            .WithCurrentTimestamp()
+                            .WithImageUrl(booruPost.ImageUrl)
+                            .WithTitle($"The Good Stuff")
+                            .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
+                            .WithUrl(booruPost.PageUrl);
+                        messages.Add(eBuilder.Build());
+                    }
+                    catch (ArgumentException are)
+                    {
+                        Console.WriteLine(are);
+                        continue;
+                    }
                 }
                 await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
             }
