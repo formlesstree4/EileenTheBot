@@ -167,7 +167,7 @@ namespace Bot.Modules
         {
             var tags = new List<string>(c);
             var results = new List<string>();
-            if (Context.Channel is Discord.ITextChannel t && !t.IsNsfw) results.Add("-s");
+            if (Context.Channel is Discord.ITextChannel t && !t.IsNsfw) tags.Add("-s");
             foreach (var i in tags) results.Add(tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias) ? alias : i);
             return results.ToArray();
         }
