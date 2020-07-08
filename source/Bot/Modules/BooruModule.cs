@@ -101,7 +101,7 @@ namespace Bot.Modules
 
         [Command("yan")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
+        // [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task YandereSearchAsync(params string[] criteria)
         {
             await InitialCommandHandler(Yandere, criteria);
@@ -165,11 +165,10 @@ namespace Bot.Modules
 
         private string[] ExpandCriteria(string[] c)
         {
+            var tags = new List<string>(c);
             var results = new List<string>();
-            foreach (var i in c)
-            {
-                results.Add(tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias) ? alias : i);
-            }
+            if (Context.Channel is Discord.ITextChannel t && !t.IsNsfw) results.Add("-s");
+            foreach (var i in tags) results.Add(tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias) ? alias : i);
             return results.ToArray();
         }
 
