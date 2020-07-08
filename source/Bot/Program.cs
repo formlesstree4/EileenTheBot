@@ -57,6 +57,8 @@ namespace Bot
                 .AddSingleton<Danbooru>()
                 .AddSingleton<e621>()
                 .AddSingleton<Gelbooru>()
+                .AddSingleton<SafeBooru>()
+                .AddSingleton<Yandere>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<BetterPaginationService>()

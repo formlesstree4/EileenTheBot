@@ -45,7 +45,13 @@ namespace Bot.Modules
 
         public Gelbooru Gelbooru { get; set; }
 
+        public SafeBooru Safebooru { get; set; }
+
+        public Yandere Yandere { get; set; }
+
         public IMapper Mapper { get; set; }
+
+
 
         [Command("aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
@@ -85,6 +91,23 @@ namespace Bot.Modules
         {
             await InitialCommandHandler(Gelbooru, criteria);
         }
+
+        [Command("sb")]
+        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
+        public async Task SafebooruSearchAsync(params string[] criteria)
+        {
+            await InitialCommandHandler(Safebooru, criteria);
+        }
+
+        [Command("yan")]
+        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
+        public async Task YandereSearchAsync(params string[] criteria)
+        {
+            await InitialCommandHandler(Yandere, criteria);
+        }
+
 
 
         private async Task InitialCommandHandler<TResponse, T>(

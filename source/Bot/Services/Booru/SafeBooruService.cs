@@ -3,9 +3,9 @@ using Bot.Models.Safebooru;
 
 namespace Bot.Services.Booru
 {
-    public sealed class SafeBooruService : BooruService<Post[], Post>
+    public sealed class SafeBooru : BooruService<Post[], Post>
     {
-        public SafeBooruService(CredentialsService credentials) : base(credentials) { }
+        public SafeBooru(CredentialsService credentials) : base(credentials) { }
 
         protected override IEnumerable<Post> ConvertResponseAsEnumerable(Post[] response) => response;
 
