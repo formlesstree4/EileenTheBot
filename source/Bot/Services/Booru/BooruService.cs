@@ -66,7 +66,9 @@ namespace Bot.Services.Booru
         protected virtual HttpClient BuildHttpClient(HttpClient client) => client;
 
         /// <summary>Gets the User Agent that will be used by the API</summary>
-        protected virtual string GetUserAgent => $"The-Erector-by-{_credentials.Username}";
+        protected virtual string GetUserAgent => _credentials is null ?
+            $"The-Erector" :
+            $"The-Erector-by-{_credentials.Username}";
 
         /// <summary>Gets the current credentials for the API</summary>
         protected internal CredentialsEntry GetCredentials() => _credentials;
