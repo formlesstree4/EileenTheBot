@@ -18,6 +18,10 @@ namespace Bot.Modules
 
         private const string NsfwErrorMessage = "uwu oopsie-woopsie you made a lil fucksy-wucksy and twied to be lewdie in pubwic";
 
+        private const string CriteriaSummary = "The collection of booru-safe tags. Tags with multiple words use underscores instead of spaces (such as long_hair)";
+
+        private const string ContextErrorMessage = "uwu pubwic channels ownly~";
+
         private static IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
         {
             ["-r"] = "order:random",
@@ -53,7 +57,8 @@ namespace Bot.Modules
 
 
         [Command("aliases")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
+        [Summary("Lists all the currently available tag aliases")]
+        [RequireNsfw]
         public Task ListTagAliasesAsync()
         {
             var messageBuilder = new StringBuilder();
@@ -62,46 +67,45 @@ namespace Bot.Modules
             {
                 messageBuilder.AppendLine($"\t{c}");
             }
+            messageBuilder.AppendLine($"Example: `.db long_hair --take 1` will return the first discovered `long_hair` image on Danbooru");
             return ReplyAsync(messageBuilder.ToString());
         }
 
-
         [Command("db")]
+        [Summary("Queries the Danbooru API. Is fully compatible with all aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
-        public async Task DanbooruSearchAsync(params string[] criteria)
+        public async Task DanbooruSearchAsync([Summary("The collection of booru-safe tags. Tags with multiple words use underscores instead of spaces (such as long_hair)")]params string[] criteria)
         {
             await InitialCommandHandler(Danbooru, criteria);
         }
 
         [Command("fur")]
+        [Summary("Queries the e621 API. Is fully compatible with all aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task e621SearchAsync(params string[] criteria)
         {
             await InitialCommandHandler(e621, criteria);
         }
 
-
         [Command("gb")]
+        [Summary("Queries the Gelbooru API. Is fully compatible with all aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task GelbooruSearchAsync(params string[] criteria)
         {
             await InitialCommandHandler(Gelbooru, criteria);
         }
 
         [Command("sb")]
+        [Summary("Queries the Safebooru API. Is fully compatible with all aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task SafebooruSearchAsync(params string[] criteria)
         {
             await InitialCommandHandler(Safebooru, criteria);
         }
 
         [Command("yan")]
+        [Summary("Queries the Yande.re API. Is fully compatible with all aliases")]
         [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        // [RequireNsfw(ErrorMessage = NsfwErrorMessage)]
         public async Task YandereSearchAsync(params string[] criteria)
         {
             await InitialCommandHandler(Yandere, criteria);

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Bot.Services;
 using Discord;
@@ -11,20 +13,10 @@ namespace Bot.Modules
 
         public CommandService Commands { get; set; }
 
-        [Command("ping")]
-        [Alias("pong", "hello")]
-        public Task PingAsync()
-            => ReplyAsync("pong!");
+        public BetterPaginationService PaginationService { get; set; }
 
+        public StupidTextService StupidTextService { get; set; }
 
-        // Get info on a user, or the user who invoked the command if one is not specified
-        [Command("userinfo")]
-        public async Task UserInfoAsync(IUser user = null)
-        {
-            user = user ?? Context.User;
-
-            await ReplyAsync(user.ToString());
-        }
 
         // [Remainder] takes the rest of the command's arguments as one argument, rather than splitting every space
         [Command("echo")]
@@ -44,13 +36,29 @@ namespace Bot.Modules
                 .AddField("test", string.Join(", ", items)).Build());
 
         [Command("help")]
-        public Task HelpAsync()
+        public async Task HelpAsync()
         {
-            return ReplyAsync("I'm working on it");
+            var embeds = new List<Embed>();
+            foreach (var c in Commands.Commands)
+            {
+                var builder = new EmbedBuilder()
+                    .WithAuthor(new EmbedAuthorBuilder()
+                        .WithName(Context.User.Username)
+                        .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
+                    .WithColor(new Color(152, 201, 124))
+                    .WithDescription(c.Summary)
+                    .WithCurrentTimestamp()
+                    .WithTitle(c.Name)
+                    .WithFooter(new EmbedFooterBuilder()
+                        .WithText(StupidTextService.GetRandomStupidText()))
+                    .AddField("NSFW", c.Preconditions.Any(p => p.GetType() == typeof(RequireNsfwAttribute)));
+                embeds.Add(builder.Build());
+            }
+            await PaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
         }
 
 
-        // // Setting a custom ErrorMessage property will help clarify the precondition error
+        //// Setting a custom ErrorMessage property will help clarify the precondition error
         // [Command("guild_only")]
         // [RequireContext(ContextType.Guild, ErrorMessage = "Sorry, this command must be ran from within a server, not a DM!")]
         // public Task GuildOnlyCommand()
