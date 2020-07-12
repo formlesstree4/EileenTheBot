@@ -24,11 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="resources/text.txt"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="resources/text.txt" />
+    <None Update="text.txt" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 
 </Project>

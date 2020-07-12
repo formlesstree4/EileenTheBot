@@ -15,9 +15,7 @@ namespace Bot.Services
 
         public StupidTextService()
         {
-            var ass = Assembly.GetEntryAssembly();
-            var resource = ass.GetManifestResourceStream("EmbeddedResource.resources.text.txt");
-            using(var reader = new StreamReader(resource))
+            using(var reader = new StreamReader("text.txt"))
             {
                 while (!reader.EndOfStream)
                 {
