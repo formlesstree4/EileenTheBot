@@ -62,6 +62,7 @@ namespace Bot
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<BetterPaginationService>()
+                .AddSingleton<StupidTextService>()
                 .BuildServiceProvider();
         }
 
