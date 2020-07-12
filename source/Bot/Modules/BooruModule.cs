@@ -54,6 +54,8 @@ namespace Bot.Modules
 
         public IMapper Mapper { get; set; }
 
+        public StupidTextService StupidTextService { get; set; }
+
 
 
         [Command("aliases")]
@@ -153,7 +155,7 @@ namespace Bot.Modules
                             .WithCurrentTimestamp()
                             .WithImageUrl(booruPost.ImageUrl)
                             .WithTitle($"The Good Stuff")
-                            .WithFooter($"Requested By: {Context.User.Username} | Page: {pageNumber}")
+                            .WithFooter($"{StupidTextService.GetRandomStupidText()} | Page: {pageNumber}")
                             .WithUrl(booruPost.PageUrl);
                         messages.Add(eBuilder.Build());
                     }
