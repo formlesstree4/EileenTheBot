@@ -33,10 +33,26 @@ namespace Bot.Modules
                     .WithTitle(c.Name)
                     .WithFooter(new EmbedFooterBuilder()
                         .WithText(StupidTextService.GetRandomStupidText()))
-                    .AddField("NSFW", c.Preconditions.Any(p => p.GetType() == typeof(RequireNsfwAttribute)));
+                    .AddField("Requires NSFW", BoolToYesNo(c.Preconditions.Any(p => p.GetType() == typeof(RequireNsfwAttribute))), true)
+                    .AddField("Required Context", GetContext((RequireContextAttribute)c.Preconditions.FirstOrDefault(p => p.GetType() == typeof(RequireContextAttribute))), true);
+
+                foreach (var p in c.Parameters)
+                {
+                    builder.AddField(p.Name, p.Summary, true);
+                }
                 embeds.Add(builder.Build());
             }
             await PaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
+        }
+
+
+
+        private static string BoolToYesNo(bool b) => b ? "Yes": "No";
+
+        private static string GetContext(RequireContextAttribute attribute)
+        {
+            if (attribute is null) return "None";
+            return attribute.Contexts.ToString();
         }
 
     }

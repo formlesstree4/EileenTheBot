@@ -18,9 +18,16 @@ namespace Bot.Modules
 
         private const string NsfwErrorMessage = "uwu oopsie-woopsie you made a lil fucksy-wucksy and twied to be lewdie in pubwic";
 
+        private const string NoResultsMessage = "";
+
         private const string CriteriaSummary = "The collection of booru-safe tags. Tags with multiple words use underscores instead of spaces (such as long_hair)";
 
         private const string ContextErrorMessage = "uwu pubwic channels ownly~";
+
+        private const string TakeParameter = "take";
+
+        private const string SkipParameter = "skip";
+
 
         private static IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
         {
@@ -60,7 +67,6 @@ namespace Bot.Modules
 
         [Command("aliases")]
         [Summary("Lists all the currently available tag aliases")]
-        [RequireNsfw]
         public Task ListTagAliasesAsync()
         {
             var messageBuilder = new StringBuilder();
@@ -74,41 +80,46 @@ namespace Bot.Modules
         }
 
         [Command("db")]
-        [Summary("Queries the Danbooru API. Is fully compatible with all aliases")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public async Task DanbooruSearchAsync([Summary("The collection of booru-safe tags. Tags with multiple words use underscores instead of spaces (such as long_hair)")]params string[] criteria)
+        [Summary("Invokes the Danbooru API. If performed in SFW channels, the '-s' tag is automatically appended")]
+        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        public async Task DanbooruSearchAsync(
+            [Summary(CriteriaSummary)] params string[] criteria)
         {
             await InitialCommandHandler(Danbooru, criteria);
         }
 
         [Command("fur")]
-        [Summary("Queries the e621 API. Is fully compatible with all aliases")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public async Task e621SearchAsync(params string[] criteria)
+        [Summary("Invokes the e621 API. If performed in SFW channels, the '-s' tag is automatically appended")]
+        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        public async Task e621SearchAsync(
+            [Summary(CriteriaSummary)] params string[] criteria)
         {
             await InitialCommandHandler(e621, criteria);
         }
 
         [Command("gb")]
-        [Summary("Queries the Gelbooru API. Is fully compatible with all aliases")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public async Task GelbooruSearchAsync(params string[] criteria)
+        [Summary("Invokes the Gelbooru API. If performed in SFW channels, the '-s' tag is automatically appended")]
+        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        public async Task GelbooruSearchAsync(
+            [Summary(CriteriaSummary)] params string[] criteria)
         {
             await InitialCommandHandler(Gelbooru, criteria);
         }
 
         [Command("sb")]
-        [Summary("Queries the Safebooru API. Is fully compatible with all aliases")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public async Task SafebooruSearchAsync(params string[] criteria)
+        [Summary("Invokes the Safebooru API. If performed in SFW channels, the '-s' tag is automatically appended")]
+        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        public async Task SafebooruSearchAsync(
+            [Summary(CriteriaSummary)] params string[] criteria)
         {
             await InitialCommandHandler(Safebooru, criteria);
         }
 
         [Command("yan")]
-        [Summary("Queries the Yande.re API. Is fully compatible with all aliases")]
-        [RequireContext(ContextType.Guild, ErrorMessage = "Hey. Public channels only.")]
-        public async Task YandereSearchAsync(params string[] criteria)
+        [Summary("Invokes the Yande.re API. If performed in SFW channels, the '-s' tag is automatically appended")]
+        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        public async Task YandereSearchAsync(
+            [Summary(CriteriaSummary)] params string[] criteria)
         {
             await InitialCommandHandler(Yandere, criteria);
         }
@@ -122,8 +133,8 @@ namespace Bot.Modules
             var newCriteria = ExpandCriteria(criteria);
             var parameters = GetSkipAndTake(ref newCriteria);
 
-            var pageNumber = parameters["skip"];
-            var pageSize = parameters["take"];
+            var pageNumber = parameters[SkipParameter];
+            var pageSize = parameters[TakeParameter];
 
             var results = (await service.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             var posts = results.Select(c => Mapper.Map<T, Models.EmbedPost>(c));
@@ -155,7 +166,7 @@ namespace Bot.Modules
                             .WithCurrentTimestamp()
                             .WithImageUrl(booruPost.ImageUrl)
                             .WithTitle($"The Good Stuff")
-                            .WithFooter($"{StupidTextService.GetRandomStupidText()} | Page: {pageNumber}")
+                            .WithFooter($"{StupidTextService.GetRandomStupidText()} | Page Offset: {pageNumber}")
                             .WithUrl(booruPost.PageUrl);
                         messages.Add(eBuilder.Build());
                     }
@@ -183,24 +194,24 @@ namespace Bot.Modules
             var updated = new List<string>();
             var results = new Dictionary<string, int>
             {
-                ["take"] = 50,
-                ["skip"] = 1
+                [TakeParameter] = 50,
+                [SkipParameter] = 1
             };
             for (var index = 0; index < c.Length; index++)
             {
                 switch (c[index].ToLowerInvariant())
                 {
-                    case "--take":
+                    case "--" + TakeParameter:
                         if (int.TryParse(c[index + 1], out var t))
                         {
-                            results["take"] = t;
+                            results[TakeParameter] = t;
                         }
                         index++;
                         break;
-                    case "--skip":
+                    case "--" + SkipParameter:
                         if (int.TryParse(c[index + 1], out var s))
                         {
-                            results["skip"] = s;
+                            results[SkipParameter] = s;
                         }
                         index++;
                         break;
