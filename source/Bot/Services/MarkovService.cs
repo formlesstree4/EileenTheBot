@@ -64,10 +64,12 @@ namespace Bot.Services
             if (message.Content.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
             Console.WriteLine($"Generating a new message");
 
-            var generatedMessage = _sourceChain.Walk(
-                _sourceHistory.Count > 0 ? _sourceHistory.Peek(): Enumerable.Empty<string>(), _sourceRandom);
-            var messageToSend = string.Join(" ", generatedMessage);
-            _sourceHistory.Push(generatedMessage);
+            string messageToSend = null;
+
+            while(string.IsNullOrWhiteSpace(messageToSend))
+            {
+                messageToSend = GenerateMessage();
+            }
 
             using (message.Channel.EnterTypingState())
             {
@@ -87,7 +89,7 @@ namespace Bot.Services
             // });
             // var hst = _history.GetOrAdd(guildId, _ => new Stack<IEnumerable<string>>());
 
-            
+
 
             // // Add our new data to it
             // mkc.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries), rng.Next(3, 10));
@@ -102,6 +104,17 @@ namespace Bot.Services
 
         }
 
+        private string GenerateMessage()
+        {
+            var generatedMessage = _sourceChain.Walk(
+                _sourceHistory.Count > 0 ? _sourceHistory.Peek() : Enumerable.Empty<string>(), _sourceRandom);
+            var messageToSend = string.Join(" ", generatedMessage);
+            if (!string.IsNullOrWhiteSpace(messageToSend))
+            {
+                _sourceHistory.Push(generatedMessage);
+            }
+            return messageToSend;
+        }
     }
 
 }
