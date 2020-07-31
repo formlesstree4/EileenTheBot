@@ -44,7 +44,7 @@ namespace Bot.Services
                 {
                     var nextLine = await reader.ReadLineAsync();
                     Console.WriteLine($"\tSeeding with: {nextLine}");
-                    _sourceChain.Add(new[] { nextLine });
+                    _sourceChain.Add(nextLine.Split(" ", StringSplitOptions.RemoveEmptyEntries));
                 }
             }
 
@@ -59,12 +59,10 @@ namespace Bot.Services
             if (message.Source != MessageSource.User) return;
 
             // Get out the chain.
-            var guildId = gc.Id;
+            var guildId = gc.GuildId;
             var rng = _randoms.GetOrAdd(guildId, _ => new SecureRandom());
             var mkc = _chain.GetOrAdd(guildId, _ =>
             {
-
-                // for a new chain, we need to seed it
                 var chain = new MarkovChain<string>(4, rng);
                 var seed = _sourceChain.Walk(rng).SelectMany(c => c.Split(" ", StringSplitOptions.RemoveEmptyEntries));
                 chain.Add(seed, rng.Next(1, 6));
