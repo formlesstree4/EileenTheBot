@@ -35,7 +35,9 @@ namespace Bot
                 await client.StartAsync();
 
                 // Here we initialize the logic required to register our commands.
+                Console.WriteLine("Initializing Services...");
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
+                await services.GetRequiredService<MarkovService>().InitializeFirstChain();
 
                 await Task.Delay(Timeout.Infinite);
             }
@@ -61,6 +63,7 @@ namespace Bot
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<BetterPaginationService>()
                 .AddSingleton<StupidTextService>()
+                .AddSingleton<MarkovService>()
                 .BuildServiceProvider();
 
 

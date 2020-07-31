@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Threading.Tasks;
 using Bot.Services.Markov;
 using Discord;
@@ -16,6 +17,7 @@ namespace Bot.Services
         private readonly ConcurrentDictionary<ulong, SecureRandom> _randoms;
         private readonly ConcurrentDictionary<ulong, MarkovChain<string>> _chain;
         private readonly MarkovChain<string> _sourceChain;
+        private readonly SecureRandom _sourceRandom;
 
         public MarkovService(IServiceProvider services)
         {
@@ -24,6 +26,27 @@ namespace Bot.Services
             _chain = new ConcurrentDictionary<ulong, MarkovChain<string>>();
             _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
             _discord.MessageReceived += HandleIncomingMessage;
+            _sourceRandom = new SecureRandom();
+            _sourceChain = new MarkovChain<string>(_sourceRandom);
+        }
+
+
+        public async Task InitializeFirstChain()
+        {
+
+            // look for markov.txt. It's a huge seeded file
+            var seedSize = _sourceRandom.Next(10);
+            var seedCount = 0;
+            using (var reader = new StreamReader("markov.txt"))
+            {
+                while (++seedCount <= seedSize)
+                {
+                    var nextLine = await reader.ReadLineAsync();
+                    Console.WriteLine($"\tSeeding with: {nextLine}");
+                    _sourceChain.Add(new[] { nextLine });
+                }
+            }
+
         }
 
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
@@ -44,10 +67,12 @@ namespace Bot.Services
                 var chain = new MarkovChain<string>(rng);
                 var seed = _sourceChain.Walk(rng);
                 chain.Add(seed);
+                Console.WriteLine($"Creating Chain for Guild {guildId}");
                 return chain;
 
             });
 
+            Console.WriteLine($"Adding {message.Content} to the chain...");
             // Add our new data to it
             mkc.Add(new[] { message.Content });
 
