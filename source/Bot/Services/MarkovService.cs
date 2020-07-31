@@ -27,7 +27,7 @@ namespace Bot.Services
             _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
             _discord.MessageReceived += HandleIncomingMessage;
             _sourceRandom = new SecureRandom();
-            _sourceChain = new MarkovChain<string>(_sourceRandom);
+            _sourceChain = new MarkovChain<string>(100, _sourceRandom);
         }
 
 
@@ -64,7 +64,7 @@ namespace Bot.Services
             {
 
                 // for a new chain, we need to seed it
-                var chain = new MarkovChain<string>(rng);
+                var chain = new MarkovChain<string>(100, rng);
                 var seed = _sourceChain.Walk(rng);
                 chain.Add(seed);
                 Console.WriteLine($"Creating Chain for Guild {guildId}");
