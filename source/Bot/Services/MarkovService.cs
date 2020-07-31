@@ -67,7 +67,7 @@ namespace Bot.Services
                 // for a new chain, we need to seed it
                 var chain = new MarkovChain<string>(4, rng);
                 var seed = _sourceChain.Walk(rng).SelectMany(c => c.Split(" ", StringSplitOptions.RemoveEmptyEntries));
-                chain.Add(seed);
+                chain.Add(seed, rng.Next(1, 6));
 
                 Console.WriteLine($"Creating Chain for Guild {guildId}");
                 return chain;
@@ -77,13 +77,13 @@ namespace Bot.Services
             Console.WriteLine($"Adding {message.Content} to the chain...");
 
             // Add our new data to it
-            mkc.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            mkc.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries), rng.Next(3, 10));
 
             // If the message contains "erector", have it respond.
             if (message.Content.IndexOf("erector", StringComparison.OrdinalIgnoreCase) == -1) return;
 
             // Now, let's push out the message back to the appropriate channel
-            var messageToSend = string.Join(string.Empty, mkc.Walk());
+            var messageToSend = string.Join(" ", mkc.Walk());
 
             using (message.Channel.EnterTypingState())
             {
