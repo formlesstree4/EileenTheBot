@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace Bot.Services
         private readonly DiscordSocketClient _discord;
         private readonly ConcurrentDictionary<ulong, SecureRandom> _randoms;
         private readonly ConcurrentDictionary<ulong, MarkovChain<string>> _chain;
+        private readonly ConcurrentDictionary<ulong, Stack<IEnumerable<string>>> _history;
         private readonly MarkovChain<string> _sourceChain;
         private readonly SecureRandom _sourceRandom;
 
@@ -25,6 +27,7 @@ namespace Bot.Services
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _randoms = new ConcurrentDictionary<ulong, SecureRandom>();
             _chain = new ConcurrentDictionary<ulong, MarkovChain<string>>();
+            _history = new ConcurrentDictionary<ulong, Stack<IEnumerable<string>>>();
             _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
             _discord.MessageReceived += HandleIncomingMessage;
             _sourceRandom = new SecureRandom();
@@ -71,6 +74,7 @@ namespace Bot.Services
                 return chain;
 
             });
+            var hst = _history.GetOrAdd(guildId, _ => new Stack<IEnumerable<string>>());
 
             Console.WriteLine($"Adding {message.Content} to the chain...");
 
@@ -78,10 +82,12 @@ namespace Bot.Services
             mkc.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries), rng.Next(3, 10));
 
             // If the message contains "erector", have it respond.
-            if (message.Content.IndexOf("erector", StringComparison.OrdinalIgnoreCase) == -1) return;
+            if (message.Content.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
 
             // Now, let's push out the message back to the appropriate channel
-            var messageToSend = string.Join(" ", mkc.Walk());
+            var generatedMessage = mkc.Walk(hst.Peek());
+            hst.Push(generatedMessage);
+            var messageToSend = string.Join(" ", generatedMessage);
 
             using (message.Channel.EnterTypingState())
             {
