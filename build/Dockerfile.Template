@@ -21,5 +21,6 @@ COPY --from=build /app .
 ENV DiscordApiToken $(DiscordApiToken)
 ENV Credentials $(Credentials)
 ENV CommandPrefix $(CommandPrefix)
+ENV MarkovTrigger $(MarkovTrigger)
 
 ENTRYPOINT ["./Bot"]

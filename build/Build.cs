@@ -38,6 +38,9 @@ sealed class Build : NukeBuild
     [Parameter("Overrides the command prefix used to fire off commands for the bot")]
     readonly string CommandPrefix = "!";
 
+    [Parameter("The text to look for in a sentence that will trigger the Markov chain builder for the bot")]
+    readonly string MarkovTrigger = "erector";
+
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
@@ -77,7 +80,8 @@ sealed class Build : NukeBuild
             {
                 {"DiscordApiToken", DiscordApiToken},
                 {"Credentials", credentials},
-                {"CommandPrefix", CommandPrefix}
+                {"CommandPrefix", CommandPrefix},
+                {"MarkovTrigger", MarkovTrigger}
             };
             var dockerFile = Regex.Replace(dockerTemplate, @"\$\((.*?)\)", (match) =>
             {

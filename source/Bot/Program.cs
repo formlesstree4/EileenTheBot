@@ -9,6 +9,7 @@ using System.Threading;
 using Bot.Services.Booru;
 using AutoMapper;
 using System.Reflection;
+using Bot.Services.Markov;
 
 namespace Bot
 {
@@ -21,7 +22,6 @@ namespace Bot
 
         public async Task MainAsync()
         {
-            
             using (var services = ConfigureServices())
             {
                 var client = services.GetRequiredService<DiscordSocketClient>();
@@ -47,9 +47,7 @@ namespace Bot
             return Task.CompletedTask;
         }
 
-        private ServiceProvider ConfigureServices()
-        {
-            return new ServiceCollection()
+        private ServiceProvider ConfigureServices() => new ServiceCollection()
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
@@ -64,7 +62,6 @@ namespace Bot
                 .AddSingleton<BetterPaginationService>()
                 .AddSingleton<StupidTextService>()
                 .BuildServiceProvider();
-        }
 
 
 
