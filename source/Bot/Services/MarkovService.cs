@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Bot.Services.Markov;
 using Discord;
@@ -27,7 +28,7 @@ namespace Bot.Services
             _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
             _discord.MessageReceived += HandleIncomingMessage;
             _sourceRandom = new SecureRandom();
-            _sourceChain = new MarkovChain<string>(100, _sourceRandom);
+            _sourceChain = new MarkovChain<string>(4, _sourceRandom);
         }
 
 
@@ -35,7 +36,7 @@ namespace Bot.Services
         {
 
             // look for markov.txt. It's a huge seeded file
-            var seedSize = _sourceRandom.Next(10);
+            var seedSize = _sourceRandom.Next(10, 100);
             var seedCount = 0;
             using (var reader = new StreamReader("markov.txt"))
             {
@@ -64,17 +65,19 @@ namespace Bot.Services
             {
 
                 // for a new chain, we need to seed it
-                var chain = new MarkovChain<string>(100, rng);
-                var seed = _sourceChain.Walk(rng);
+                var chain = new MarkovChain<string>(4, rng);
+                var seed = _sourceChain.Walk(rng).SelectMany(c => c.Split(" ", StringSplitOptions.RemoveEmptyEntries));
                 chain.Add(seed);
+
                 Console.WriteLine($"Creating Chain for Guild {guildId}");
                 return chain;
 
             });
 
             Console.WriteLine($"Adding {message.Content} to the chain...");
+
             // Add our new data to it
-            mkc.Add(new[] { message.Content });
+            mkc.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries));
 
             // If the message contains "erector", have it respond.
             if (message.Content.IndexOf("erector", StringComparison.OrdinalIgnoreCase) == -1) return;
