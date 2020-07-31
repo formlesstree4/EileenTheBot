@@ -85,7 +85,7 @@ namespace Bot.Services
             if (message.Content.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
 
             // Now, let's push out the message back to the appropriate channel
-            var generatedMessage = mkc.Walk(hst.Peek());
+            var generatedMessage = mkc.Walk(hst.Count > 0 ? hst.Peek(): Enumerable.Empty<string>());
             hst.Push(generatedMessage);
             var messageToSend = string.Join(" ", generatedMessage);
 
