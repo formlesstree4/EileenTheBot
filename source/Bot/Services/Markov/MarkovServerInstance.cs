@@ -4,23 +4,41 @@ using Discord.WebSocket;
 
 namespace Bot.Services.Markov
 {
-    public class MarkovServerInstance
+    public sealed class MarkovServerInstance
     {
         
         public ulong ServerId { get; }
 
         private readonly Stack<string> _historicalMessages;
-        private readonly DiscordSocketClient _client;
-        private readonly MarkovChain<string> _chain;
         private readonly Random _random;
+        private MarkovChain<string> _chain;
 
-        public MarkovServerInstance(ulong serverId, DiscordSocketClient client)
+        public bool ReadyToMakeChain => _historicalMessages.Count >= 1000;
+
+
+        public MarkovServerInstance(ulong serverId, List<string> seed)
         {
             ServerId = serverId;
-            _client = client;
             _historicalMessages = new Stack<string>();
             _random = new SecureRandom();
             _chain = new MarkovChain<string>(_random);
+            foreach(var i in seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        public void AddHistoricalMessage(string message)
+        {
+            _historicalMessages.Push(message);
+        }
+
+        public string GetNextMessage() => string.Join(" ", _chain.Walk(_random));
+
+        public void CreateChain()
+        {
+            _chain = new MarkovChain<string>(_random);
+            while(_historicalMessages.Count > 0)
+            {
+                _chain.Add(_historicalMessages.Pop().Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            }
         }
 
     }

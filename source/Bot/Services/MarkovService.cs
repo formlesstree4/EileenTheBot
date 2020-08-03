@@ -16,36 +16,42 @@ namespace Bot.Services
 
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
-        private readonly MarkovChain<string> _sourceChain;
-        private readonly Stack<IEnumerable<string>> _sourceHistory;
-        private readonly Random _sourceRandom;
+        private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
+        private readonly List<string> _source;
+        private readonly Random _random;
+        private bool _isReady = false;
 
         public MarkovService(IServiceProvider services)
         {
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            _sourceRandom = new Random();
-            _sourceChain = new MarkovChain<string>(1, _sourceRandom);
-            _sourceHistory = new Stack<IEnumerable<string>>();
             _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
-            _discord.MessageReceived += HandleIncomingMessage;
+            _source = new List<string>();
+            _random = new SecureRandom();
+            _chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
         }
 
 
-        public async Task InitializeFirstChain()
+        public async Task InitializeService()
         {
 
             // look for markov.txt. It's a huge seeded file
-            var seedSize = _sourceRandom.Next(50, 100);
+            var seedSize = _random.Next(50, 100);
             var seedCount = 0;
             using (var reader = new StreamReader("markov.txt"))
             {
-                while (++seedCount <= seedSize)
+                while (++seedCount <= seedSize && !reader.EndOfStream)
                 {
                     var nextLine = await reader.ReadLineAsync();
-                    Console.WriteLine($"\tSeeding with: {nextLine}");
-                    _sourceChain.Add(nextLine.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+                    if (!string.IsNullOrWhiteSpace(nextLine))
+                    {
+                        _source.Add(nextLine);
+                    }
                 }
             }
+
+            _source.Shuffle(_random);
+            _discord.MessageReceived += HandleIncomingMessage;
+            _isReady = true;
 
         }
 
@@ -57,18 +63,27 @@ namespace Bot.Services
             if (!(message.Channel is IGuildChannel gc)) return;
             if (message.Source != MessageSource.User) return;
 
-            // Okay. Fuck it.
-            Console.WriteLine($"Adding {message.Content} to the chain...");
-            // _sourceChain.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries));
-
-            if (message.Content.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
+            // Find the appropriate instance to add to the source with it.
+            var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s));
+            var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
+            var containsTriggerWord = false;
+            for (var i = messageFragments.Count - 1; i >= 0; i--)
+            {
+                var insensitive = messageFragments[i].ToLowerInvariant();
+                if (insensitive.Equals(_triggerWord, StringComparison.OrdinalIgnoreCase) || insensitive.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    containsTriggerWord = true;
+                    messageFragments.RemoveAt(i);
+                }
+            }
+            serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
+            if (!containsTriggerWord) return;
             Console.WriteLine($"Generating a new message");
 
             string messageToSend = null;
-
-            while(string.IsNullOrWhiteSpace(messageToSend))
+            while (string.IsNullOrWhiteSpace(messageToSend))
             {
-                messageToSend = GenerateMessage();
+                messageToSend = serverInstance.GetNextMessage();
             }
 
             using (message.Channel.EnterTypingState())
@@ -76,50 +91,33 @@ namespace Bot.Services
                 await message.Channel.SendMessageAsync(messageToSend);
             }
 
-            // Get out the chain.
-            // var guildId = gc.GuildId;
-            // var rng = _randoms.GetOrAdd(guildId, _ => new SecureRandom());
-            // var mkc = _chain.GetOrAdd(guildId, _ =>
-            // {
-            //     var chain = new MarkovChain<string>(4, rng);
-            //     var seed = _sourceChain.Walk(rng).SelectMany(c => c.Split(" ", StringSplitOptions.RemoveEmptyEntries));
-            //     chain.Add(seed, rng.Next(1, 6));
-            //     Console.WriteLine($"Creating Chain for Guild {guildId}");
-            //     return chain;
-            // });
-            // var hst = _history.GetOrAdd(guildId, _ => new Stack<IEnumerable<string>>());
-
-
-
-            // // Add our new data to it
-            // mkc.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries), rng.Next(3, 10));
-
-            // // If the message contains "erector", have it respond.
-            // if (message.Content.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
-
-            // // Now, let's push out the message back to the appropriate channel
-            // var generatedMessage = mkc.Walk(hst.Count > 0 ? hst.Peek(): Enumerable.Empty<string>());
-            // hst.Push(generatedMessage);
-            // var messageToSend = string.Join(" ", generatedMessage);
-
         }
 
-        private string GenerateMessage()
+        private IEnumerable<string> GetSeedContent()
         {
-            var generatedMessage = _sourceChain.Walk(
-                _sourceHistory.Count > 0 ? _sourceHistory.Peek() : Enumerable.Empty<string>(), _sourceRandom);
-            var messageToSend = string.Join(" ", generatedMessage);
-            if (!string.IsNullOrWhiteSpace(messageToSend))
+            
+        }
+
+    }
+
+    internal static class Extensions
+    {
+
+        public static void Shuffle<T>(this IList<T> list, Random random)
+        {
+
+            var n = list.Count;
+            for (var i = 0; i < n; i++)
             {
-                _sourceHistory.Push(generatedMessage);
+                var r = i + (int)(random.NextDouble() * (n - i));
+                var t = list[r];
+                list[r] = list[i];
+                list[i] = t;
             }
-            return messageToSend;
+
         }
 
-        private string[] CreateSeedData(string source)
-        {
-            return null;
-        }
+
     }
 
 }

@@ -24,7 +24,7 @@ namespace Bot
             using (var services = ConfigureServices())
             {
                 var client = services.GetRequiredService<DiscordSocketClient>();
-                var cts = services.GetRequiredService<CancellationTokenSource>(); //new CancellationTokenSource();
+                var cts = services.GetRequiredService<CancellationTokenSource>();
                 
                 client.Log += LogAsync;
                 services.GetRequiredService<CommandService>().Log += LogAsync;
@@ -39,7 +39,7 @@ namespace Bot
                 // Here we initialize the logic required to register our commands.
                 Console.WriteLine("Initializing Services...");
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
-                await services.GetRequiredService<MarkovService>().InitializeFirstChain();
+                await services.GetRequiredService<MarkovService>().InitializeService();
 
                 await Task.Delay(Timeout.Infinite, cts.Token);
             }
