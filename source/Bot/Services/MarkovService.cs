@@ -59,7 +59,7 @@ namespace Bot.Services
 
             // Okay. Fuck it.
             Console.WriteLine($"Adding {message.Content} to the chain...");
-            _sourceChain.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            // _sourceChain.Add(message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries));
 
             if (message.Content.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
             Console.WriteLine($"Generating a new message");
@@ -114,6 +114,11 @@ namespace Bot.Services
                 _sourceHistory.Push(generatedMessage);
             }
             return messageToSend;
+        }
+
+        private string[] CreateSeedData(string source)
+        {
+            return null;
         }
     }
 

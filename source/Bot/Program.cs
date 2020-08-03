@@ -9,7 +9,6 @@ using System.Threading;
 using Bot.Services.Booru;
 using AutoMapper;
 using System.Reflection;
-using Bot.Services.Markov;
 
 namespace Bot
 {
@@ -25,7 +24,8 @@ namespace Bot
             using (var services = ConfigureServices())
             {
                 var client = services.GetRequiredService<DiscordSocketClient>();
-
+                var cts = services.GetRequiredService<CancellationTokenSource>(); //new CancellationTokenSource();
+                
                 client.Log += LogAsync;
                 services.GetRequiredService<CommandService>().Log += LogAsync;
 
@@ -33,13 +33,15 @@ namespace Bot
                 // We can read from the environment variable to avoid hardcoding.
                 await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DiscordApiToken"));
                 await client.StartAsync();
+                await client.SetStatusAsync(UserStatus.Online);
+                await client.SetGameAsync(name: "A small time booru bot", streamUrl: null, type: ActivityType.CustomStatus);
 
                 // Here we initialize the logic required to register our commands.
                 Console.WriteLine("Initializing Services...");
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 await services.GetRequiredService<MarkovService>().InitializeFirstChain();
 
-                await Task.Delay(Timeout.Infinite);
+                await Task.Delay(Timeout.Infinite, cts.Token);
             }
         }
 
