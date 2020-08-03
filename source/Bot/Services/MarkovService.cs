@@ -64,38 +64,57 @@ namespace Bot.Services
             if (message.Source != MessageSource.User) return;
 
             // Find the appropriate instance to add to the source with it.
-            var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s));
-            var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
-            var containsTriggerWord = false;
-            for (var i = messageFragments.Count - 1; i >= 0; i--)
+            var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s, GetSeedContent()));
+            string messageToSend = null;
+
+            lock (serverInstance)
             {
-                var insensitive = messageFragments[i].ToLowerInvariant();
-                if (insensitive.Equals(_triggerWord, StringComparison.OrdinalIgnoreCase) || insensitive.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
+
+                // Break apart the message into fragments to filter out the trigger word.
+                // Add it to the historical message for that instance.
+                var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
+                var containsTriggerWord = false;
+                for (var i = messageFragments.Count - 1; i >= 0; i--)
                 {
-                    containsTriggerWord = true;
-                    messageFragments.RemoveAt(i);
+                    var insensitive = messageFragments[i].ToLowerInvariant();
+                    if (insensitive.Equals(_triggerWord, StringComparison.OrdinalIgnoreCase) || insensitive.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
+                    {
+                        containsTriggerWord = true;
+                        messageFragments.RemoveAt(i);
+                    }
+                }
+                serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
+                if (!containsTriggerWord) return;
+
+                // We need to generate a message in response since we were directly referenced.
+                while (string.IsNullOrWhiteSpace(messageToSend))
+                {
+                    messageToSend = serverInstance.GetNextMessage();
+                }
+
+            }
+
+            if (!string.IsNullOrWhiteSpace(messageToSend))
+            {
+                using (message.Channel.EnterTypingState())
+                {
+                    await message.Channel.SendMessageAsync(messageToSend);
                 }
             }
-            serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
-            if (!containsTriggerWord) return;
-            Console.WriteLine($"Generating a new message");
-
-            string messageToSend = null;
-            while (string.IsNullOrWhiteSpace(messageToSend))
-            {
-                messageToSend = serverInstance.GetNextMessage();
-            }
-
-            using (message.Channel.EnterTypingState())
-            {
-                await message.Channel.SendMessageAsync(messageToSend);
-            }
-
         }
 
         private IEnumerable<string> GetSeedContent()
         {
-            
+            var content = new List<string>();
+            lock (_source)
+            {
+                _source.Shuffle(_random);
+                for (var i = 0; i < _random.Next(100); i++)
+                {
+                    content.Add(_source[i]);
+                }
+            }
+            return content;
         }
 
     }

@@ -16,7 +16,7 @@ namespace Bot.Services.Markov
         public bool ReadyToMakeChain => _historicalMessages.Count >= 1000;
 
 
-        public MarkovServerInstance(ulong serverId, List<string> seed)
+        public MarkovServerInstance(ulong serverId, IEnumerable<string> seed)
         {
             ServerId = serverId;
             _historicalMessages = new Stack<string>();
