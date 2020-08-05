@@ -5,14 +5,17 @@ using Discord.Commands;
 
 namespace Bot.Modules
 {
-    public class OwoModule : ModuleBase<SocketCommandContext>
+    public sealed class OwoModule : ModuleBase<SocketCommandContext>
     {
         private static readonly string[] s_faces = { "(\x30FB`\x03C9\x00B4\x30FB)", ";;w;;", "owo", "UwU", ">w<", "^w^", "◕w◕", "(⁄ʘ⁄⁄ω⁄⁄ʘ⁄)♡", "*𝓌𝒶𝓉𝓈 𝒹𝒾𝓈?*ღ(O꒳Oღ)", "( ͡o ꒳ ͡o )*𝔫𝔬𝔱𝔦𝔠𝔢𝔰 𝔟𝔲𝔩𝔤𝔢*" };
 
         private readonly Random _rng = new Random();
 
         [Command("owo")]
-        public async Task Owoify([Remainder] string text)
+        [Summary("Crafts an amalgamation of text like if a furry said it")]
+        public async Task Owoify(
+            [Remainder]
+            [Summary("The text to owoify")]string text)
         {
             await Context.Message.DeleteAsync().ConfigureAwait(false);
 
@@ -21,7 +24,7 @@ namespace Bot.Modules
             await ReplyAsync(output).ConfigureAwait(false);
         }
 
-        public string OwoifyText(string text)
+        private string OwoifyText(string text)
         {
             switch (text.ToLower()) // Because case sensitivity
             {
