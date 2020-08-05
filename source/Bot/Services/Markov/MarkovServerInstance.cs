@@ -6,22 +6,24 @@ namespace Bot.Services.Markov
 {
     public sealed class MarkovServerInstance
     {
-        private const int MaxHistoryCount = 100;
+        private const int ChainRefreshCount = 100;
+        private const int MaxHistoryCount = 1000;
 
 
         public ulong ServerId { get; }
 
-        private readonly Stack<string> _historicalMessages;
+        private readonly Queue<string> _historicalMessages;
         private readonly Random _random;
         private MarkovChain<string> _chain;
 
-        public bool ReadyToMakeChain => _historicalMessages.Count >= MaxHistoryCount;
+        public bool ReadyToMakeChain => _historicalMessages.Count % ChainRefreshCount == 0;
+        public bool ReadyToCleanHistory => _historicalMessages.Count > MaxHistoryCount;
 
 
         public MarkovServerInstance(ulong serverId, IEnumerable<string> seed)
         {
             ServerId = serverId;
-            _historicalMessages = new Stack<string>();
+            _historicalMessages = new Queue<string>();
             _random = new SecureRandom();
             _chain = new MarkovChain<string>(_random);
             foreach(var i in seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
@@ -29,18 +31,27 @@ namespace Bot.Services.Markov
 
         public void AddHistoricalMessage(string message)
         {
-            _historicalMessages.Push(message);
+            _historicalMessages.Enqueue(message);
             if (ReadyToMakeChain) CreateChain();
+            if (ReadyToCleanHistory) CleanHistory();
         }
 
         public string GetNextMessage() => string.Join(" ", _chain.Walk(_random));
 
-        public void CreateChain()
+        private void CreateChain()
         {
             _chain = new MarkovChain<string>(_random);
-            while(_historicalMessages.Count > 0)
+            foreach(var i in _historicalMessages)
             {
-                _chain.Add(_historicalMessages.Pop().Split(" ", StringSplitOptions.RemoveEmptyEntries));
+                _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            }
+        }
+
+        private void CleanHistory()
+        {
+            for(var i = 0; i < ChainRefreshCount; i++)
+            {
+                _historicalMessages.Dequeue();
             }
         }
 
