@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Bot.Services
@@ -27,12 +28,13 @@ namespace Bot.Services
 
 
         private readonly Color ErrorColor = new Color(237, 67, 55);
+        private readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
 
 
         private readonly ConcurrentDictionary<ulong, BetterPaginationMessage> _messages;
         private readonly DiscordSocketClient _client;
         private readonly Func<LogMessage, Task> WriteLog;
-
+        private readonly Timer _maintenanceTimer;
 
 
         /// <summary>
@@ -43,6 +45,7 @@ namespace Bot.Services
         public BetterPaginationService(DiscordSocketClient dsc, Func<LogMessage, Task> logger = null)
         {
             _messages = new ConcurrentDictionary<ulong, BetterPaginationMessage>();
+            _maintenanceTimer = new Timer(HandleMaintenance, null, 2000, 2000);
             WriteLog = logger ?? (message => Task.CompletedTask);
             WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), "Initializing..."));
             _client = dsc;
@@ -280,6 +283,21 @@ namespace Bot.Services
 
         }
 
+        private void HandleMaintenance(object state)
+        {
+            var messageIds = _messages.Keys.ToList();
+            var messages = _messages.Values.ToList();
+            for(var index = _messages.Count - 1; index >= 0; index--)
+            {
+                var messageId = messageIds[index];
+                var message = messages[index];
+                if ((DateTime.UtcNow - message.Created).Duration() > Timeout)
+                {
+                    _messages.Remove(messageId, out _);
+                }
+            }
+        }
+
     }
 
     /// <summary>
@@ -326,6 +344,12 @@ namespace Bot.Services
         /// </summary>
         public IUser User { get; }
 
+        /// <summary>
+        ///     Gets the UTC timestamp this instance was created.
+        /// </summary>
+        /// <value></value>
+        public DateTime Created { get; }
+
 
 
         /// <summary>
@@ -334,6 +358,7 @@ namespace Bot.Services
         /// <param name="pages">The collection of <see cref="Embed"/> messages</param>
         public BetterPaginationMessage(IEnumerable<Embed> pages, bool pageCountAsInline = true, IUser user = null, string pageText = "Page")
         {
+            Created = DateTime.UtcNow;
             var embedList = new List<Embed>(pages);
             User = user;
 
@@ -388,8 +413,8 @@ namespace Bot.Services
         public override string ToString()
         {
             var sBuilder = new StringBuilder();
-            sBuilder.AppendLine($"Pages: {_pages.Count}");
-            sBuilder.AppendLine($"Current Page: {CurrentPageIndex}");
+            sBuilder.AppendLine($"Pages: {_pages.Count} ");
+            sBuilder.AppendLine($"Current Page: {CurrentPageIndex} ");
             sBuilder.AppendLine($"IsNsfw: {IsNsfw}");
             return sBuilder.ToString();
         }
