@@ -19,7 +19,6 @@ namespace Bot.Services
         private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
         private readonly List<string> _source;
         private readonly Random _random;
-        private bool _isReady = false;
 
         public MarkovService(IServiceProvider services)
         {
@@ -51,7 +50,6 @@ namespace Bot.Services
 
             _source.Shuffle(_random);
             _discord.MessageReceived += HandleIncomingMessage;
-            _isReady = true;
 
         }
 

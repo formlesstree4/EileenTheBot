@@ -53,6 +53,7 @@ namespace Bot
 
         private ServiceProvider ConfigureServices() => new ServiceCollection()
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
+                .AddSingleton<CancellationTokenSource>()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
                 .AddSingleton<CredentialsService>()
