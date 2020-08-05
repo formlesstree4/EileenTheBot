@@ -135,6 +135,11 @@ namespace Bot.Services
         {
             try
             {
+                if (ReferenceEquals(messageParam, null))
+                {
+                    await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"Incoming message was not found in cache and could not be downloaded. Disregard."));
+                    return;
+                }
                 var message = await messageParam.GetOrDownloadAsync();
                 if (ReferenceEquals(message, null))
                 {
@@ -149,6 +154,10 @@ namespace Bot.Services
                 }
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was removed from the internal tracking system."));
                 return;
+            }
+            catch (System.NullReferenceException nre)
+            {
+                await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"Null Reference Exception occurred inside the {nameof(OnMessageDeleted)} handler", nre));
             }
             catch (System.Exception e)
             {
