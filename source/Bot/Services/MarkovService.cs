@@ -35,7 +35,7 @@ namespace Bot.Services
         {
 
             // look for markov.txt. It's a huge seeded file
-            var seedSize = _random.Next(50, 100);
+            var seedSize = _random.Next(500, 1000);
             var seedCount = 0;
             using (var reader = new StreamReader("markov.txt"))
             {

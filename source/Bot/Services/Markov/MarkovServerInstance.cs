@@ -6,14 +6,16 @@ namespace Bot.Services.Markov
 {
     public sealed class MarkovServerInstance
     {
-        
+        private const int MaxHistoryCount = 100;
+
+
         public ulong ServerId { get; }
 
         private readonly Stack<string> _historicalMessages;
         private readonly Random _random;
         private MarkovChain<string> _chain;
 
-        public bool ReadyToMakeChain => _historicalMessages.Count >= 1000;
+        public bool ReadyToMakeChain => _historicalMessages.Count >= MaxHistoryCount;
 
 
         public MarkovServerInstance(ulong serverId, IEnumerable<string> seed)
@@ -28,6 +30,7 @@ namespace Bot.Services.Markov
         public void AddHistoricalMessage(string message)
         {
             _historicalMessages.Push(message);
+            if (ReadyToMakeChain) CreateChain();
         }
 
         public string GetNextMessage() => string.Join(" ", _chain.Walk(_random));
