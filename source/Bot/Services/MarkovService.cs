@@ -138,7 +138,8 @@ namespace Bot.Services
             var builder = new System.Text.StringBuilder();
             while (true)
             {
-                var currentLine = reader.ReadLine().Trim();
+                var currentLine = reader.ReadLine();
+                if (currentLine == null) break; // no more shit to read
 
                 // If the current line is empty and we have NOTHING saved in the builder
                 // then advance the reader and don't worry about it for now
@@ -158,33 +159,10 @@ namespace Bot.Services
 
         public static IEnumerable<string> ReadAllParagraphs(this StreamReader reader)
         {
-            while (!reader.EndOfStream)
+            while (reader.Peek() >= 0)
             {
                 yield return reader.ReadParagraph();
             }
-        }
-
-        public static async Task<string> ReadParagraphAsync(this StreamReader reader)
-        {
-            // so we'll loop until an empty line shows up
-            var builder = new System.Text.StringBuilder();
-            while (true)
-            {
-                var currentLine = (await reader.ReadLineAsync()).Trim();
-
-                // If the current line is empty and we have NOTHING saved in the builder
-                // then advance the reader and don't worry about it for now
-                if (string.IsNullOrWhiteSpace(currentLine) && builder.Length == 0) continue;
-
-                // If the current line is empty and there's something in the builder
-                // return out the string as the 'end of paragraph'.
-                if (string.IsNullOrWhiteSpace(currentLine)) break;
-
-                // Append to the builder, prefixing a space to the line
-                builder.Append(" ").Append(currentLine);
-            }
-
-            return builder.ToString();
         }
 
         public static bool HasPrefix(this IUserMessage message)
