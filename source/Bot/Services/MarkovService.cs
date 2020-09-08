@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Bot.Services.Markov;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,7 @@ namespace Bot.Services
         private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
         private readonly List<string> _source;
         private readonly Random _random;
+        private readonly char _prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
 
         public MarkovService(IServiceProvider services)
         {
@@ -34,18 +36,12 @@ namespace Bot.Services
         {
 
             // look for markov.txt. It's a huge seeded file
-            var seedSize = _random.Next(500, 1000);
-            var seedCount = 0;
+
+            // var seedSize = _random.Next(500, 1000);
+            // var seedCount = 0;
             using (var reader = new StreamReader("markov.txt"))
             {
-                while (++seedCount <= seedSize && !reader.EndOfStream)
-                {
-                    var nextLine = await reader.ReadLineAsync();
-                    if (!string.IsNullOrWhiteSpace(nextLine))
-                    {
-                        _source.Add(nextLine);
-                    }
-                }
+                _source.AddRange(reader.ReadAllParagraphs());
             }
 
             _source.Shuffle(_random);
@@ -60,6 +56,7 @@ namespace Bot.Services
             if (!(rawMessage is SocketUserMessage message)) return;
             if (!(message.Channel is IGuildChannel gc)) return;
             if (message.Source != MessageSource.User) return;
+            if (message.HasPrefix()) return;
 
             // Find the appropriate instance to add to the source with it.
             var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s, GetSeedContent()));
@@ -134,6 +131,68 @@ namespace Bot.Services
 
         }
 
+        public static string ReadParagraph(this StreamReader reader)
+        {
+
+            // so we'll loop until an empty line shows up
+            var builder = new System.Text.StringBuilder();
+            while (true)
+            {
+                var currentLine = reader.ReadLine().Trim();
+
+                // If the current line is empty and we have NOTHING saved in the builder
+                // then advance the reader and don't worry about it for now
+                if (string.IsNullOrWhiteSpace(currentLine) && builder.Length == 0) continue;
+
+                // If the current line is empty and there's something in the builder
+                // return out the string as the 'end of paragraph'.
+                if (string.IsNullOrWhiteSpace(currentLine)) break;
+
+                // Append to the builder, prefixing a space to the line
+                builder.Append(" ").Append(currentLine);
+            }
+
+            return builder.ToString();
+
+        }
+
+        public static IEnumerable<string> ReadAllParagraphs(this StreamReader reader)
+        {
+            while (!reader.EndOfStream)
+            {
+                yield return reader.ReadParagraph();
+            }
+        }
+
+        public static async Task<string> ReadParagraphAsync(this StreamReader reader)
+        {
+            // so we'll loop until an empty line shows up
+            var builder = new System.Text.StringBuilder();
+            while (true)
+            {
+                var currentLine = (await reader.ReadLineAsync()).Trim();
+
+                // If the current line is empty and we have NOTHING saved in the builder
+                // then advance the reader and don't worry about it for now
+                if (string.IsNullOrWhiteSpace(currentLine) && builder.Length == 0) continue;
+
+                // If the current line is empty and there's something in the builder
+                // return out the string as the 'end of paragraph'.
+                if (string.IsNullOrWhiteSpace(currentLine)) break;
+
+                // Append to the builder, prefixing a space to the line
+                builder.Append(" ").Append(currentLine);
+            }
+
+            return builder.ToString();
+        }
+
+        public static bool HasPrefix(this IUserMessage message)
+        {
+            var prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
+            var position = 0;
+            return message.HasCharPrefix(prefix, ref position);
+        }
 
     }
 
