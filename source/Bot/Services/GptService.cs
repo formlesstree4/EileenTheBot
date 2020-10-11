@@ -1,13 +1,8 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Bot.Services.Markov;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -20,7 +15,6 @@ namespace Bot.Services
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
         private readonly LinkedList<string> _archiveOfMessages;
-        private readonly char _truncate = '\n';
         private readonly ulong _validServerId = 167274926883995648;
         private readonly int _backlogToKeep;
         private readonly string _endpointUrl;
@@ -75,13 +69,17 @@ namespace Bot.Services
             if (escapedMessage.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
 
             // time to get the response
-            using (message.Channel.EnterTypingState())
-            {
-                Console.WriteLine("Requesting a Payload");
-                var response = await GetGptResponse(payload + '\n' + "erector: ");
-                Console.WriteLine("Got a response! Sending now...");
-                await message.Channel.SendMessageAsync(response);
-            }
+            Task.Factory.StartNew(async () => {
+                using (message.Channel.EnterTypingState())
+                {
+                    var finalPayload = payload + '\n' + "erector: ";
+                    Console.WriteLine("Requesting Response...");
+                    var response = await GetGptResponse(finalPayload);
+                    Console.WriteLine("... response received!");
+                    await message.Channel.SendMessageAsync(response);
+                }
+            });
+            
 
         }
 
@@ -91,8 +89,10 @@ namespace Bot.Services
             var message = new { prefix = context, length = 50 };
             var anonType = new { text = "" };
             var stringContent = new StringContent(JsonConvert.SerializeObject(message));
+            Console.WriteLine($"Outgoing: {stringContent}");
             var clientResults = await _client.PostAsync(_endpointUrl, stringContent);
             var jsonResponse = await clientResults.Content.ReadAsStringAsync();
+            Console.WriteLine($"Incoming: {jsonResponse}");
             var gptResponse = JsonConvert.DeserializeAnonymousType(jsonResponse, anonType);
             return gptResponse.text.Extract(":", "\n");
         }

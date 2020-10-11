@@ -39,7 +39,7 @@ namespace Bot
                 // Here we initialize the logic required to register our commands.
                 Console.WriteLine("Initializing Services...");
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
-                await services.GetRequiredService<MarkovService>().InitializeService();
+                services.GetRequiredService<MarkovService>().InitializeService();
                 services.GetRequiredService<GptService>().InitializeService();
 
                 await Task.Delay(Timeout.Infinite, cts.Token);

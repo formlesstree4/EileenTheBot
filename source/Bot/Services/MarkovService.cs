@@ -34,7 +34,7 @@ namespace Bot.Services
         }
 
 
-        public async Task InitializeService()
+        public void InitializeService()
         {
 
             // look for markov.txt. It's a huge seeded file
