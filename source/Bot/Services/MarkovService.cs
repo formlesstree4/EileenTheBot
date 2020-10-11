@@ -44,7 +44,7 @@ namespace Bot.Services
             // var seedCount = 0;
             using (var reader = new StreamReader("markov.txt"))
             {
-                _source.AddRange(reader.ReadAllParagraphs());
+                _source.AddRange(reader.ReadAllLines());
             }
 
             _source.Shuffle(_random);
@@ -133,6 +133,15 @@ namespace Bot.Services
                 list[i] = t;
             }
 
+        }
+
+        public static IEnumerable<string> ReadAllLines(this StreamReader reader)
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                yield return line;
+            }
         }
 
         public static string ReadParagraph(this StreamReader reader)
