@@ -96,7 +96,9 @@ namespace Bot.Services
             var jsonResponse = await clientResults.Content.ReadAsStringAsync();
             Console.WriteLine($"Incoming: {jsonResponse}");
             var gptResponse = JsonConvert.DeserializeAnonymousType(jsonResponse, anonType);
-            return gptResponse.text.Remove(0, context.Length).Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0];
+            var text = gptResponse.text.Remove(0, context.Length).Split(new[] { '\n', '\r' })[0];
+            if (string.IsNullOrWhiteSpace(text)) return await GetGptResponse(context);
+            return text;
         }
 
     }
