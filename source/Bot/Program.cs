@@ -40,6 +40,7 @@ namespace Bot
                 Console.WriteLine("Initializing Services...");
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 await services.GetRequiredService<MarkovService>().InitializeService();
+                services.GetRequiredService<GptService>().InitializeService();
 
                 await Task.Delay(Timeout.Infinite, cts.Token);
             }
@@ -67,6 +68,7 @@ namespace Bot
                 .AddSingleton<BetterPaginationService>()
                 .AddSingleton<StupidTextService>()
                 .AddSingleton<MarkovService>()
+                .AddSingleton<GptService>()
                 .BuildServiceProvider();
 
 

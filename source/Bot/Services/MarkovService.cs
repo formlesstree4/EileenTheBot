@@ -21,6 +21,8 @@ namespace Bot.Services
         private readonly List<string> _source;
         private readonly Random _random;
         private readonly char _prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
+        private readonly ulong _validServerId = 167274926883995648;
+
 
         public MarkovService(IServiceProvider services)
         {
@@ -57,6 +59,7 @@ namespace Bot.Services
             if (!(message.Channel is IGuildChannel gc)) return;
             if (message.Source != MessageSource.User) return;
             if (message.HasPrefix()) return;
+            if (gc.GuildId == _validServerId) return;
 
             // Find the appropriate instance to add to the source with it.
             var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s, GetSeedContent()));
@@ -170,6 +173,31 @@ namespace Bot.Services
             var prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
             var position = 0;
             return message.HasCharPrefix(prefix, ref position);
+        }
+
+        public static string Extract(this string content, string start, string end,
+            StringComparison comparison = StringComparison.OrdinalIgnoreCase, int instance = 1)
+        {
+            var startIndex = content.Seek(start, comparison, instance);
+            var endIndex = content.Seek(end, comparison, start.Equals(end, comparison) ? instance + 1 : instance);
+            startIndex += start.Length;
+            return content.Extract(startIndex, endIndex);
+        }
+
+        public static string Extract(this string content, int start, int end)
+        {
+            return content.Substring(start, end - start);
+        }
+
+        public static int Seek(this string content, string item, StringComparison comparison = StringComparison.OrdinalIgnoreCase, int instance = 1)
+        {
+            var location = 0;
+            for (var instanceCounter = 0; instanceCounter < instance; instanceCounter++)
+            {
+                if (location == -1) break;
+                location = content.IndexOf(item, instanceCounter == 0 ? location : location + 1, comparison);
+            }
+            return location;
         }
 
     }

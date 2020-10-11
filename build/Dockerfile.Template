@@ -22,5 +22,7 @@ ENV DiscordApiToken $(DiscordApiToken)
 ENV Credentials $(Credentials)
 ENV CommandPrefix $(CommandPrefix)
 ENV MarkovTrigger $(MarkovTrigger)
+ENV GptUrl $(GptUrl)
+ENV History $(History)
 
 ENTRYPOINT ["./Bot"]

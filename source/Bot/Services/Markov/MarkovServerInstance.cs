@@ -15,6 +15,7 @@ namespace Bot.Services.Markov
         private readonly Queue<string> _historicalMessages;
         private readonly Random _random;
         private MarkovChain<string> _chain;
+        private IEnumerable<string> _seed;
 
         public bool ReadyToMakeChain => _historicalMessages.Count % ChainRefreshCount == 0;
         public bool ReadyToCleanHistory => _historicalMessages.Count > MaxHistoryCount;
@@ -26,7 +27,8 @@ namespace Bot.Services.Markov
             _historicalMessages = new Queue<string>();
             _random = new SecureRandom();
             _chain = new MarkovChain<string>(_random);
-            foreach(var i in seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            _seed = seed;
+            foreach(var i in _seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
         }
 
         public void AddHistoricalMessage(string message)
@@ -42,6 +44,10 @@ namespace Bot.Services.Markov
         {
             _chain = new MarkovChain<string>(_random);
             foreach(var i in _historicalMessages)
+            {
+                _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            }
+            foreach (var i in _seed)
             {
                 _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
             }

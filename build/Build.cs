@@ -41,6 +41,12 @@ sealed class Build : NukeBuild
     [Parameter("The text to look for in a sentence that will trigger the Markov chain builder for the bot")]
     readonly string MarkovTrigger = "erector";
 
+    [Parameter("The remote URL used to request the 'next sentence' for GPT")]
+    readonly string GptUrl = "";
+
+    [Parameter("The number of messages to keep in the historical banks")]
+    readonly int SizeOfHistory = 50;
+
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
@@ -81,7 +87,9 @@ sealed class Build : NukeBuild
                 {"DiscordApiToken", DiscordApiToken},
                 {"Credentials", credentials},
                 {"CommandPrefix", CommandPrefix},
-                {"MarkovTrigger", MarkovTrigger}
+                {"MarkovTrigger", MarkovTrigger},
+                {"GptUrl", GptUrl},
+                {"History", SizeOfHistory.ToString()}
             };
             var dockerFile = Regex.Replace(dockerTemplate, @"\$\((.*?)\)", (match) =>
             {
