@@ -45,6 +45,7 @@ namespace Bot.Services
             if (!(rawMessage is SocketUserMessage message)) return;
             if (!(message.Channel is IGuildChannel gc)) return;
             if (gc.GuildId != _validServerId) return;
+            if (message.Author.Id == _discord.CurrentUser.Id) return;
 
             var username = message.Author.Id == _discord.CurrentUser.Id ? "erector" : message.Author.Username;
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
@@ -65,7 +66,6 @@ namespace Bot.Services
             
             // Don't let erector respond to itself. However, we do need to keep track of
             // what erector HAS said so if erector did say something, then that's OK.
-            if (message.Author.Id == _discord.CurrentUser.Id) return;
             if (escapedMessage.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
 
             // time to get the response
