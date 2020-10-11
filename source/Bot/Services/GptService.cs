@@ -47,7 +47,7 @@ namespace Bot.Services
             if (gc.GuildId != _validServerId) return;
             if (message.Author.Id == _discord.CurrentUser.Id) return;
 
-            var username = message.Author.Id == _discord.CurrentUser.Id ? "erector" : message.Author.Username;
+            var username = message.Author.Id == _discord.CurrentUser.Id ? "Coolswift" : message.Author.Username;
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
             var formattedMessage = $"{username}: {escapedMessage}";
             Console.WriteLine(formattedMessage);
@@ -72,7 +72,7 @@ namespace Bot.Services
             Task.Factory.StartNew(async () => {
                 using (message.Channel.EnterTypingState())
                 {
-                    var finalPayload = payload + '\n' + "erector: ";
+                    var finalPayload = payload + '\n' + "Coolswift: ";
                     Console.WriteLine("Requesting Response...");
                     var response = await GetGptResponse(finalPayload);
                     Console.WriteLine("... response received!");
