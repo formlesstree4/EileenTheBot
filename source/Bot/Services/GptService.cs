@@ -19,6 +19,7 @@ namespace Bot.Services
         private readonly int _backlogToKeep;
         private readonly string _endpointUrl;
         private readonly HttpClient _client = new HttpClient();
+        private readonly string _replacementName = "Coolswift";
 
         public GptService(IServiceProvider services)
         {
@@ -47,9 +48,10 @@ namespace Bot.Services
             if (gc.GuildId != _validServerId) return;
             if (message.Author.Id == _discord.CurrentUser.Id) return;
 
-            var username = message.Author.Id == _discord.CurrentUser.Id ? "Coolswift" : message.Author.Username;
+            var username = message.Author.Id == _discord.CurrentUser.Id ? _replacementName : message.Author.Username;
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
-            var formattedMessage = $"{username}: {escapedMessage}";
+            var replacedMessage = escapedMessage.Replace("erector", _replacementName, true, System.Globalization.CultureInfo.InvariantCulture);
+            var formattedMessage = $"{username}: {replacedMessage}";
             Console.WriteLine(formattedMessage);
             var payload = "";
 
@@ -72,7 +74,7 @@ namespace Bot.Services
             Task.Factory.StartNew(async () => {
                 using (message.Channel.EnterTypingState())
                 {
-                    var finalPayload = payload + '\n' + "Coolswift: ";
+                    var finalPayload = payload + '\n' + $"{_replacementName}: ";
                     Console.WriteLine("Requesting Response...");
                     var response = await GetGptResponse(finalPayload);
                     Console.WriteLine("... response received!");
