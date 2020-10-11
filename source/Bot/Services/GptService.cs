@@ -86,15 +86,15 @@ namespace Bot.Services
 
         private async Task<string> GetGptResponse(string context)
         {
-            var message = new { prefix = context, length = 50 };
+            var message = JsonConvert.SerializeObject(new { prefix = context, length = 50 });
             var anonType = new { text = "" };
-            var stringContent = new StringContent(JsonConvert.SerializeObject(message));
-            Console.WriteLine($"Outgoing: {stringContent}");
+            var stringContent = new StringContent(message);
+            Console.WriteLine($"Outgoing: {message}");
             var clientResults = await _client.PostAsync(_endpointUrl, stringContent);
             var jsonResponse = await clientResults.Content.ReadAsStringAsync();
             Console.WriteLine($"Incoming: {jsonResponse}");
             var gptResponse = JsonConvert.DeserializeAnonymousType(jsonResponse, anonType);
-            return gptResponse.text.Extract(":", "\n");
+            return gptResponse.text.Remove(0, context.Length).Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0];
         }
 
     }
