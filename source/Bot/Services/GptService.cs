@@ -78,7 +78,8 @@ namespace Bot.Services
                     Console.WriteLine("Requesting Response...");
                     var response = await GetGptResponse(finalPayload);
                     Console.WriteLine("... response received!");
-                    await message.Channel.SendMessageAsync(response);
+                    var fullResponse = $"> {escapedMessage}" + "\n" + response;
+                    await message.Channel.SendMessageAsync(fullResponse);
                 }
             });
             
