@@ -46,7 +46,6 @@ namespace Bot.Services
             if (!(rawMessage is SocketUserMessage message)) return;
             if (!(message.Channel is IGuildChannel gc)) return;
             if (gc.GuildId != _validServerId) return;
-            if (message.Author.Id == _discord.CurrentUser.Id) return;
 
             var username = message.Author.Id == _discord.CurrentUser.Id ? _replacementName : message.Author.Username;
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
@@ -69,6 +68,7 @@ namespace Bot.Services
             // Don't let erector respond to itself. However, we do need to keep track of
             // what erector HAS said so if erector did say something, then that's OK.
             if (escapedMessage.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
+            if (message.Author.Id == _discord.CurrentUser.Id) return;
 
             // time to get the response
             Task.Factory.StartNew(async () => {
@@ -87,8 +87,9 @@ namespace Bot.Services
         }
 
 
-        private async Task<string> GetGptResponse(string context)
+        private async Task<string> GetGptResponse(string context, int counter = 1)
         {
+            if (counter > 3) return "I tried three times and got shit back";
             var message = JsonConvert.SerializeObject(new { prefix = context, length = 50 });
             var anonType = new { text = "" };
             var stringContent = new StringContent(message);
@@ -98,7 +99,7 @@ namespace Bot.Services
             Console.WriteLine($"Incoming: {jsonResponse}");
             var gptResponse = JsonConvert.DeserializeAnonymousType(jsonResponse, anonType);
             var text = gptResponse.text.Remove(0, context.Length).Split(new[] { '\n', '\r' })[0];
-            if (string.IsNullOrWhiteSpace(text)) return await GetGptResponse(context);
+            if (string.IsNullOrWhiteSpace(text)) return await GetGptResponse(context, counter += 1);
             return text;
         }
 
