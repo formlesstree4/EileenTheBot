@@ -1,15 +1,19 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Bot.Services;
 using Discord;
 using Discord.Commands;
+using Newtonsoft.Json;
 
 namespace Bot.Modules
 {
     // Modules must be public and inherit from an IModuleBase
     public class PublicModule : ModuleBase<SocketCommandContext>
     {
+
+        private static HttpClient client = new HttpClient();
 
         public CommandService Commands { get; set; }
 
@@ -45,6 +49,28 @@ namespace Bot.Modules
             await PaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
         }
 
+        [Command("poem")]
+        [Summary("Generates a poem with an optional title")]
+        public async Task PoetryAsync(
+            [Name("Title"),
+            Summary("The optional title of the poem"),
+            Remainder]string title = "")
+        {
+            var url = System.Environment.GetEnvironmentVariable("GptUrl");
+            if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
+            url = url.Replace(t.Port.ToString(), "8081");
+            using (Context.Channel.EnterTypingState())
+            {
+                var payload = new { title = (title ?? "") };
+                var responseType = new { text = "" };
+                var message = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(message);
+                var jsonResponse = await client.PostAsync(url, content);
+                var poetry = JsonConvert.DeserializeAnonymousType(await jsonResponse.Content.ReadAsStringAsync(), responseType);
+                var responseString = $"```\r\n{poetry.text}\r\n```";
+                await Context.Channel.SendMessageAsync(responseString);
+            }
+        }
 
 
         private static string BoolToYesNo(bool b) => b ? "Yes": "No";
