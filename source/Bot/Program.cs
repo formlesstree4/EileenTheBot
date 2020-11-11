@@ -42,7 +42,7 @@ namespace Bot
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 services.GetRequiredService<MarkovService>().InitializeService();
                 services.GetRequiredService<GptService>().InitializeService();
-                services.GetRequiredService<RavenDatabaseService>().Initialize();
+                services.GetRequiredService<RavenDatabaseService>().InitializeService();
                 await Task.Delay(Timeout.Infinite, cts.Token);
             }
         }
