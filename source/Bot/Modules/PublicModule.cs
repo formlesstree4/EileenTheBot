@@ -49,6 +49,7 @@ namespace Bot.Modules
             await PaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
         }
 
+        #pragma warning disable CS1998
         [Command("poem")]
         [Summary("Generates a poem with an optional title")]
         public async Task PoetryAsync(
@@ -59,19 +60,23 @@ namespace Bot.Modules
             var url = System.Environment.GetEnvironmentVariable("GptUrl");
             if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
             url = url.Replace(t.Port.ToString(), "8081");
-            using (Context.Channel.EnterTypingState())
-            {
-                var payload = new { title = (title ?? "") };
-                var responseType = new { text = "" };
-                var message = JsonConvert.SerializeObject(payload);
-                var content = new StringContent(message);
-                var jsonResponse = await client.PostAsync(url, content);
-                var poetry = JsonConvert.DeserializeAnonymousType(await jsonResponse.Content.ReadAsStringAsync(), responseType);
-                var responseString = $"```\r\n{poetry.text}\r\n```";
-                await Context.Channel.SendMessageAsync(responseString);
-            }
+            #pragma warning disable CS4014
+            Task.Factory.StartNew(async() => {
+                using (Context.Channel.EnterTypingState())
+                {
+                    var payload = new { title = (title ?? "") };
+                    var responseType = new { text = "" };
+                    var message = JsonConvert.SerializeObject(payload);
+                    var content = new StringContent(message);
+                    var jsonResponse = await client.PostAsync(url, content);
+                    var poetry = JsonConvert.DeserializeAnonymousType(await jsonResponse.Content.ReadAsStringAsync(), responseType);
+                    var responseString = $"```\r\n{poetry.text}\r\n```";
+                    await Context.Channel.SendMessageAsync(responseString);
+                }
+            });
+            #pragma warning restore CS4014
         }
-
+        #pragma warning restore CS1998
 
         private static string BoolToYesNo(bool b) => b ? "Yes": "No";
 
