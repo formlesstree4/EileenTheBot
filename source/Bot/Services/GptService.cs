@@ -40,7 +40,8 @@ namespace Bot.Services
             _discord.MessageReceived += HandleIncomingMessage;
         }
 
-
+        // Suppress the warning about using an async method when no code is async.
+        #pragma warning disable CS1998
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
         {
             if (!(rawMessage is SocketUserMessage message)) return;
@@ -71,6 +72,9 @@ namespace Bot.Services
             if (message.Author.Id == _discord.CurrentUser.Id) return;
 
             // time to get the response
+            // Disable warning that we are not using await here
+            // as we do not want to wait for this to finish!
+            #pragma warning disable CS4014
             Task.Factory.StartNew(async () => {
                 using (message.Channel.EnterTypingState())
                 {
@@ -82,10 +86,10 @@ namespace Bot.Services
                     await message.Channel.SendMessageAsync(fullResponse);
                 }
             });
-            
+            #pragma warning restore CS4014
 
         }
-
+        #pragma warning restore CS1998
 
         private async Task<string> GetGptResponse(string context, int counter = 1)
         {
