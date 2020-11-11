@@ -9,6 +9,7 @@ using System.Threading;
 using Bot.Services.Booru;
 using AutoMapper;
 using System.Reflection;
+using Bot.Services.RavenDB;
 
 namespace Bot
 {
@@ -41,7 +42,7 @@ namespace Bot
                 await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 services.GetRequiredService<MarkovService>().InitializeService();
                 services.GetRequiredService<GptService>().InitializeService();
-
+                services.GetRequiredService<RavenDatabaseService>().Initialize();
                 await Task.Delay(Timeout.Infinite, cts.Token);
             }
         }
@@ -54,6 +55,7 @@ namespace Bot
 
         private ServiceProvider ConfigureServices() => new ServiceCollection()
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
+                .AddSingleton<RavenDatabaseService>()
                 .AddSingleton<CancellationTokenSource>()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
