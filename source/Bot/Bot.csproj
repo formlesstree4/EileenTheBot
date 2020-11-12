@@ -13,12 +13,12 @@
     <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Discord.Net.Commands" Version="2.2.0" />
     <PackageReference Include="Hangfire" Version="1.7.17" />
-    <PackageReference Include="Hangfire.Raven" Version="3.2.0" />
+    <PackageReference Include="Hangfire.LiteDB" Version="0.4.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.5" />
-    <PackageReference Include="RavenDB.Client" Version="5.0.4" />
+    <PackageReference Include="RavenDB.Client" Version="5.0.3" />
   </ItemGroup>
 
   <ItemGroup>

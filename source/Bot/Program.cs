@@ -10,6 +10,9 @@ using Bot.Services.Booru;
 using AutoMapper;
 using System.Reflection;
 using Bot.Services.RavenDB;
+using Bot.Models.Raven;
+using Hangfire;
+using Hangfire.LiteDB;
 
 namespace Bot
 {
@@ -22,27 +25,32 @@ namespace Bot
 
         public async Task MainAsync()
         {
+            GlobalConfiguration.Configuration.UseLiteDbStorage();
+            var bjs = new BackgroundJobServer();
+
             using (var services = ConfigureServices())
             {
                 var client = services.GetRequiredService<DiscordSocketClient>();
                 var cts = services.GetRequiredService<CancellationTokenSource>();
                 
                 client.Log += LogAsync;
+                // Here we initialize the logic required to register our commands.
+                Console.WriteLine("Initializing Services...");
+                await services.GetRequiredService<RavenDatabaseService>().InitializeService();
+                await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
                 services.GetRequiredService<CommandService>().Log += LogAsync;
+                services.GetRequiredService<MarkovService>().InitializeService();
+                services.GetRequiredService<GptService>().InitializeService();
+                var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
 
                 // Tokens should be considered secret data and never hard-coded.
                 // We can read from the environment variable to avoid hardcoding.
-                await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DiscordApiToken"));
+                await client.LoginAsync(TokenType.Bot, configuration.DiscordToken);
                 await client.StartAsync();
                 await client.SetStatusAsync(UserStatus.Online);
                 await client.SetGameAsync(name: "A small time booru bot", streamUrl: null, type: ActivityType.CustomStatus);
 
-                // Here we initialize the logic required to register our commands.
-                Console.WriteLine("Initializing Services...");
-                await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
-                services.GetRequiredService<MarkovService>().InitializeService();
-                services.GetRequiredService<GptService>().InitializeService();
-                services.GetRequiredService<RavenDatabaseService>().InitializeService();
+                RecurringJob.AddOrUpdate(() => Console.WriteLine("From Hangfire!"), Cron.Minutely);
                 await Task.Delay(Timeout.Infinite, cts.Token);
             }
         }
@@ -55,6 +63,10 @@ namespace Bot
 
         private ServiceProvider ConfigureServices() => new ServiceCollection()
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
+                // .AddHangfire(config =>
+                // {
+                //     config.UseMemoryStorage();
+                // })
                 .AddSingleton<RavenDatabaseService>()
                 .AddSingleton<CancellationTokenSource>()
                 .AddSingleton<DiscordSocketClient>()
@@ -72,9 +84,6 @@ namespace Bot
                 .AddSingleton<MarkovService>()
                 .AddSingleton<GptService>()
                 .BuildServiceProvider();
-
-
-
 
     }
 
