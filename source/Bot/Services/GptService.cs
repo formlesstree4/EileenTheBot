@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Bot.Services.RavenDB;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,12 +25,11 @@ namespace Bot.Services
         public GptService(IServiceProvider services)
         {
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
-            _endpointUrl = Environment.GetEnvironmentVariable("GptUrl");
-            if (!int.TryParse(Environment.GetEnvironmentVariable("History"), out _backlogToKeep))
-            {
-                _backlogToKeep = 10;
-            }
+            var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
+
+            _triggerWord = configuration.MarkovTrigger ?? "erector";
+            _endpointUrl = configuration.GptUrl;
+            _backlogToKeep = configuration.History;
             Console.WriteLine($"Trigger Word: {_triggerWord}");
             Console.WriteLine($"Historical Context: {_backlogToKeep}");
             _archiveOfMessages = new LinkedList<string>();

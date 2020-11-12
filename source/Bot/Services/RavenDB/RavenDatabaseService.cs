@@ -1,5 +1,8 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Bot.Models.Raven;
 using Hangfire;
-using Hangfire.Raven.Storage;
 using Raven.Client.Documents;
 
 namespace Bot.Services.RavenDB
@@ -7,26 +10,66 @@ namespace Bot.Services.RavenDB
     public sealed class RavenDatabaseService
     {
 
+        private BotConfiguration configuration;
         private readonly string RavenDBLocation;
-        private readonly IDocumentStore documentStore;
+        private Lazy<IDocumentStore> coreDocumentStore;
+        private Lazy<IDocumentStore> userDocumentStore;
+
+        public IDocumentStore GetCoreConnection => coreDocumentStore.Value;
+
+        public IDocumentStore GetUserConnection => userDocumentStore.Value;
+
+        public BotConfiguration Configuration => configuration;
 
         public RavenDatabaseService()
         {
             RavenDBLocation = System.Environment.GetEnvironmentVariable("RavenIP");
+            if (string.IsNullOrWhiteSpace(RavenDBLocation))
+            {
+                RavenDBLocation = "http://192.168.254.180:8080";
+                // throw new InvalidOperationException("The RavenDB address, provided by the 'RavenIP' environment variable, cannot be blank!");
+            }
+            coreDocumentStore = new Lazy<IDocumentStore>(() =>
+            {
+                var s = new DocumentStore
+                {
+                    Urls = new[] { RavenDBLocation },
+                    Database = "erector_core"
+                };
+
+                return s.Initialize();
+            });
+            userDocumentStore = new Lazy<IDocumentStore>(() => 
+            {
+                var s = new DocumentStore
+                {
+                    Urls = new[] { RavenDBLocation },
+                    Database = "erector_users"
+                };
+
+                return s.Initialize();
+            });
         }
 
 
-        public string GetConnectionStringWithDatabase(string dbName)
+        public async Task InitializeService()
         {
-            return $"{RavenDBLocation};Database={dbName}";
+            // GlobalConfiguration.Configuration.UseRavenStorage(RavenDBLocation, "erector_hangfire");
+            GetBotConfiguration();            
+            await Task.Yield();
         }
 
-        public string GetConnectionString => RavenDBLocation;
 
-
-        public void InitializeService()
+        private BotConfiguration GetBotConfiguration()
         {
-            GlobalConfiguration.Configuration.UseRavenStorage(RavenDBLocation, "erector_hangfire");
+            if (ReferenceEquals(configuration, null))
+            {
+                using (var session = coreDocumentStore.Value.OpenSession())
+                {
+                    configuration = session.Load<BotConfiguration>("configuration");
+                }
+            }
+            return configuration;
         }
 
     }

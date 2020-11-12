@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Bot.Services;
+using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Newtonsoft.Json;
@@ -20,6 +21,8 @@ namespace Bot.Modules
         public BetterPaginationService PaginationService { get; set; }
 
         public StupidTextService StupidTextService { get; set; }
+
+        public RavenDatabaseService Rdbs { get; set; }
 
         [Command("help")]
         public async Task HelpAsync()
@@ -57,7 +60,7 @@ namespace Bot.Modules
             Summary("The optional title of the poem"),
             Remainder]string title = "")
         {
-            var url = System.Environment.GetEnvironmentVariable("GptUrl");
+            var url = Rdbs.Configuration.GptUrl;
             if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
             url = url.Replace(t.Port.ToString(), "8081");
             #pragma warning disable CS4014

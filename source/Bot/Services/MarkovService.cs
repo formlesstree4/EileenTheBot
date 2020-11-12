@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Bot.Services.Markov;
+using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -21,14 +22,17 @@ namespace Bot.Services
         private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
         private readonly List<string> _source;
         private readonly Random _random;
-        private readonly char _prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
+        private readonly char _prefix;
         private readonly ulong _validServerId = 167274926883995648;
 
 
         public MarkovService(IServiceProvider services)
         {
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            _triggerWord = Environment.GetEnvironmentVariable("MarkovTrigger") ?? "erector";
+            var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
+            _prefix = configuration.CommandPrefix[0];
+
+            _triggerWord = configuration.MarkovTrigger ?? "erector";
             _source = new List<string>();
             _random = new SecureRandom();
             _chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
@@ -54,12 +58,12 @@ namespace Bot.Services
 
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
         {
-
+            var position = 0;
             // Pre-filter some jargon out of here
             if (!(rawMessage is SocketUserMessage message)) return;
             if (!(message.Channel is IGuildChannel gc)) return;
             if (message.Source != MessageSource.User) return;
-            if (message.HasPrefix()) return;
+            if (message.HasCharPrefix(_prefix, ref position)) return;
             if (gc.GuildId == _validServerId) return;
 
             // Find the appropriate instance to add to the source with it.
@@ -176,13 +180,6 @@ namespace Bot.Services
             {
                 yield return reader.ReadParagraph();
             }
-        }
-
-        public static bool HasPrefix(this IUserMessage message)
-        {
-            var prefix = Environment.GetEnvironmentVariable("CommandPrefix")[0];
-            var position = 0;
-            return message.HasCharPrefix(prefix, ref position);
         }
 
         public static string Extract(this string content, string start, string end,
