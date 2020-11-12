@@ -24,5 +24,6 @@ ENV CommandPrefix $(CommandPrefix)
 ENV MarkovTrigger $(MarkovTrigger)
 ENV GptUrl $(GptUrl)
 ENV History $(History)
+ENV RavenIP $(RavenIP)
 
 ENTRYPOINT ["./Bot"]
