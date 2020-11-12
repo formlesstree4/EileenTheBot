@@ -354,3 +354,4 @@ resources/*
 build/resources/*
 output/*
 Dockerfile
+*.db
