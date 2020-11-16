@@ -3,19 +3,24 @@ namespace Bot.Services.Markov
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Newtonsoft.Json;
 
     // Some code used from https://github.com/otac0n/markov 
     // I have modified it to my needs.
 
     public sealed class MarkovChain<T> where T : IEquatable<T>
     {
-        private readonly Dictionary<ChainState<T>, Dictionary<T, int>> items;
-        private readonly Dictionary<ChainState<T>, int> terminals;
-        private readonly int order;
+        private Dictionary<ChainState<T>, Dictionary<T, int>> items;
+        private Dictionary<ChainState<T>, int> terminals;
+        private int order;
+        
+        [JsonIgnore]
         private Random random;
 
         public int Order => order;
         public ulong Size => (ulong)items.Count + (ulong)terminals.Count;
+
+        public MarkovChain(): this(new Random()) { }
 
         public MarkovChain(Random random) : this(1, random) { }
 
@@ -128,6 +133,9 @@ namespace Bot.Services.Markov
                 }
             }
         }
+
+
+        
 
         // --- PRIVATE --- //
 

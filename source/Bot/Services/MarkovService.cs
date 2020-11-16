@@ -5,12 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bot.Models;
 using Bot.Services.Markov;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Raven.Client.Documents;
 
 namespace Bot.Services
 {
@@ -19,6 +21,7 @@ namespace Bot.Services
 
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
+        private readonly RavenDatabaseService _rdbs;
         private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
         private readonly List<string> _source;
         private readonly Random _random;
@@ -29,31 +32,78 @@ namespace Bot.Services
         public MarkovService(IServiceProvider services)
         {
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
+            _rdbs = services.GetRequiredService<RavenDatabaseService>();
+            var configuration = _rdbs.Configuration;
             _prefix = configuration.CommandPrefix[0];
 
-            _triggerWord = configuration.MarkovTrigger ?? "erector";
+            _triggerWord = configuration.MarkovTrigger;
             _source = new List<string>();
             _random = new SecureRandom();
             _chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
         }
 
 
-        public void InitializeService()
+        public async Task InitializeService()
         {
 
             // look for markov.txt. It's a huge seeded file
-
-            // var seedSize = _random.Next(500, 1000);
-            // var seedCount = 0;
             using (var reader = new StreamReader("markov.txt"))
             {
                 _source.AddRange(reader.ReadAllLines());
             }
 
             _source.Shuffle(_random);
+            await LoadServiceAsync();
             _discord.MessageReceived += HandleIncomingMessage;
+        }
 
+        public async Task SaveServiceAsync()
+        {
+            using(var session = _rdbs.GetMarkovConnection.OpenAsyncSession())
+            {
+                foreach (var kvp in _chains)
+                {
+                    await session.StoreAsync(new MarkovContent
+                    {
+                        ServerId = kvp.Key,
+                        Context = kvp.Value._historicalMessages,
+                        CurrentChain = kvp.Value._chain
+                    }, kvp.Key.ToString());
+                }
+                await session.SaveChangesAsync();
+            }
+        }
+
+        public async Task LoadServiceAsync()
+        {
+            using (var session = _rdbs.GetMarkovConnection.OpenAsyncSession())
+            {
+                var content = await session.Query<MarkovContent>().ToListAsync();
+                _chains.Clear();
+                foreach(var mc in content)
+                {
+                    var msi = new MarkovServerInstance(mc.ServerId, mc.Context);
+                    msi._chain = mc.CurrentChain;
+                    _chains.AddOrUpdate(mc.ServerId, (f) => msi, (f, g) => g);
+                }
+            }
+        }
+
+        public void SaveService()
+        {
+            using(var session = _rdbs.GetMarkovConnection.OpenSession())
+            {
+                foreach (var kvp in _chains)
+                {
+                    session.Store(new MarkovContent
+                    {
+                        ServerId = kvp.Key,
+                        Context = kvp.Value._historicalMessages,
+                        CurrentChain = kvp.Value._chain
+                    }, kvp.Key.ToString());
+                }
+                session.SaveChanges();
+            }
         }
 
         private async Task HandleIncomingMessage(SocketMessage rawMessage)

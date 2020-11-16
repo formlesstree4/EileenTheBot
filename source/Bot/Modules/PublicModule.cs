@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Bot.Services;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
+using Hangfire;
 using Newtonsoft.Json;
 
 namespace Bot.Modules
@@ -23,6 +26,11 @@ namespace Bot.Modules
         public StupidTextService StupidTextService { get; set; }
 
         public RavenDatabaseService Rdbs { get; set; }
+
+        public MarkovService MarkovService { get; set; }
+
+        public CancellationTokenSource TokenSource { get; set; }
+
 
         [Command("help")]
         public async Task HelpAsync()
@@ -81,6 +89,13 @@ namespace Bot.Modules
         }
         #pragma warning restore CS1998
 
+        [Command("kill")]
+        public async Task KillAsync()
+        {
+            await Context.Channel.SendMessageAsync("okey, goodbye");
+            TokenSource.Cancel();
+        }
+
         private static string BoolToYesNo(bool b) => b ? "Yes": "No";
 
         private static string GetContext(RequireContextAttribute attribute)
@@ -88,6 +103,7 @@ namespace Bot.Modules
             if (attribute is null) return "None";
             return attribute.Contexts.ToString();
         }
+
 
     }
 }

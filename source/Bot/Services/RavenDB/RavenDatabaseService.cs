@@ -14,15 +14,20 @@ namespace Bot.Services.RavenDB
         private readonly string RavenDBLocation;
         private Lazy<IDocumentStore> coreDocumentStore;
         private Lazy<IDocumentStore> userDocumentStore;
+        private Lazy<IDocumentStore> markovDocumentStore;
+
 
         public IDocumentStore GetCoreConnection => coreDocumentStore.Value;
 
         public IDocumentStore GetUserConnection => userDocumentStore.Value;
 
+        public IDocumentStore GetMarkovConnection => markovDocumentStore.Value;
+
         public BotConfiguration Configuration => configuration;
 
         public RavenDatabaseService()
         {
+
             RavenDBLocation = System.Environment.GetEnvironmentVariable("RavenIP");
             if (string.IsNullOrWhiteSpace(RavenDBLocation))
             {
@@ -49,12 +54,21 @@ namespace Bot.Services.RavenDB
 
                 return s.Initialize();
             });
+            markovDocumentStore = new Lazy<IDocumentStore>(() =>
+            {
+                var s = new DocumentStore
+                {
+                    Urls = new[] { RavenDBLocation },
+                    Database = "erector_markov"
+                };
+
+                return s.Initialize();
+            });
         }
 
 
         public async Task InitializeService()
         {
-            // GlobalConfiguration.Configuration.UseRavenStorage(RavenDBLocation, "erector_hangfire");
             GetBotConfiguration();            
             await Task.Yield();
         }

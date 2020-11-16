@@ -12,10 +12,10 @@ namespace Bot.Services.Markov
 
         public ulong ServerId { get; }
 
-        private readonly Queue<string> _historicalMessages;
-        private readonly Random _random;
-        private MarkovChain<string> _chain;
-        private IEnumerable<string> _seed;
+        public Queue<string> _historicalMessages;
+        public readonly Random _random;
+        public MarkovChain<string> _chain;
+        public IEnumerable<string> _seed;
 
         public bool ReadyToMakeChain => _historicalMessages.Count % ChainRefreshCount == 0;
         public bool ReadyToCleanHistory => _historicalMessages.Count > MaxHistoryCount;
@@ -30,6 +30,10 @@ namespace Bot.Services.Markov
             _seed = seed;
             foreach(var i in _seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
         }
+
+
+
+
 
         public void AddHistoricalMessage(string message)
         {
