@@ -29,16 +29,19 @@ namespace Bot.Services
         private readonly Random _random;
         private readonly char _prefix;
         private readonly ulong _validServerId = 167274926883995648;
+        private readonly Func<LogMessage, Task> WriteLog;
 
 
-        public MarkovService(IServiceProvider services)
+        public MarkovService(IServiceProvider services, Func<LogMessage, Task> logger)
         {
+            WriteLog = logger ?? (message => Task.CompletedTask);
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _rdbs = services.GetRequiredService<RavenDatabaseService>();
             var configuration = _rdbs.Configuration;
+            Write("Setting Configuration...");
             _prefix = configuration.CommandPrefix[0];
-
             _triggerWord = configuration.MarkovTrigger;
+            Write($"Initialized. Prefix: {_prefix}. Trigger Word {_triggerWord}");
             _source = new List<string>();
             _random = new SecureRandom();
             _chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
@@ -47,35 +50,37 @@ namespace Bot.Services
 
         public async Task InitializeService()
         {
-            Console.WriteLine("Querying DB for markov...");
+            Write("Querying the database for the markov source file...");
             using(var markovFile = await _rdbs.GetCoreConnection.Operations.SendAsync(new GetAttachmentOperation(
                 documentId: "configuration",
                 name: "markov.txt",
                 type: AttachmentType.Document,
                 changeVector: null)))
             {
-                Console.WriteLine("Stream retrieved, using a reader now to import...");
+                Write("Opening the StreamReader...", LogSeverity.Verbose);
                 using (var reader = new StreamReader(markovFile.Stream))
                 {
                     _source.AddRange(reader.ReadAllLines());
                 }
-                Console.WriteLine("Source built!");
+                Write("Done! Source finished...", LogSeverity.Verbose);
             }
             
-            Console.WriteLine("Shuffling!");
+            Write($"Shuffling {_source.Count:N0} item(s)", LogSeverity.Verbose);
             _source.Shuffle(_random);
-            Console.WriteLine("Shuffled, loading data from the server");
+            Write("Shuffling complete", LogSeverity.Verbose);
             await LoadServiceAsync();
-            Console.WriteLine("Loaded! Attaching handler");
+            Write($"Service has finished initializing... attaching {nameof(HandleIncomingMessage)}...");
             _discord.MessageReceived += HandleIncomingMessage;
         }
 
         public async Task SaveServiceAsync()
         {
+            Write($"Start Service Save...");
             using(var session = _rdbs.GetMarkovConnection.OpenAsyncSession())
             {
                 foreach (var kvp in _chains)
                 {
+                    Write($"Saving {kvp.Key}...", LogSeverity.Verbose);
                     await session.StoreAsync(new MarkovContent
                     {
                         ServerId = kvp.Key,
@@ -84,17 +89,21 @@ namespace Bot.Services
                 }
                 await session.SaveChangesAsync();
             }
+            Write($"Finish Service Save...");
         }
 
         public async Task LoadServiceAsync()
         {
+            Write($"Start Service Load...");
             using (var session = _rdbs.GetMarkovConnection.OpenAsyncSession())
             {
-                var content = await session.Query<MarkovContent>().ToListAsync();
                 _chains.Clear();
+                var content = await session.Query<MarkovContent>().ToListAsync();
                 foreach(var mc in content)
                 {
+                    Write($"Loading {mc.ServerId}...", LogSeverity.Verbose);
                     var msi = new MarkovServerInstance(mc.ServerId, Enumerable.Empty<string>());
+                    Write($"Inserting Historical Context", LogSeverity.Verbose);
                     foreach(var c in mc.Context)
                     {
                         msi.AddHistoricalMessage(c);
@@ -102,6 +111,7 @@ namespace Bot.Services
                     _chains.AddOrUpdate(mc.ServerId, (f) => msi, (f, g) => g);
                 }
             }
+            Write($"Finish Service Load...");
         }
 
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
@@ -115,6 +125,7 @@ namespace Bot.Services
             if (gc.GuildId == _validServerId) return;
 
             // Find the appropriate instance to add to the source with it.
+            Write("");
             var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s, GetSeedContent()));
             string messageToSend = null;
 
@@ -166,6 +177,11 @@ namespace Bot.Services
                 }
             }
             return content;
+        }
+
+        private void Write(string message, LogSeverity severity = LogSeverity.Info)
+        {
+            WriteLog(new LogMessage(severity, nameof(MarkovService), message));
         }
 
     }
