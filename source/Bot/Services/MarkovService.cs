@@ -13,6 +13,8 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Attachments;
+using Raven.Client.Documents.Operations.Attachments;
 
 namespace Bot.Services
 {
@@ -45,15 +47,26 @@ namespace Bot.Services
 
         public async Task InitializeService()
         {
-
-            // look for markov.txt. It's a huge seeded file
-            using (var reader = new StreamReader("markov.txt"))
+            Console.WriteLine("Querying DB for markov...");
+            using(var markovFile = await _rdbs.GetCoreConnection.Operations.SendAsync(new GetAttachmentOperation(
+                documentId: "configuration",
+                name: "markov.txt",
+                type: AttachmentType.Document,
+                changeVector: null)))
             {
-                _source.AddRange(reader.ReadAllLines());
+                Console.WriteLine("Stream retrieved, using a reader now to import...");
+                using (var reader = new StreamReader(markovFile.Stream))
+                {
+                    _source.AddRange(reader.ReadAllLines());
+                }
+                Console.WriteLine("Source built!");
             }
-
+            
+            Console.WriteLine("Shuffling!");
             _source.Shuffle(_random);
+            Console.WriteLine("Shuffled, loading data from the server");
             await LoadServiceAsync();
+            Console.WriteLine("Loaded! Attaching handler");
             _discord.MessageReceived += HandleIncomingMessage;
         }
 
@@ -66,8 +79,7 @@ namespace Bot.Services
                     await session.StoreAsync(new MarkovContent
                     {
                         ServerId = kvp.Key,
-                        Context = kvp.Value._historicalMessages,
-                        CurrentChain = kvp.Value._chain
+                        Context = kvp.Value._historicalMessages
                     }, kvp.Key.ToString());
                 }
                 await session.SaveChangesAsync();
@@ -82,27 +94,13 @@ namespace Bot.Services
                 _chains.Clear();
                 foreach(var mc in content)
                 {
-                    var msi = new MarkovServerInstance(mc.ServerId, mc.Context);
-                    msi._chain = mc.CurrentChain;
+                    var msi = new MarkovServerInstance(mc.ServerId, Enumerable.Empty<string>());
+                    foreach(var c in mc.Context)
+                    {
+                        msi.AddHistoricalMessage(c);
+                    }
                     _chains.AddOrUpdate(mc.ServerId, (f) => msi, (f, g) => g);
                 }
-            }
-        }
-
-        public void SaveService()
-        {
-            using(var session = _rdbs.GetMarkovConnection.OpenSession())
-            {
-                foreach (var kvp in _chains)
-                {
-                    session.Store(new MarkovContent
-                    {
-                        ServerId = kvp.Key,
-                        Context = kvp.Value._historicalMessages,
-                        CurrentChain = kvp.Value._chain
-                    }, kvp.Key.ToString());
-                }
-                session.SaveChanges();
             }
         }
 

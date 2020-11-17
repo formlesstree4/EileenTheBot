@@ -11,8 +11,6 @@ namespace Bot.Models
 
         public Queue<string> Context { get; set; }
 
-        public MarkovChain<string> CurrentChain { get; set; }
-
     }
 
 
