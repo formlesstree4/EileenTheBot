@@ -25,9 +25,4 @@
    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="text.txt" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="markov.txt" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
