@@ -73,6 +73,7 @@ namespace Bot
                     .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Warning))
                     .UseUrls("http://localhost:5000/")
                     .Build();
+
             GlobalConfiguration.Configuration.UseLiteDbStorage();
             var bjs = new BackgroundJobServer();
             var services = ui.Services;
@@ -80,13 +81,16 @@ namespace Bot
             var cts = services.GetRequiredService<CancellationTokenSource>();
             var website = ui.RunAsync(cts.Token);
             
-            client.Log += LogAsync;
             // Here we initialize the logic required to register our commands.
             Console.WriteLine("Initializing Services...");
+            
+            client.Log += LogAsync;
             services.GetRequiredService<CommandService>().Log += LogAsync;
+
             await services.GetRequiredService<RavenDatabaseService>().InitializeService();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
             await services.GetRequiredService<MarkovService>().InitializeService();
+            await services.GetRequiredService<StupidTextService>().InitializeService();
             services.GetRequiredService<GptService>().InitializeService();
             var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
 
@@ -95,11 +99,21 @@ namespace Bot
             await client.LoginAsync(TokenType.Bot, configuration.DiscordToken);
             await client.StartAsync();
             await client.SetStatusAsync(UserStatus.Online);
-            await client.SetGameAsync(name: "A small time booru bot", streamUrl: null, type: ActivityType.CustomStatus);
-            await website;
-            await Task.Delay(Timeout.Infinite, cts.Token);
+            await client.SetGameAsync(name: "A bot made by formlesstree4", streamUrl: null, type: ActivityType.CustomStatus);
+
+            try
+            {
+                await Task.Delay(Timeout.Infinite, cts.Token);
+            }
+            catch(TaskCanceledException)
+            {
+                Console.WriteLine("Shutdown command has been received!");
+            }
+            Console.WriteLine("Disengaging Hangfire");
             bjs.Dispose();
-            Console.WriteLine("saving the stuff");
+            
+            Console.WriteLine("Dumping Markov history into the DB");
+            await services.GetRequiredService<MarkovService>().SaveServiceAsync();
         }
 
         private Task LogAsync(LogMessage log)
