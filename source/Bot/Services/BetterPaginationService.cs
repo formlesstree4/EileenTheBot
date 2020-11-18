@@ -47,11 +47,11 @@ namespace Bot.Services
             _messages = new ConcurrentDictionary<ulong, BetterPaginationMessage>();
             _maintenanceTimer = new Timer(HandleMaintenance, null, 2000, 2000);
             WriteLog = logger ?? (message => Task.CompletedTask);
-            WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), "Initializing..."));
+            WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), "Initializing..."));
             _client = dsc;
             _client.ReactionAdded += OnReactionAdded;
             _client.MessageDeleted += OnMessageDeleted;
-            WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{nameof(DiscordSocketClient.ReactionAdded)} has been hooked."));
+            WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"{nameof(DiscordSocketClient.ReactionAdded)} has been hooked."));
         }
 
 
