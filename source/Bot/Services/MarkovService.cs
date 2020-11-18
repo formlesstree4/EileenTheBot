@@ -117,17 +117,27 @@ namespace Bot.Services
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
         {
             var position = 0;
-            // Pre-filter some jargon out of here
+            var serverId = 0UL;
+            var isPrivate = false;
+
             if (!(rawMessage is SocketUserMessage message)) return;
-            if (!(message.Channel is IGuildChannel gc)) return;
             if (message.Source != MessageSource.User) return;
             if (message.HasCharPrefix(_prefix, ref position)) return;
-            if (gc.GuildId == _validServerId) return;
+            if (message.Channel is IGuildChannel gc)
+            {
+                serverId = gc.GuildId;
+                if (gc.GuildId == _validServerId) return;
+            }
+            if (message.Channel is IPrivateChannel pc)
+            {
+                isPrivate = true;
+                serverId = pc.Id;
+            }
 
             // Find the appropriate instance to add to the source with it.
             Write("Searching for instance...");
             var serverInstance = _chains.GetOrAdd(
-                gc.GuildId,
+                serverId,
                 s =>
                 {
                     Write($"Creating new chain for {s}", LogSeverity.Verbose);
@@ -155,7 +165,7 @@ namespace Bot.Services
                     }
                 }
                 serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
-                if (!containsTriggerWord) return;
+                if (!containsTriggerWord && !isPrivate) return;
 
                 // We need to generate a message in response since we were directly referenced.
                 Write($"Generating a response...");
