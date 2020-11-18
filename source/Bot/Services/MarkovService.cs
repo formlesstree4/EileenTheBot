@@ -39,9 +39,9 @@ namespace Bot.Services
             _rdbs = services.GetRequiredService<RavenDatabaseService>();
             var configuration = _rdbs.Configuration;
             Write("Setting Configuration...");
-            _prefix = configuration.CommandPrefix[0];
+            _prefix = configuration.CommandPrefix;
             _triggerWord = configuration.MarkovTrigger;
-            Write($"Initialized. Prefix: {_prefix}. Trigger Word {_triggerWord}");
+            Write($"Trigger Word '{_triggerWord}'");
             _source = new List<string>();
             _random = new SecureRandom();
             _chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
@@ -125,10 +125,17 @@ namespace Bot.Services
             if (gc.GuildId == _validServerId) return;
 
             // Find the appropriate instance to add to the source with it.
-            Write("");
-            var serverInstance = _chains.GetOrAdd(gc.GuildId, s => new MarkovServerInstance(s, GetSeedContent()));
+            Write("Searching for instance...");
+            var serverInstance = _chains.GetOrAdd(
+                gc.GuildId,
+                s =>
+                {
+                    Write($"Creating new chain for {s}", LogSeverity.Verbose);
+                    return new MarkovServerInstance(s, GetSeedContent());
+                });
             string messageToSend = null;
-
+            Write($"Using Instance: {serverInstance.ServerId}");
+            Write($"Acquiring exclusive lock on {serverInstance.ServerId}", LogSeverity.Verbose);
             lock (serverInstance)
             {
 
@@ -136,11 +143,13 @@ namespace Bot.Services
                 // Add it to the historical message for that instance.
                 var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
                 var containsTriggerWord = false;
+                Write($"Looking for trigger word in the message...");
                 for (var i = messageFragments.Count - 1; i >= 0; i--)
                 {
                     var insensitive = messageFragments[i].ToLowerInvariant();
                     if (insensitive.Equals(_triggerWord, StringComparison.OrdinalIgnoreCase) || insensitive.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
                     {
+                        Write($"Trigger word found in the message... remove it and get ready to send a new message", LogSeverity.Verbose);
                         containsTriggerWord = true;
                         messageFragments.RemoveAt(i);
                     }
@@ -149,15 +158,18 @@ namespace Bot.Services
                 if (!containsTriggerWord) return;
 
                 // We need to generate a message in response since we were directly referenced.
+                Write($"Generating a response...");
                 while (string.IsNullOrWhiteSpace(messageToSend))
                 {
                     messageToSend = serverInstance.GetNextMessage();
                 }
+                Write($"Response generated!");
 
             }
 
             if (!string.IsNullOrWhiteSpace(messageToSend))
             {
+                Write($"Submitting Response...");
                 using (message.Channel.EnterTypingState())
                 {
                     await message.Channel.SendMessageAsync(messageToSend);
