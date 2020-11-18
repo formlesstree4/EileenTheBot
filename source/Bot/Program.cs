@@ -16,6 +16,7 @@ using Hangfire.LiteDB;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
+using Bot.Services.Communication;
 
 namespace Bot
 {
@@ -28,29 +29,15 @@ namespace Bot
 
         public async Task MainAsync()
         {
-
+            GlobalConfiguration.Configuration.UseLiteDbStorage();
             var ui = WebHost.CreateDefaultBuilder()
                     .UseKestrel()
                     .ConfigureServices((hfs) => {
-                        // Add Hangfire services.
-                        // 
-                        hfs.AddHangfire(configuration => configuration
-                            .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-                            .UseSimpleAssemblyNameTypeSerializer()
-                            .UseRecommendedSerializerSettings()
-                            .UseLiteDbStorage()
-                        );
-
-                        // Add the processing server as IHostedService
-                        hfs.AddHangfireServer();
-                        hfs.AddMvc(config => {
-                            config.EnableEndpointRouting = false;
-                        });
-
                         hfs.AddAutoMapper(Assembly.GetExecutingAssembly())
                             .AddSingleton<RavenDatabaseService>()
                             .AddSingleton<CancellationTokenSource>()
                             .AddSingleton<DiscordSocketClient>()
+                            .AddSingleton<HangfireToDiscordComm>()
                             .AddSingleton<Func<LogMessage, Task>>(LogAsync)
                             .AddSingleton<CredentialsService>()
                             .AddSingleton<Danbooru>()
@@ -65,34 +52,41 @@ namespace Bot
                             .AddSingleton<MarkovService>()
                             .AddSingleton<GptService>();
 
+                        hfs.AddHangfire(configuration => configuration
+                            .UseSimpleAssemblyNameTypeSerializer()
+                            .UseRecommendedSerializerSettings()
+                            .UseLiteDbStorage()
+                        );
+
+                        hfs.AddHangfireServer();
+                        hfs.AddMvc(config => {
+                            config.EnableEndpointRouting = false;
+                        });
                     })
                     .Configure((app) => {
-                        // app.UseStaticFiles();
                         app.UseHangfireDashboard();
                     })
                     .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Warning))
                     .UseUrls("http://localhost:5000/")
                     .Build();
 
-            GlobalConfiguration.Configuration.UseLiteDbStorage();
-            var bjs = new BackgroundJobServer();
             var services = ui.Services;
             var client = services.GetRequiredService<DiscordSocketClient>();
             var cts = services.GetRequiredService<CancellationTokenSource>();
-            var website = ui.RunAsync(cts.Token);
             
             // Here we initialize the logic required to register our commands.
             Console.WriteLine("Initializing Services...");
             
             client.Log += LogAsync;
             services.GetRequiredService<CommandService>().Log += LogAsync;
-
             await services.GetRequiredService<RavenDatabaseService>().InitializeService();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
             await services.GetRequiredService<MarkovService>().InitializeService();
             await services.GetRequiredService<StupidTextService>().InitializeService();
-            services.GetRequiredService<GptService>().InitializeService();
+            await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
+            await services.GetRequiredService<GptService>().InitializeService();
             var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
+            var website = ui.RunAsync(cts.Token);
 
             // Tokens should be considered secret data and never hard-coded.
             // We can read from the environment variable to avoid hardcoding.
@@ -100,7 +94,6 @@ namespace Bot
             await client.StartAsync();
             await client.SetStatusAsync(UserStatus.Online);
             await client.SetGameAsync(name: "A bot made by formlesstree4", streamUrl: null, type: ActivityType.CustomStatus);
-
             try
             {
                 await Task.Delay(Timeout.Infinite, cts.Token);
@@ -109,9 +102,6 @@ namespace Bot
             {
                 Console.WriteLine("Shutdown command has been received!");
             }
-            Console.WriteLine("Disengaging Hangfire");
-            bjs.Dispose();
-            
             Console.WriteLine("Dumping Markov history into the DB");
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
         }
@@ -121,26 +111,6 @@ namespace Bot
             Console.WriteLine(log.ToString());
             return Task.CompletedTask;
         }
-
-        private ServiceProvider ConfigureServices() => new ServiceCollection()
-                .AddAutoMapper(Assembly.GetExecutingAssembly())
-                .AddSingleton<RavenDatabaseService>()
-                .AddSingleton<CancellationTokenSource>()
-                .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<Func<LogMessage, Task>>(LogAsync)
-                .AddSingleton<CredentialsService>()
-                .AddSingleton<Danbooru>()
-                .AddSingleton<e621>()
-                .AddSingleton<Gelbooru>()
-                .AddSingleton<SafeBooru>()
-                .AddSingleton<Yandere>()
-                .AddSingleton<CommandService>()
-                .AddSingleton<CommandHandlingService>()
-                .AddSingleton<BetterPaginationService>()
-                .AddSingleton<StupidTextService>()
-                .AddSingleton<MarkovService>()
-                .AddSingleton<GptService>()
-                .BuildServiceProvider();
 
     }
 
