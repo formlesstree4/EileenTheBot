@@ -35,9 +35,10 @@ namespace Bot.Services
             _archiveOfMessages = new LinkedList<string>();
         }
 
-        public void InitializeService()
+        public async Task InitializeService()
         {
             _discord.MessageReceived += HandleIncomingMessage;
+            await Task.Yield();
         }
 
         // Suppress the warning about using an async method when no code is async.

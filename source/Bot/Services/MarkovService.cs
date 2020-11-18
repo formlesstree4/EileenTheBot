@@ -11,6 +11,7 @@ using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Attachments;
