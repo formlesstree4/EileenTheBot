@@ -92,6 +92,11 @@ namespace Bot.Modules
         [Command("kill")]
         public async Task KillAsync()
         {
+            if(Context.User.Id != 105497358833336320)
+            {
+                await Context.Channel.SendMessageAsync("👎");
+                return;
+            }
             await Context.Channel.SendMessageAsync("okey, goodbye");
             TokenSource.Cancel();
         }
