@@ -20,7 +20,7 @@ namespace Bot.Services
         {
             _commands = services.GetRequiredService<CommandService>();
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            _prefix = services.GetRequiredService<RavenDatabaseService>().Configuration.CommandPrefix[0];
+            _prefix = services.GetRequiredService<RavenDatabaseService>().Configuration.CommandPrefix;
             _services = services;
 
             // Hook CommandExecuted to handle post-command-execution logic.
@@ -67,7 +67,7 @@ namespace Bot.Services
             if (result.IsSuccess) return;
 
             // the command failed, let's notify the user that something happened.
-            await context.Channel.SendMessageAsync($"error: {result}");
+            await context.Channel.SendMessageAsync($"error: {result.ErrorReason}");
         }
     }
 }
