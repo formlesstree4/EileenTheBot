@@ -10,7 +10,7 @@ namespace Bot.Models.Raven
 
         public IList<Bot.Models.CredentialsEntry> Credentials { get; set; }
 
-        public string CommandPrefix { get; set; }
+        public char CommandPrefix { get; set; }
 
         public string MarkovTrigger { get; set; }
 
