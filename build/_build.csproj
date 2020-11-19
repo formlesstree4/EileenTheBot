@@ -10,13 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="0.24.11" />
+    <PackageReference Include="Nuke.Common" Version="5.0.0" />
     <PackageDownload Include="GitVersion.Tool" Version="[5.1.1]" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Dockerfile.Template" CopyToOutputDirectory="PreserveNewest"/>
-    <None Update="resources/credentials.json" CopyToOutputDirectory="PreserveNewest"/>
+    <None Update="Dockerfile" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="resources/credentials.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -31,8 +31,8 @@ namespace Bot.Services.RavenDB
             RavenDBLocation = System.Environment.GetEnvironmentVariable("RavenIP");
             if (string.IsNullOrWhiteSpace(RavenDBLocation))
             {
-                RavenDBLocation = "http://192.168.254.180:8080";
-                // throw new InvalidOperationException("The RavenDB address, provided by the 'RavenIP' environment variable, cannot be blank!");
+                // RavenDBLocation = "http://192.168.254.180:8080";
+                throw new InvalidOperationException("The RavenDB address, provided by the 'RavenIP' environment variable, cannot be blank!");
             }
             coreDocumentStore = new Lazy<IDocumentStore>(() =>
             {
