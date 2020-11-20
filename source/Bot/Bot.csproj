@@ -13,7 +13,7 @@
     <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Discord.Net.Commands" Version="2.2.0" />
     <PackageReference Include="Hangfire" Version="1.7.17" />
-    <PackageReference Include="Hangfire.LiteDB" Version="0.4.0" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.8.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
