@@ -72,6 +72,9 @@ namespace Bot.Services
             await LoadServiceAsync();
             Write($"Service has finished initializing... attaching {nameof(HandleIncomingMessage)}...");
             _discord.MessageReceived += HandleIncomingMessage;
+            Write($"Hooking up hangfire job...");
+            RecurringJob.AddOrUpdate("markovSaveContent", () => SaveServiceAsync(), Cron.Hourly);
+            Write($"Hangfire job setup...");
         }
 
         public async Task SaveServiceAsync()
@@ -103,7 +106,7 @@ namespace Bot.Services
                 foreach(var mc in content)
                 {
                     Write($"Loading {mc.ServerId}...", LogSeverity.Verbose);
-                    var msi = new MarkovServerInstance(mc.ServerId, Enumerable.Empty<string>());
+                    var msi = new MarkovServerInstance(mc.ServerId, GetSeedContent());
                     Write($"Inserting Historical Context", LogSeverity.Verbose);
                     foreach(var c in mc.Context)
                     {
@@ -114,6 +117,8 @@ namespace Bot.Services
             }
             Write($"Finish Service Load...");
         }
+
+        public IEnumerable<ulong> GetServerIds() => _chains.Keys;
 
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
         {
@@ -170,9 +175,11 @@ namespace Bot.Services
 
                 // We need to generate a message in response since we were directly referenced.
                 Write($"Generating a response...");
-                while (string.IsNullOrWhiteSpace(messageToSend))
+                var attempts = 0;
+                while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
                 {
                     messageToSend = serverInstance.GetNextMessage();
+                    Write($"Response: '{messageToSend}'", LogSeverity.Verbose);
                 }
                 Write($"Response generated!");
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -13,10 +12,9 @@ using System.Reflection;
 using Bot.Services.RavenDB;
 using Hangfire;
 using Hangfire.PostgreSql;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Builder;
+using Hangfire.Server;
 using Bot.Services.Communication;
+using Hangfire.States;
 
 namespace Bot
 {
@@ -29,50 +27,10 @@ namespace Bot
 
         public async Task MainAsync()
         {
-            // var ui = WebHost.CreateDefaultBuilder()
-            //         .UseKestrel()
-            //         .ConfigureServices((hfs) => {
-            //             hfs.AddAutoMapper(Assembly.GetExecutingAssembly())
-            //                 .AddSingleton<RavenDatabaseService>()
-            //                 .AddSingleton<CancellationTokenSource>()
-            //                 .AddSingleton<DiscordSocketClient>()
-            //                 .AddSingleton<HangfireToDiscordComm>()
-            //                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
-            //                 .AddSingleton<CredentialsService>()
-            //                 .AddSingleton<Danbooru>()
-            //                 .AddSingleton<e621>()
-            //                 .AddSingleton<Gelbooru>()
-            //                 .AddSingleton<SafeBooru>()
-            //                 .AddSingleton<Yandere>()
-            //                 .AddSingleton<CommandService>()
-            //                 .AddSingleton<CommandHandlingService>()
-            //                 .AddSingleton<BetterPaginationService>()
-            //                 .AddSingleton<StupidTextService>()
-            //                 .AddSingleton<MarkovService>()
-            //                 .AddSingleton<GptService>();
-
-            //             hfs.AddHangfire(configuration => configuration
-            //                 .UseSimpleAssemblyNameTypeSerializer()
-            //                 .UseRecommendedSerializerSettings()
-            //                 .UseLiteDbStorage()
-            //             );
-
-            //             hfs.AddHangfireServer();
-            //             hfs.AddMvc(config => {
-            //                 config.EnableEndpointRouting = false;
-            //             });
-            //         })
-            //         .Configure((app) => {
-            //             app.UseHangfireDashboard();
-            //         })
-            //         .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Warning))
-            //         .UseUrls("http://localhost:5000/")
-            //         .Build();
-
             var services = ConfigureServices();
             var client = services.GetRequiredService<DiscordSocketClient>();
             var cts = services.GetRequiredService<CancellationTokenSource>();
-            
+
             // Here we initialize the logic required to register our commands.
             Console.WriteLine("Initializing Services...");
             
@@ -83,17 +41,39 @@ namespace Bot
 
             // Setup hangfire real quick...
             var configuration = ravenService.Configuration;
-            GlobalConfiguration.Configuration.UsePostgreSqlStorage(
-                $"User ID={configuration.RelationalDatabase.Username};Password={configuration.RelationalDatabase.Password};Host={configuration.RelationalDatabase.Hostname};Port=5432;Database={configuration.RelationalDatabase.Database};Pooling=true;Min Pool Size=0;Max Pool Size=100;Connection Lifetime=0;");
 
+            GlobalConfiguration.Configuration.UsePostgreSqlStorage($"User ID={configuration.RelationalDatabase.Username};Password={configuration.RelationalDatabase.Password};Host={configuration.RelationalDatabase.Hostname};Port=5432;Database={configuration.RelationalDatabase.Database};Pooling=true;", new PostgreSqlStorageOptions()
+            {
+                UseNativeDatabaseTransactions = true,
+                QueuePollInterval = TimeSpan.FromSeconds(5),
+                InvisibilityTimeout = TimeSpan.FromSeconds(5)
+            });
+            GlobalConfiguration.Configuration.UseColouredConsoleLogProvider(Hangfire.Logging.LogLevel.Trace);
+            GlobalConfiguration.Configuration.UseActivator(new SpecialActivator(services));
+            
+            var bjs = new BackgroundJobServer(
+                new BackgroundJobServerOptions
+                {
+                    Activator = new SpecialActivator(services),
+                    WorkerCount = Math.Min(Environment.ProcessorCount * 5, 20),
+                    Queues = new[] { EnqueuedState.DefaultQueue },
+                    StopTimeout = TimeSpan.FromSeconds(10),
+                    ShutdownTimeout = TimeSpan.FromSeconds(10),
+                    SchedulePollingInterval = TimeSpan.FromSeconds(10),
+                    HeartbeatInterval = TimeSpan.FromSeconds(30),
+                    ServerTimeout = TimeSpan.FromSeconds(30),
+                    ServerCheckInterval = TimeSpan.FromSeconds(30),
+                    CancellationCheckInterval = TimeSpan.FromSeconds(5),
+                    FilterProvider = null,
+                    TaskScheduler = TaskScheduler.Default,
+                    ServerName = "Eileen",
+                }, JobStorage.Current);
+
+            await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
             await services.GetRequiredService<MarkovService>().InitializeService();
             await services.GetRequiredService<StupidTextService>().InitializeService();
-            await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
             await services.GetRequiredService<GptService>().InitializeService();
-
-            // Tokens should be considered secret data and never hard-coded.
-            // We can read from the environment variable to avoid hardcoding.
             await client.LoginAsync(TokenType.Bot, configuration.DiscordToken);
             await client.StartAsync();
             await client.SetStatusAsync(UserStatus.Online);
@@ -107,6 +87,7 @@ namespace Bot
                 Console.WriteLine("Shutdown command has been received!");
             }
             Console.WriteLine("Dumping Markov history into the DB");
+            bjs.Dispose();
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
         }
 
@@ -114,9 +95,23 @@ namespace Bot
             .AddAutoMapper(Assembly.GetExecutingAssembly())
             .AddSingleton<RavenDatabaseService>()
             .AddSingleton<CancellationTokenSource>()
-            .AddSingleton<DiscordSocketClient>()
-            .AddSingleton<HangfireToDiscordComm>()
+            .AddSingleton<DiscordSocketClient>((services) => {
+                var config = new DiscordSocketConfig
+                {
+                    AlwaysDownloadUsers = true,
+                    LogLevel = LogSeverity.Verbose,
+                    DefaultRetryMode = RetryMode.RetryRatelimit,
+                    UseSystemClock = true,
+                    ConnectionTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds,
+                    GatewayHost = null,
+                    HandlerTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds,
+
+                };
+                var dsc = new DiscordSocketClient(config);
+                return dsc;
+            })
             .AddSingleton<Func<LogMessage, Task>>(LogAsync)
+            .AddSingleton<HangfireToDiscordComm>()
             .AddSingleton<CredentialsService>()
             .AddSingleton<Danbooru>()
             .AddSingleton<e621>()
@@ -137,6 +132,20 @@ namespace Bot
             return Task.CompletedTask;
         }
 
+    }
+
+
+    sealed class SpecialActivator : JobActivator
+    {
+        private readonly IServiceProvider provider;
+
+        public SpecialActivator(IServiceProvider provider) =>
+            this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
+
+        public override object ActivateJob(Type jobType)
+        {
+            return provider.GetRequiredService(jobType);
+        }
     }
 
 }
