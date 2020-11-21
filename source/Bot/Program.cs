@@ -41,6 +41,7 @@ namespace Bot
 
             // Setup hangfire real quick...
             var configuration = ravenService.Configuration;
+            var hangfireActivator = new SpecialActivator(services);
 
             GlobalConfiguration.Configuration.UsePostgreSqlStorage($"User ID={configuration.RelationalDatabase.Username};Password={configuration.RelationalDatabase.Password};Host={configuration.RelationalDatabase.Hostname};Port=5432;Database={configuration.RelationalDatabase.Database};Pooling=true;", new PostgreSqlStorageOptions()
             {
@@ -48,13 +49,13 @@ namespace Bot
                 QueuePollInterval = TimeSpan.FromSeconds(5),
                 InvisibilityTimeout = TimeSpan.FromSeconds(5)
             });
-            GlobalConfiguration.Configuration.UseColouredConsoleLogProvider(Hangfire.Logging.LogLevel.Trace);
-            GlobalConfiguration.Configuration.UseActivator(new SpecialActivator(services));
+            GlobalConfiguration.Configuration.UseColouredConsoleLogProvider(Hangfire.Logging.LogLevel.Info);
+            GlobalConfiguration.Configuration.UseActivator(hangfireActivator);
             
             var bjs = new BackgroundJobServer(
                 new BackgroundJobServerOptions
                 {
-                    Activator = new SpecialActivator(services),
+                    Activator = hangfireActivator,
                     WorkerCount = Math.Min(Environment.ProcessorCount * 5, 20),
                     Queues = new[] { EnqueuedState.DefaultQueue },
                     StopTimeout = TimeSpan.FromSeconds(10),
