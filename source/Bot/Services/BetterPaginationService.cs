@@ -78,7 +78,7 @@ namespace Bot.Services
             {
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message}"));
                 var paginatedMessage = await channel.SendMessageAsync(embed: message.CurrentPage);
-                await EnsureMessageHasReactions(paginatedMessage);
+                await paginatedMessage.AddReactionsAsync(new[] {new Emoji(FIRST), new Emoji(BACK), new Emoji(NEXT), new Emoji(END), new Emoji(STOP)});
                 await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
                 _messages.TryAdd(paginatedMessage.Id, message);
                 return paginatedMessage;

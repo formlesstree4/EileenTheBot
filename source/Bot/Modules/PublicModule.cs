@@ -67,16 +67,14 @@ namespace Bot.Modules
         [Summary("Runs a recurring job that the server maintains")]
         public async Task RunRecurringJob([Summary("The unique name of the job to run")]string jobName)
         {
-            Emote.TryParse(":thumbsup:", out var succeed);
-            Emote.TryParse(":thumbsdown:", out var fail);
             try
             {
                 RecurringJob.Trigger(jobName);
-                await Context.Message.AddReactionAsync(succeed);
+                await Context.Message.AddReactionAsync(new Emoji("👍"));
             }
             catch
             {
-                await Context.Message.AddReactionAsync(fail);
+                await Context.Message.AddReactionAsync(new Emoji("👎"));
             }
         }
 
