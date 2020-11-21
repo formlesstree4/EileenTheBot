@@ -63,6 +63,24 @@ namespace Bot.Modules
         }
 
 
+        [Command("run")]
+        [Summary("Runs a recurring job that the server maintains")]
+        public async Task RunRecurringJob([Summary("The unique name of the job to run")]string jobName)
+        {
+            Emote.TryParse(":thumbsup:", out var succeed);
+            Emote.TryParse(":thumbsdown:", out var fail);
+            try
+            {
+                RecurringJob.Trigger(jobName);
+                await Context.Message.AddReactionAsync(succeed);
+            }
+            catch
+            {
+                await Context.Message.AddReactionAsync(fail);
+            }
+        }
+
+
         [Command("profile")]
         [Summary("Pulls up the User Profile information")]
         public async Task ProfileAsync()

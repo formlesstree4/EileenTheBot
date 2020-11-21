@@ -70,6 +70,7 @@ namespace Bot
                 }, JobStorage.Current);
 
             await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
+            await services.GetRequiredService<UserService>().InitializeService();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
             await services.GetRequiredService<MarkovService>().InitializeService();
             await services.GetRequiredService<StupidTextService>().InitializeService();
@@ -88,6 +89,7 @@ namespace Bot
             }
             Console.WriteLine("Dumping Markov history into the DB");
             bjs.Dispose();
+            await services.GetRequiredService<UserService>().SaveServiceAsync();
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
         }
 

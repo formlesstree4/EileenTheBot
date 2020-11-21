@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.RavenDB;
@@ -41,8 +42,12 @@ namespace Bot.Services
 
         public async Task InitializeService()
         {
+            Write("Initializing the UserService");
             await LoadServiceAsync();
+            Write("Setting up recurring jobs...");
             RecurringJob.AddOrUpdate("usersAutoSave", () => SaveServiceAsync(), Cron.Minutely());
+            RecurringJob.AddOrUpdate("usersUpdateServerPresence", () => UpdateUserDataServerAwareness(), Cron.Hourly());
+            Write("UserService has been initialized");
             await Task.Yield();
         }
 
@@ -76,6 +81,7 @@ namespace Bot.Services
 
         public async Task<EileenUserData> GetOrCreateUserData(ulong userId)
         {
+            Write($"Retrieving UserData for {userId}");
             if (!userContent.ContainsKey(userId))
             {
                 userContent.TryAdd(userId, await(CreateUserContent(userId)));
@@ -110,13 +116,30 @@ namespace Bot.Services
 
         public void RegisterProfileCallback(Func<EileenUserData, Embed> callback)
         {
+            Write("Registering a callback...", LogSeverity.Verbose);
             profilePageCallbacks.Add(callback);
         }
 
+        public async Task UpdateUserDataServerAwareness()
+        {
+            Write("Synchronizing Users Server List with available Guilds");
+            var servers = client.Guilds.ToList();
+            foreach(var ud in userContent)
+            {
+                Write($"Identifying Servers {ud.Key} is located on", LogSeverity.Verbose);
+                ud.Value.ServersOn = (from c in servers
+                                      where !ReferenceEquals(c.GetUser(ud.Key), null)
+                                      select c.Id).ToList();
+                Write($"{ud.Key} is on {ud.Value.ServersOn.Count} server(s) out of {servers.Count}", LogSeverity.Verbose);
+            }
+            Write($"Synchronization Complete");
+            await Task.Yield();
+        }
 
 
         private EileenUserData GetUserData(ulong userId)
         {
+            Write($"Retrieving UserData for {userId} from cache (aka NOT going to RavenDB)");
             if(!userContent.TryGetValue(userId, out var d))
             {
                 throw new ArgumentException(nameof(userId));
@@ -126,6 +149,7 @@ namespace Bot.Services
 
         private async Task<EileenUserData> CreateUserContent(ulong userId)
         {
+            Write($"Creating new UserData for {userId}");
             var userData = new EileenUserData { UserId = userId };
             using(var session = ravenDatabaseService.GetUserConnection.OpenAsyncSession())
             {
