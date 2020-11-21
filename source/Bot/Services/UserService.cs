@@ -105,6 +105,9 @@ namespace Bot.Services
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Created")
                         .WithValue(userData.Created.ToString("yyyy-MM-dd")))
+                    .AddField(new EmbedFieldBuilder()
+                        .WithName("Servers In")
+                        .WithValue(userData.ServersOn.Count.ToString("N0")))
                     .Build();
             var additionalPages = new List<Embed> { mainProfilePage };
             foreach(var callback in profilePageCallbacks)
