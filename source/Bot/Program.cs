@@ -93,8 +93,10 @@ namespace Bot
 
         private ServiceProvider ConfigureServices() => new ServiceCollection()
             .AddAutoMapper(Assembly.GetExecutingAssembly())
+            .AddSingleton<Func<LogMessage, Task>>(LogAsync)
             .AddSingleton<RavenDatabaseService>()
             .AddSingleton<CancellationTokenSource>()
+            .AddSingleton<UserService>()
             .AddSingleton<DiscordSocketClient>((services) => {
                 var config = new DiscordSocketConfig
                 {
@@ -110,7 +112,6 @@ namespace Bot
                 var dsc = new DiscordSocketClient(config);
                 return dsc;
             })
-            .AddSingleton<Func<LogMessage, Task>>(LogAsync)
             .AddSingleton<HangfireToDiscordComm>()
             .AddSingleton<CredentialsService>()
             .AddSingleton<Danbooru>()

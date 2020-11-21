@@ -31,6 +31,8 @@ namespace Bot.Modules
 
         public CancellationTokenSource TokenSource { get; set; }
 
+        public UserService UserService { get; set; }
+
 
         [Command("help")]
         public async Task HelpAsync()
@@ -58,6 +60,15 @@ namespace Bot.Modules
                 embeds.Add(builder.Build());
             }
             await PaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
+        }
+
+
+        [Command("profile")]
+        [Summary("Pulls up the User Profile information")]
+        public async Task ProfileAsync()
+        {
+            var userId = Context.User.Id;
+            await UserService.CreateUserProfile(userId, Context.Channel);
         }
 
         #pragma warning disable CS1998
