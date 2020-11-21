@@ -130,8 +130,12 @@ namespace Bot
             .AddSingleton<GptService>()
             .BuildServiceProvider();
 
+        LogSeverity currentLogLevel = LogSeverity.Info;
+
+
         private Task LogAsync(LogMessage log)
         {
+            if (log.Severity > currentLogLevel) return Task.CompletedTask;
             if (log.Exception is null)
                 Console.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{log.Severity.ToString().ToUpperInvariant()}] ({log.Source}) {log.Message}");
             else

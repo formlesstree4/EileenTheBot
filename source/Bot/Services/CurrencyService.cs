@@ -28,7 +28,7 @@ namespace Bot.Services
 
         public async Task UpdateUserCurrency()
         {
-
+            await Task.Yield();
         }
 
 
