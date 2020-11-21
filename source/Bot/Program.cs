@@ -12,9 +12,13 @@ using System.Reflection;
 using Bot.Services.RavenDB;
 using Hangfire;
 using Hangfire.PostgreSql;
-using Hangfire.Server;
 using Bot.Services.Communication;
 using Hangfire.States;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore;
 
 namespace Bot
 {
@@ -42,8 +46,8 @@ namespace Bot
             // Setup hangfire real quick...
             var configuration = ravenService.Configuration;
             var hangfireActivator = new SpecialActivator(services);
-
-            GlobalConfiguration.Configuration.UsePostgreSqlStorage($"User ID={configuration.RelationalDatabase.Username};Password={configuration.RelationalDatabase.Password};Host={configuration.RelationalDatabase.Hostname};Port=5432;Database={configuration.RelationalDatabase.Database};Pooling=true;", new PostgreSqlStorageOptions()
+            var connString = $"User ID={configuration.RelationalDatabase.Username};Password={configuration.RelationalDatabase.Password};Host={configuration.RelationalDatabase.Hostname};Port=5432;Database={configuration.RelationalDatabase.Database};Pooling=true;";
+            GlobalConfiguration.Configuration.UsePostgreSqlStorage(connString, new PostgreSqlStorageOptions()
             {
                 UseNativeDatabaseTransactions = true,
                 QueuePollInterval = TimeSpan.FromSeconds(5),
@@ -80,6 +84,18 @@ namespace Bot
             await client.StartAsync();
             await client.SetStatusAsync(UserStatus.Online);
             await client.SetGameAsync(name: "A bot made by formlesstree4", streamUrl: null, type: ActivityType.CustomStatus);
+
+            var ui = WebHost
+                .CreateDefaultBuilder()
+                .UseSetting("connection-string", connString)
+                .UseKestrel()
+                .UseUrls("http://localhost:5000/")
+                .UseStartup<Startup>()
+                .Build();
+            #pragma warning disable CS4014
+            ui.RunAsync();
+            #pragma warning restore CS4014
+
             try
             {
                 await Task.Delay(Timeout.Infinite, cts.Token);
@@ -145,13 +161,50 @@ namespace Bot
 
     }
 
+    public sealed class Startup
+    {
+
+        public IConfiguration Configuration { get; }
+
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddHangfire(config =>
+		        config.UsePostgreSqlStorage(Configuration.GetValue<string>("connection-string")));
+        }
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Error");
+                app.UseHsts();
+            }
+            app.UseHangfireDashboard(options: new DashboardOptions()
+            {
+                DashboardTitle = "Erector's Background Erections"
+            }, storage: JobStorage.Current);
+        }
+    }
 
     sealed class SpecialActivator : JobActivator
     {
+
         private readonly IServiceProvider provider;
 
-        public SpecialActivator(IServiceProvider provider) =>
+        public SpecialActivator(IServiceProvider provider)
+        {
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        }
+            
 
         public override object ActivateJob(Type jobType)
         {

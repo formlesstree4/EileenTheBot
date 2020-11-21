@@ -22,7 +22,6 @@ namespace Bot.Services
 
         public async Task InitializeService()
         {
-            // RecurringJob.AddOrUpdate("currencyUpdateUsers", () => UpdateUserCurrency(), Cron.Hourly);
             await Task.Yield();
         }
 

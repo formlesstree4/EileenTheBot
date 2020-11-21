@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Bot.Models;
+using Bot.Services.Communication;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.WebSocket;
@@ -21,6 +22,7 @@ namespace Bot.Services
         private readonly BetterPaginationService paginationService;
         private readonly DiscordSocketClient client;
         private readonly StupidTextService stupidTextService;
+        private readonly HangfireToDiscordComm hangfireToDiscordComm;
         private readonly ConcurrentDictionary<ulong, EileenUserData> userContent;
         private readonly List<Func<EileenUserData, Embed>> profilePageCallbacks;
 
@@ -29,6 +31,7 @@ namespace Bot.Services
             BetterPaginationService paginationService,
             DiscordSocketClient client,
             StupidTextService stupidTextService,
+            HangfireToDiscordComm hangfireToDiscordComm,
             Func<LogMessage, Task> logger)
         {
             this.userContent = new ConcurrentDictionary<ulong, EileenUserData>();
@@ -37,6 +40,7 @@ namespace Bot.Services
             this.paginationService = paginationService;
             this.client = client;
             this.stupidTextService = stupidTextService;
+            this.hangfireToDiscordComm = hangfireToDiscordComm;
             this.logger = logger;
         }
 
@@ -136,6 +140,7 @@ namespace Bot.Services
                 Write($"{ud.Key} is on {ud.Value.ServersOn.Count} server(s) out of {servers.Count}", LogSeverity.Verbose);
             }
             Write($"Synchronization Complete");
+            BackgroundJob.Schedule(() => hangfireToDiscordComm.SendMessageToUser(105497358833336320, "Awareness Updated!"), TimeSpan.FromSeconds(1));
             await Task.Yield();
         }
 
