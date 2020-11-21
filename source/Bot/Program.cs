@@ -133,9 +133,9 @@ namespace Bot
         private Task LogAsync(LogMessage log)
         {
             if (log.Exception is null)
-                Console.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{log.Severity}] ({log.Source}) {log.Message}");
+                Console.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{log.Severity.ToString().ToUpperInvariant()}] ({log.Source}) {log.Message}");
             else
-                Console.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [!{log.Severity}!] ({log.Source}) {log.Exception}");
+                Console.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [!{log.Severity.ToString().ToUpperInvariant()}!] ({log.Source}) {log.Exception}");
             return Task.CompletedTask;
         }
 
