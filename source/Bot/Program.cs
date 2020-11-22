@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore;
+using Hangfire.Dashboard;
+using Hangfire.Annotations;
 
 namespace Bot
 {
@@ -191,7 +193,7 @@ namespace Bot
             app.UseHangfireDashboard(options: new DashboardOptions()
             {
                 DashboardTitle = "Erector's Background Erections",
-                Authorization = null,
+                Authorization = new[] { new HangfireAutoAuthenticationFilter() },
                 AppPath = null
             }, storage: JobStorage.Current);
         }
@@ -212,6 +214,11 @@ namespace Bot
         {
             return provider.GetRequiredService(jobType);
         }
+    }
+
+    sealed class HangfireAutoAuthenticationFilter : IDashboardAuthorizationFilter
+    {
+        public bool Authorize([NotNull] DashboardContext context) => true;
     }
 
 }
