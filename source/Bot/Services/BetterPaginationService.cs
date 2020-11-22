@@ -138,11 +138,6 @@ namespace Bot.Services
         {
             try
             {
-                if (ReferenceEquals(messageParam, null))
-                {
-                    await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"Incoming message was not found in cache and could not be downloaded. Disregard."));
-                    return;
-                }
                 var message = await messageParam.GetOrDownloadAsync();
                 if (ReferenceEquals(message, null))
                 {
