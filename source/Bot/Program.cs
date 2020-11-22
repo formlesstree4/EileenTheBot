@@ -190,7 +190,9 @@ namespace Bot
             }
             app.UseHangfireDashboard(options: new DashboardOptions()
             {
-                DashboardTitle = "Erector's Background Erections"
+                DashboardTitle = "Erector's Background Erections",
+                Authorization = null,
+                AppPath = null
             }, storage: JobStorage.Current);
         }
     }
