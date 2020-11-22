@@ -89,7 +89,7 @@ namespace Bot
                 .CreateDefaultBuilder()
                 .UseSetting("connection-string", connString)
                 .UseKestrel()
-                .UseUrls("http://localhost:5000/")
+                .UseUrls("http://*:5000")
                 .UseStartup<Startup>()
                 .Build();
             #pragma warning disable CS4014
