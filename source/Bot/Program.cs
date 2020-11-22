@@ -71,7 +71,7 @@ namespace Bot
                     CancellationCheckInterval = TimeSpan.FromSeconds(5),
                     FilterProvider = null,
                     TaskScheduler = TaskScheduler.Default,
-                    ServerName = "Eileen",
+                    ServerName = "Eileen-Host",
                 }, JobStorage.Current);
 
             await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
