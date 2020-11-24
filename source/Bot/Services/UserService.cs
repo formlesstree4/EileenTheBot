@@ -24,7 +24,7 @@ namespace Bot.Services
         private readonly StupidTextService stupidTextService;
         private readonly HangfireToDiscordComm hangfireToDiscordComm;
         private readonly ConcurrentDictionary<ulong, EileenUserData> userContent;
-        private readonly List<Func<EileenUserData, Embed>> profilePageCallbacks;
+        private readonly List<Func<EileenUserData, IUser, Task<Embed>>> profilePageCallbacks;
 
         public UserService(
             RavenDatabaseService ravenDatabaseService,
@@ -35,7 +35,7 @@ namespace Bot.Services
             Func<LogMessage, Task> logger)
         {
             this.userContent = new ConcurrentDictionary<ulong, EileenUserData>();
-            this.profilePageCallbacks = new List<Func<EileenUserData, Embed>>();
+            this.profilePageCallbacks = new List<Func<EileenUserData, IUser, Task<Embed>>>();
             this.ravenDatabaseService = ravenDatabaseService;
             this.paginationService = paginationService;
             this.client = client;
@@ -51,6 +51,7 @@ namespace Bot.Services
             Write("Setting up recurring jobs...");
             RecurringJob.AddOrUpdate("usersAutoSave", () => SaveServiceAsync(), Cron.Minutely());
             RecurringJob.AddOrUpdate("usersUpdateServerPresence", () => UpdateUserDataServerAwareness(), Cron.Hourly());
+            RecurringJob.AddOrUpdate("tellCoolswiftHello", () => hangfireToDiscordComm.SendMessageToUser(143551309776289792, "Hey mom!"), Cron.Hourly);
             Write("UserService has been initialized");
             await Task.Yield();
         }
@@ -122,12 +123,12 @@ namespace Bot.Services
             var additionalPages = new List<Embed> { mainProfilePage };
             foreach(var callback in profilePageCallbacks)
             {
-                additionalPages.Add(callback.Invoke(userData));
+                additionalPages.Add(await callback.Invoke(userData, discordInfo));
             }
             await paginationService.Send(channel, new BetterPaginationMessage(additionalPages, profilePageCallbacks.Count > 1, discordInfo));
         }
 
-        public void RegisterProfileCallback(Func<EileenUserData, Embed> callback)
+        public void RegisterProfileCallback(Func<EileenUserData, IUser, Task<Embed>> callback)
         {
             Write("Registering a callback...", LogSeverity.Verbose);
             profilePageCallbacks.Add(callback);

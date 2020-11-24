@@ -82,6 +82,7 @@ namespace Bot
             await services.GetRequiredService<MarkovService>().InitializeService();
             await services.GetRequiredService<StupidTextService>().InitializeService();
             await services.GetRequiredService<GptService>().InitializeService();
+            await services.GetRequiredService<CurrencyService>().InitializeService();
             await client.LoginAsync(TokenType.Bot, configuration.DiscordToken);
             await client.StartAsync();
             await client.SetStatusAsync(UserStatus.Online);
@@ -146,6 +147,7 @@ namespace Bot
             .AddSingleton<StupidTextService>()
             .AddSingleton<MarkovService>()
             .AddSingleton<GptService>()
+            .AddSingleton<CurrencyService>()
             .BuildServiceProvider();
 
         LogSeverity currentLogLevel = LogSeverity.Info;

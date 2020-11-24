@@ -68,8 +68,7 @@ namespace Bot.Services.Communication
 
         private void ScheduleJobs()
         {
-            // this job should always happen
-            BackgroundJob.Schedule(() => SendMessageToUser(105497358833336320, "Hey man. I'm alive and well"), TimeSpan.FromSeconds(1));
+            BackgroundJob.Schedule(() => SendMessageToUser(105497358833336320, "Hey man. I'm alive and well"), TimeSpan.FromSeconds(5));
         }
 
     }
