@@ -93,12 +93,12 @@ namespace Bot.Services
             return GetUserData(userId);
         }
 
-        public async Task CreateUserProfile(ulong userId, IMessageChannel channel)
+        public async Task CreateUserProfileMessage(ulong userId, IMessageChannel channel)
         {
             Write($"Generating the User Profile message...");
             var userData = await GetOrCreateUserData(userId);
             var discordInfo = await (client as IDiscordClient).GetUserAsync(userId);
-            var mainProfilePage =
+            var mainProfilePageBuilder =
                 new EmbedBuilder()
                     .WithAuthor(new EmbedAuthorBuilder()
                         .WithName($"{discordInfo.Username}")
@@ -111,8 +111,12 @@ namespace Bot.Services
                         .WithValue(userData.Created.ToString("yyyy-MM-dd")))
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Servers In")
-                        .WithValue(userData.ServersOn.Count.ToString("N0")))
-                    .Build();
+                        .WithValue(userData.ServersOn.Count.ToString("N0")));
+            if (!string.IsNullOrWhiteSpace(userData.ProfileImage))
+            {
+                mainProfilePageBuilder.WithImageUrl(userData.ProfileImage);
+            }
+            var mainProfilePage = mainProfilePageBuilder.Build();
             var additionalPages = new List<Embed> { mainProfilePage };
             foreach(var callback in profilePageCallbacks)
             {

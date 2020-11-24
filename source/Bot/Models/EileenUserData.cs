@@ -21,6 +21,9 @@ namespace Bot.Models
         public List<ulong> ServersOn { get; set; } = new List<ulong>();
 
         [JsonProperty]
+        public string ProfileImage { get; set; }
+
+        [JsonProperty]
         internal Dictionary<string, object> _tags { get; set; } = new Dictionary<string, object>();
 
 

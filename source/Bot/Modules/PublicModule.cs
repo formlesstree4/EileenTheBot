@@ -78,15 +78,6 @@ namespace Bot.Modules
             }
         }
 
-
-        [Command("profile")]
-        [Summary("Pulls up the User Profile information")]
-        public async Task ProfileAsync()
-        {
-            var userId = Context.User.Id;
-            await UserService.CreateUserProfile(userId, Context.Channel);
-        }
-
         #pragma warning disable CS1998
         [Command("poem")]
         [Summary("Generates a poem with an optional title")]
