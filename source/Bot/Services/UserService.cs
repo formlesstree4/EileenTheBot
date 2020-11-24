@@ -128,12 +128,6 @@ namespace Bot.Services
             await paginationService.Send(channel, new BetterPaginationMessage(additionalPages, profilePageCallbacks.Count > 1, discordInfo));
         }
 
-        public void RegisterProfileCallback(Func<EileenUserData, IUser, Task<Embed>> callback)
-        {
-            Write("Registering a callback...", LogSeverity.Verbose);
-            profilePageCallbacks.Add(callback);
-        }
-
         public async Task UpdateUserDataServerAwareness()
         {
             Write("Synchronizing Users Server List with available Guilds");
@@ -150,6 +144,15 @@ namespace Bot.Services
             BackgroundJob.Schedule(() => hangfireToDiscordComm.SendMessageToUser(105497358833336320, "Awareness Updated!"), TimeSpan.FromSeconds(1));
             await Task.Yield();
         }
+
+        public void RegisterProfileCallback(Func<EileenUserData, IUser, Task<Embed>> callback)
+        {
+            Write("Registering a callback...", LogSeverity.Verbose);
+            profilePageCallbacks.Add(callback);
+        }
+
+        public IEnumerable<EileenUserData> WalkUsers() => userContent.Values.ToList();
+
 
 
         private EileenUserData GetUserData(ulong userId)
