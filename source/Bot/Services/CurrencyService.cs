@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Bot.Services.RavenDB;
 using Discord;
-using Hangfire;
+
 
 namespace Bot.Services
 {

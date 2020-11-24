@@ -101,17 +101,19 @@ namespace Bot.Services
             var mainProfilePageBuilder =
                 new EmbedBuilder()
                     .WithAuthor(new EmbedAuthorBuilder()
-                        .WithName($"{discordInfo.Username}")
+                        .WithName(discordInfo.Username)
                         .WithIconUrl(discordInfo.GetAvatarUrl() ?? discordInfo.GetDefaultAvatarUrl()))
                     .WithColor(new Color(152, 201, 124))
                     .WithCurrentTimestamp()
-                    .WithFooter($"{stupidTextService.GetRandomStupidText()}")
+                    .WithFooter(stupidTextService.GetRandomStupidText())
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Created")
-                        .WithValue(userData.Created.ToString("yyyy-MM-dd")))
+                        .WithValue(userData.Created.ToString("yyyy-MM-dd"))
+                        .WithIsInline(true))
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Servers In")
-                        .WithValue(userData.ServersOn.Count.ToString("N0")));
+                        .WithValue(userData.ServersOn.Count.ToString("N0"))
+                        .WithIsInline(true));
             if (!string.IsNullOrWhiteSpace(userData.ProfileImage))
             {
                 mainProfilePageBuilder.WithImageUrl(userData.ProfileImage);
@@ -122,7 +124,7 @@ namespace Bot.Services
             {
                 additionalPages.Add(callback.Invoke(userData));
             }
-            await paginationService.Send(channel, new BetterPaginationMessage(additionalPages, true, discordInfo));
+            await paginationService.Send(channel, new BetterPaginationMessage(additionalPages, profilePageCallbacks.Count > 1, discordInfo));
         }
 
         public void RegisterProfileCallback(Func<EileenUserData, Embed> callback)
