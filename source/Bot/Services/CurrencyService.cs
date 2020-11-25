@@ -58,6 +58,10 @@ namespace Bot.Services
                         .WithName("Prestige")
                         .WithValue($"{currencyData.Prestige:N0}")
                         .WithIsInline(true))
+                    .AddField(new EmbedFieldBuilder()
+                        .WithName("Daily Claim")
+                        .WithValue(GetDailyClaimLabelValue(currencyData))
+                        .WithIsInline(true))
                     .WithColor(new Color(152, 201, 124))
                     .WithCurrentTimestamp()
                     .WithFooter(stupidTextService.GetRandomStupidText())
@@ -107,7 +111,6 @@ namespace Bot.Services
         public EileenCurrencyData GetOrCreateCurrencyData(EileenUserData userData) =>
             userData.GetOrAddTagData<EileenCurrencyData>("currencyData", CreateNewCurrencyData);
 
-
         public void UpdateCurrencyDataLevels(EileenCurrencyData currencyData)
         {
             currencyData.MaxCurrency = GetCurrencyForLevel(currencyData.Level);
@@ -120,6 +123,8 @@ namespace Bot.Services
             currencyData.DailyClaim = DateTime.Now;
         }
 
+
+        private string GetDailyClaimLabelValue(EileenCurrencyData currencyData) => currencyData.DailyClaim == null ? "No" : "Yes";
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
             logger(new LogMessage(severity, nameof(CurrencyService), message));
