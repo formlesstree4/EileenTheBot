@@ -67,6 +67,7 @@ namespace Bot.Services
                     await session.StoreAsync(entry.Value, entry.Key.ToString());
                 }
                 await session.SaveChangesAsync();
+                Write("User Data has been saved");
             }
         }
 
