@@ -117,6 +117,7 @@ namespace Bot.Services
         public void ProcessDailyClaimOfCurrency(EileenCurrencyData currencyData)
         {
             currencyData.Currency += CalculatePassiveCurrency(currencyData) * 3UL;
+            currencyData.DailyClaim = DateTime.Now;
         }
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
