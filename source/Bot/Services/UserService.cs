@@ -121,12 +121,12 @@ namespace Bot.Services
                 mainProfilePageBuilder.WithImageUrl(userData.ProfileImage);
             }
             var mainProfilePage = mainProfilePageBuilder.Build();
-            var additionalPages = new List<Embed> { mainProfilePage };
+            var profilePages = new List<Embed> { mainProfilePage };
             foreach(var callback in profilePageCallbacks)
             {
-                additionalPages.Add(await callback.Invoke(userData, discordInfo));
+                profilePages.Add(await callback.Invoke(userData, discordInfo));
             }
-            await paginationService.Send(channel, new BetterPaginationMessage(additionalPages, profilePageCallbacks.Count > 1, discordInfo));
+            await paginationService.Send(channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, discordInfo));
         }
 
         public async Task UpdateUserDataServerAwareness()
