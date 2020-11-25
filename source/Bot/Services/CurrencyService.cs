@@ -65,7 +65,7 @@ namespace Bot.Services
                     .WithColor(new Color(152, 201, 124))
                     .WithCurrentTimestamp()
                     .WithFooter(stupidTextService.GetRandomStupidText())
-                    .WithTitle("Currency");
+                    .WithTitle("Currency Details");
                 return await Task.FromResult(embedBuilder.Build());
             });
             Write("Initialization has finished");
