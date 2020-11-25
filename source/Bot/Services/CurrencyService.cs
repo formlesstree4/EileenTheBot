@@ -11,6 +11,9 @@ namespace Bot.Services
 
     public sealed class CurrencyService
     {
+
+        public const byte MaximumLevel = 30;
+
         private readonly UserService userService;
         private readonly DiscordSocketClient client;
         private readonly StupidTextService stupidTextService;
@@ -34,6 +37,7 @@ namespace Bot.Services
         {
             Write($"Initializing and creating background job(s)");
             RecurringJob.AddOrUpdate("currencyUpdate", () => UpdateUserCurrency(), Cron.Hourly);
+            RecurringJob.AddOrUpdate("currencyDailyReset", () => ResetDailyClaim(), Cron.Daily);
             Write($"Registering profile service callback");
             userService.RegisterProfileCallback(async (userData, discordInfo) => {
                 var embedBuilder = new EmbedBuilder();
@@ -60,6 +64,7 @@ namespace Bot.Services
                     .WithTitle("Currency");
                 return await Task.FromResult(embedBuilder.Build());
             });
+            Write("Initialization has finished");
             await Task.Yield();
         }
 
@@ -78,7 +83,7 @@ namespace Bot.Services
                 var currencyData = GetOrCreateCurrencyData(userData);
                 Write($"Performing passive check for {userData.UserId}...", LogSeverity.Verbose);
                 if (currencyData.Currency >= currencyData.PassiveCurrencyCap) continue;
-                var currencyToAdd = 1UL * Math.Max(1, (ulong)Math.Ceiling(currencyData.Prestige * 1.5));
+                ulong currencyToAdd = CalculatePassiveCurrency(currencyData);
                 Write($"The check was passed. Incrementing the currency by {currencyToAdd:N0}");
                 currencyData.Currency += currencyToAdd;
             }
@@ -86,8 +91,33 @@ namespace Bot.Services
             await Task.Yield();
         }
 
+        public async Task ResetDailyClaim()
+        {
+            Write("Running Daily Task of resetting the daily claim...");
+            foreach(var userData in userService.WalkUsers())
+            {
+                var currencyData = GetOrCreateCurrencyData(userData);
+                Write($"Resetting {userData.UserId}...", LogSeverity.Verbose);
+                currencyData.DailyClaim = null;
+            }
+            Write("Daily Task has been concluded");
+            await Task.Yield();
+        }
+
         public EileenCurrencyData GetOrCreateCurrencyData(EileenUserData userData) =>
             userData.GetOrAddTagData<EileenCurrencyData>("currencyData", CreateNewCurrencyData);
+
+
+        public void UpdateCurrencyDataLevels(EileenCurrencyData currencyData)
+        {
+            currencyData.MaxCurrency = GetCurrencyForLevel(currencyData.Level);
+            currencyData.PassiveCurrencyCap = GetPassiveCapForLevel(currencyData.Level);
+        }
+
+        public void ProcessDailyClaimOfCurrency(EileenCurrencyData currencyData)
+        {
+            currencyData.Currency += CalculatePassiveCurrency(currencyData) * 3UL;
+        }
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
@@ -112,6 +142,8 @@ namespace Bot.Services
         private ulong GetCurrencyForLevel(byte level) => 100UL + (level * 10UL);
 
         private ulong GetPassiveCapForLevel(byte level) => (ulong)Math.Ceiling(GetCurrencyForLevel(level) * 0.9);
+
+        private ulong CalculatePassiveCurrency(EileenCurrencyData currencyData) => 1UL * Math.Max(1, (ulong)Math.Ceiling(currencyData.Prestige * 1.5));
 
     }
 
