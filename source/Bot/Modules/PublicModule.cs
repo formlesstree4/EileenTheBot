@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -32,6 +33,7 @@ namespace Bot.Modules
         public CancellationTokenSource TokenSource { get; set; }
 
         public UserService UserService { get; set; }
+
 
 
         [Command("help")]
@@ -112,7 +114,7 @@ namespace Bot.Modules
         {
             if(Context.User.Id != 105497358833336320)
             {
-                await Context.Channel.SendMessageAsync("👎");
+                await Context.Channel.SendMessageAsync("🖕");
                 return;
             }
             await Context.Channel.SendMessageAsync("okey, goodbye");
