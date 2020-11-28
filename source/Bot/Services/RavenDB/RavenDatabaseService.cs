@@ -15,6 +15,7 @@ namespace Bot.Services.RavenDB
         private Lazy<IDocumentStore> coreDocumentStore;
         private Lazy<IDocumentStore> userDocumentStore;
         private Lazy<IDocumentStore> markovDocumentStore;
+        private Lazy<IDocumentStore> cmdPermissionsStore;
 
 
         public IDocumentStore GetCoreConnection => coreDocumentStore.Value;
@@ -23,49 +24,32 @@ namespace Bot.Services.RavenDB
 
         public IDocumentStore GetMarkovConnection => markovDocumentStore.Value;
 
+        public IDocumentStore GetCommandPermissionsConnection => cmdPermissionsStore.Value;
+
+
         public BotConfiguration Configuration => configuration;
 
         public RavenDatabaseService()
         {
-
             RavenDBLocation = System.Environment.GetEnvironmentVariable("RavenIP");
             if (string.IsNullOrWhiteSpace(RavenDBLocation))
             {
-                // RavenDBLocation = "http://192.168.254.180:8080";
                 throw new InvalidOperationException("The RavenDB address, provided by the 'RavenIP' environment variable, cannot be blank!");
             }
-            coreDocumentStore = new Lazy<IDocumentStore>(() =>
-            {
-                var s = new DocumentStore
-                {
-                    Urls = new[] { RavenDBLocation },
-                    Database = "erector_core"
-                };
-
-                return s.Initialize();
-            });
-            userDocumentStore = new Lazy<IDocumentStore>(() => 
-            {
-                var s = new DocumentStore
-                {
-                    Urls = new[] { RavenDBLocation },
-                    Database = "erector_users"
-                };
-
-                return s.Initialize();
-            });
-            markovDocumentStore = new Lazy<IDocumentStore>(() =>
-            {
-                var s = new DocumentStore
-                {
-                    Urls = new[] { RavenDBLocation },
-                    Database = "erector_markov"
-                };
-
-                return s.Initialize();
-            });
+            coreDocumentStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_core").Initialize());
+            userDocumentStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_users").Initialize());
+            markovDocumentStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_markov").Initialize());
+            cmdPermissionsStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_command_permissions").Initialize());
         }
 
+        private DocumentStore CreateDocumentStore(string databaseLocation)
+        {
+            return new DocumentStore
+            {
+                Urls = new[] { RavenDBLocation },
+                Database = databaseLocation
+            };
+        }
 
         public async Task InitializeService()
         {

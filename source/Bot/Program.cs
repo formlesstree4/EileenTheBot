@@ -28,19 +28,21 @@ namespace Bot
     class Program
     {
 
+        private LogSeverity currentLogLevel = LogSeverity.Info;
+
+
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
 
         public async Task MainAsync()
         {
+            currentLogLevel = ParseEnvironmentLogLevel();
             var services = ConfigureServices();
             var client = services.GetRequiredService<DiscordSocketClient>();
             var cts = services.GetRequiredService<CancellationTokenSource>();
 
-            // Here we initialize the logic required to register our commands.
-            Console.WriteLine("Initializing Services...");
-            
             client.Log += LogAsync;
+            await LogAsync(new LogMessage(LogSeverity.Info, nameof(MainAsync), "Initializing Services..."));
             services.GetRequiredService<CommandService>().Log += LogAsync;
             var ravenService = services.GetRequiredService<RavenDatabaseService>();
             await ravenService.InitializeService();
@@ -57,7 +59,7 @@ namespace Bot
             });
             GlobalConfiguration.Configuration.UseColouredConsoleLogProvider(Hangfire.Logging.LogLevel.Info);
             GlobalConfiguration.Configuration.UseActivator(hangfireActivator);
-            
+
             var bjs = new BackgroundJobServer(
                 new BackgroundJobServerOptions
                 {
@@ -76,13 +78,7 @@ namespace Bot
                     ServerName = "Eileen-Host",
                 }, JobStorage.Current);
 
-            await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
-            await services.GetRequiredService<UserService>().InitializeService();
-            await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
-            await services.GetRequiredService<MarkovService>().InitializeService();
-            await services.GetRequiredService<StupidTextService>().InitializeService();
-            await services.GetRequiredService<GptService>().InitializeService();
-            await services.GetRequiredService<CurrencyService>().InitializeService();
+            await InitializeServices(services);
             await client.LoginAsync(TokenType.Bot, configuration.DiscordToken);
             await client.StartAsync();
             await client.SetStatusAsync(UserStatus.Online);
@@ -95,15 +91,15 @@ namespace Bot
                 .UseUrls("http://*:5000")
                 .UseStartup<Startup>()
                 .Build();
-            #pragma warning disable CS4014
+#pragma warning disable CS4014
             ui.RunAsync();
-            #pragma warning restore CS4014
+#pragma warning restore CS4014
 
             try
             {
                 await Task.Delay(Timeout.Infinite, cts.Token);
             }
-            catch(TaskCanceledException)
+            catch (TaskCanceledException)
             {
                 Console.WriteLine("Shutdown command has been received!");
             }
@@ -111,6 +107,45 @@ namespace Bot
             bjs.Dispose();
             await services.GetRequiredService<UserService>().SaveServiceAsync();
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
+        }
+
+        private LogSeverity ParseEnvironmentLogLevel()
+        {
+            switch(Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
+            {
+                case "CRITICAL":
+                case "0":
+                    return LogSeverity.Critical;
+                case "ERROR":
+                case "1":
+                    return LogSeverity.Error;
+                case "WARNING":
+                case "2":
+                    return LogSeverity.Warning;
+                case "INFO":
+                case "3":
+                case null:
+                    return LogSeverity.Info;
+                case "VERBOSE":
+                case "4":
+                    return LogSeverity.Verbose;
+                case "DEBUG":
+                case "5":
+                    return LogSeverity.Debug;
+            }
+            throw new InvalidOperationException("Somehow failed to parse the logging level");
+        }
+
+        private async Task InitializeServices(ServiceProvider services)
+        {
+            await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
+            await services.GetRequiredService<UserService>().InitializeService();
+            await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
+            await services.GetRequiredService<MarkovService>().InitializeService();
+            await services.GetRequiredService<StupidTextService>().InitializeService();
+            await services.GetRequiredService<GptService>().InitializeService();
+            await services.GetRequiredService<CurrencyService>().InitializeService();
+            await services.GetRequiredService<CommandPermissionsService>().InitializeService();
         }
 
         private ServiceProvider ConfigureServices() => new ServiceCollection()
@@ -148,9 +183,9 @@ namespace Bot
             .AddSingleton<MarkovService>()
             .AddSingleton<GptService>()
             .AddSingleton<CurrencyService>()
+            .AddSingleton<CommandPermissionsService>()
             .BuildServiceProvider();
 
-        LogSeverity currentLogLevel = LogSeverity.Info;
 
 
         private Task LogAsync(LogMessage log)
