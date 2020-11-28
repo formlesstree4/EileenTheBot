@@ -25,6 +25,7 @@ namespace Bot.Services
 
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;
+            _commands.Log += services.GetRequiredService<Func<LogMessage, Task>>();
             // Hook MessageReceived so we can process each message to see
             // if it qualifies as a command.
             _discord.MessageReceived += MessageReceivedAsync;
