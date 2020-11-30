@@ -49,6 +49,11 @@ namespace Bot.Services.Dungeoneering
             {
                 Write("Retreiving previously active encounters");
                 var activeEncounters = await session.LoadAsync<Dictionary<ulong, Encounter>>("encounters");
+                if (activeEncounters is null)
+                {
+                    Write("No active encounters recorded, or the entry hasn't existed yet");
+                    return;
+                }
                 foreach(var encounter in activeEncounters)
                 {
                     Write($"Attempting to reload encounter for Channel {encounter.Key}");

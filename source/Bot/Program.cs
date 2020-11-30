@@ -108,6 +108,7 @@ namespace Bot
             bjs.Dispose();
             await services.GetRequiredService<UserService>().SaveServiceAsync();
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
+            await services.GetRequiredService<DungeoneeringMainService>().SaveServiceAsync();
         }
 
         private LogSeverity ParseEnvironmentLogLevel()
