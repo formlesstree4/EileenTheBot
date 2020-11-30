@@ -45,6 +45,8 @@ namespace Bot.Models
             return this.GetTagData<T>(tagName);
         }
 
+        public bool HasTagData(string tagName) => _tags.ContainsKey(tagName);
+
         public void SetTagData<T>(string tagName, T tagData)
         {
             _tags[tagName] = tagData;

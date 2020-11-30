@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Bot.Models.Raven;
+using Discord;
 using Hangfire;
 using Raven.Client.Documents;
 
@@ -12,35 +15,55 @@ namespace Bot.Services.RavenDB
 
         private BotConfiguration configuration;
         private readonly string RavenDBLocation;
-        private Lazy<IDocumentStore> coreDocumentStore;
-        private Lazy<IDocumentStore> userDocumentStore;
-        private Lazy<IDocumentStore> markovDocumentStore;
-        private Lazy<IDocumentStore> cmdPermissionsStore;
+        private readonly ConcurrentDictionary<string, Lazy<IDocumentStore>> stores;
+        private readonly Func<LogMessage, Task> logger;
 
+        [Obsolete("Use GetOrAddDocumentStore()")]
+        public IDocumentStore GetCoreConnection => GetOrAddDocumentStore("erector_core");
 
-        public IDocumentStore GetCoreConnection => coreDocumentStore.Value;
+        [Obsolete("Use GetOrAddDocumentStore()")]
+        public IDocumentStore GetUserConnection => GetOrAddDocumentStore("erector_users");
 
-        public IDocumentStore GetUserConnection => userDocumentStore.Value;
+        [Obsolete("Use GetOrAddDocumentStore()")]
+        public IDocumentStore GetMarkovConnection => GetOrAddDocumentStore("erector_markov");
 
-        public IDocumentStore GetMarkovConnection => markovDocumentStore.Value;
-
-        public IDocumentStore GetCommandPermissionsConnection => cmdPermissionsStore.Value;
+        [Obsolete("Use GetOrAddDocumentStore()")]
+        public IDocumentStore GetCommandPermissionsConnection => GetOrAddDocumentStore("erector_command_permissions");
 
 
         public BotConfiguration Configuration => configuration;
 
-        public RavenDatabaseService()
+        public RavenDatabaseService(Func<LogMessage, Task> logger)
         {
             RavenDBLocation = System.Environment.GetEnvironmentVariable("RavenIP");
             if (string.IsNullOrWhiteSpace(RavenDBLocation))
             {
                 throw new InvalidOperationException("The RavenDB address, provided by the 'RavenIP' environment variable, cannot be blank!");
             }
-            coreDocumentStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_core").Initialize());
-            userDocumentStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_users").Initialize());
-            markovDocumentStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_markov").Initialize());
-            cmdPermissionsStore = new Lazy<IDocumentStore>(() => CreateDocumentStore("erector_command_permissions").Initialize());
+            stores = new ConcurrentDictionary<string, Lazy<IDocumentStore>>(StringComparer.OrdinalIgnoreCase);
+
+            GetOrAddDocumentStore("erector_core");
+            GetOrAddDocumentStore("erector_users");
+            GetOrAddDocumentStore("erector_markov");
+            GetOrAddDocumentStore("erector_command_permissions");
+            GetOrAddDocumentStore("erector_dungeoneering");
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
+
+
+        public async Task InitializeService()
+        {
+            GetBotConfiguration();            
+            await Task.Yield();
+        }
+
+        public IDocumentStore GetOrAddDocumentStore(string database)
+        {
+            return stores.GetOrAdd(database, (name) => new Lazy<IDocumentStore>(CreateDocumentStore(name).Initialize())).Value;
+        }
+
+
 
         private DocumentStore CreateDocumentStore(string databaseLocation)
         {
@@ -51,23 +74,21 @@ namespace Bot.Services.RavenDB
             };
         }
 
-        public async Task InitializeService()
-        {
-            GetBotConfiguration();            
-            await Task.Yield();
-        }
-
-
         private BotConfiguration GetBotConfiguration()
         {
             if (ReferenceEquals(configuration, null))
             {
-                using (var session = coreDocumentStore.Value.OpenSession())
+                using (var session = GetOrAddDocumentStore("erector_core").OpenSession())
                 {
                     configuration = session.Load<BotConfiguration>("configuration");
                 }
             }
             return configuration;
+        }
+
+        private void Write(string message, LogSeverity severity = LogSeverity.Info)
+        {
+            logger(new LogMessage(severity, nameof(RavenDatabaseService), message));
         }
 
     }

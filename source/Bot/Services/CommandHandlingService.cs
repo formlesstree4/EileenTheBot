@@ -6,6 +6,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Bot.Services.RavenDB;
+using Bot.TypeReaders;
 
 namespace Bot.Services
 {
@@ -34,6 +35,7 @@ namespace Bot.Services
         public async Task InitializeAsync()
         {
             // Register modules that are public and inherit ModuleBase<T>.
+            _commands.AddTypeReader(typeof(string[]), new StringArrayTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
