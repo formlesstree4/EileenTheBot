@@ -21,6 +21,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore;
 using Hangfire.Dashboard;
 using Hangfire.Annotations;
+using Bot.Services.Dungeoneering;
 
 namespace Bot
 {
@@ -146,6 +147,7 @@ namespace Bot
             await services.GetRequiredService<GptService>().InitializeService();
             await services.GetRequiredService<CurrencyService>().InitializeService();
             await services.GetRequiredService<CommandPermissionsService>().InitializeService();
+            await services.GetRequiredService<DungeoneeringMainService>().InitializeService();
         }
 
         private ServiceProvider ConfigureServices() => new ServiceCollection()
@@ -184,6 +186,7 @@ namespace Bot
             .AddSingleton<GptService>()
             .AddSingleton<CurrencyService>()
             .AddSingleton<CommandPermissionsService>()
+            .AddSingleton<DungeoneeringMainService>()
             .BuildServiceProvider();
 
 
