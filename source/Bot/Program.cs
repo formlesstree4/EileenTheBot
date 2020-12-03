@@ -109,6 +109,7 @@ namespace Bot
             await services.GetRequiredService<UserService>().SaveServiceAsync();
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
             await services.GetRequiredService<DungeoneeringMainService>().SaveServiceAsync();
+            await services.GetRequiredService<CommandPermissionsService>().SaveServiceAsync();
         }
 
         private LogSeverity ParseEnvironmentLogLevel()

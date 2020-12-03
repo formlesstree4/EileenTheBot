@@ -91,6 +91,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task<bool> IsUserRegisteredAsync(ulong userId)
         {
+            Write($"Validating if {userId} is registered...");
             var userData = await userService.GetOrCreateUserData(userId);
             return userData.HasTagData(TagName);
         }
@@ -106,6 +107,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task<PlayerCard> RegisterPlayerAsync(ulong userId)
         {
+            Write($"Registering {userId} with dungoneer");
             var userData = (await userService.GetOrCreateUserData(userId));
             var playerCard = new PlayerCard
             {
@@ -127,6 +129,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task<Encounter> CreateEncounterAsync(ulong userId, ulong channelId)
         {
+            Write($"Creating an encounter in room {channelId} for {userId}");
             var playerCard = await GetPlayerCardAsync(userId);
             var monster = await CreateMonster(playerCard);
             var encounter = new Encounter
@@ -145,9 +148,7 @@ namespace Bot.Services.Dungeoneering
             => await GetEncounterAsync(channel.Id);
 
         public async Task<Encounter> GetEncounterAsync(ulong channelId)
-        {
-            return await Task.FromResult(currentEncounters.TryGetValue(channelId, out var e) ? e : null);
-        }
+            => await Task.FromResult(currentEncounters.TryGetValue(channelId, out var e) ? e : null);
 
         public Task<Embed> CreateDungeoneeringProfilePage(EileenUserData userData, IUser user)
         {
@@ -182,13 +183,12 @@ namespace Bot.Services.Dungeoneering
             => await IsUserInAnyEncounterAsync(user.Id);
 
         public async Task<bool> IsUserInAnyEncounterAsync(ulong userId)
-        {
-            return await Task.FromResult(currentEncounters.Values.Any(c => c.PlayerId == userId));
-        }
+            => await Task.FromResult(currentEncounters.Values.Any(c => c.PlayerId == userId));
 
 
         public async Task HandleVictoryAsync(PlayerCard player, Encounter encounter)
         {
+            Write($"A victory is being recorded!");
             var battleLog = new BattleLog
             {
                 Assistants = Enumerable.Empty<PlayerCard>(),
@@ -207,6 +207,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task HandleDefeatAsync(PlayerCard player, Encounter encounter)
         {
+            Write($"A defeat is being recorded!");
             var battleLog = new BattleLog
             {
                 Assistants = Enumerable.Empty<PlayerCard>(),
@@ -225,6 +226,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task HandleFleeAsync(PlayerCard player, Encounter encounter)
         {
+            Write($"A 'flee' is being recorded!");
             var battleLog = new BattleLog
             {
                 Assistants = Enumerable.Empty<PlayerCard>(),
@@ -248,6 +250,7 @@ namespace Bot.Services.Dungeoneering
 
         private async Task<Monster> CreateMonster(PlayerCard player)
         {
+            Write($"Creating a Monster", LogSeverity.Verbose);
             var level = player.GetActualPower();
             var monster =
                 await monsterService.CreateMonsterAsync(level) ??
