@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Bot.Models.Dungeoneering
 {
@@ -7,6 +8,7 @@ namespace Bot.Models.Dungeoneering
     /// <summary>
     ///     Stores 'historical' information about a particular battle that occurred
     /// </summary>
+    [JsonObject(IsReference = true)]
     public sealed class BattleLog
     {
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Bot.Models.Dungeoneering
 {
@@ -8,6 +9,7 @@ namespace Bot.Models.Dungeoneering
     /// <summary>
     ///     Represents the player state in the Dungeoneering mini-game. Includes various things such as their equipment, encounters, wins and losses, and more!
     /// </summary>
+    [JsonObject(IsReference = true)]
     public sealed class PlayerCard
     {
 
