@@ -19,6 +19,8 @@ namespace Bot.Models.Raven
 
         public ConnectionString RelationalDatabase { get; set; }
 
+        public ulong[] TrustedUsers { get; set; }
+
     }
 
 

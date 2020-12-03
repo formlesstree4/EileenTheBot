@@ -1,14 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using Hangfire;
 using Newtonsoft.Json;
 
@@ -40,7 +39,7 @@ namespace Bot.Modules
         public async Task HelpAsync()
         {
             var embeds = new List<Embed>();
-            foreach (var c in Commands.Commands)
+            foreach (var c in Commands.Commands.Where(c => !c.Preconditions.Any(f => f.GetType() == typeof(TrustedUsersPrecondition))))
             {
                 var builder = new EmbedBuilder()
                     .WithAuthor(new EmbedAuthorBuilder()
@@ -67,6 +66,7 @@ namespace Bot.Modules
 
         [Command("run")]
         [Summary("Runs a recurring job that the server maintains")]
+        [TrustedUsersPrecondition]
         public async Task RunRecurringJob([Summary("The unique name of the job to run")]string jobName)
         {
             try
@@ -109,15 +109,10 @@ namespace Bot.Modules
         }
         #pragma warning restore CS1998
 
-        [Command("kill")]
+        [Command("kill"), TrustedUsersPrecondition]
         public async Task KillAsync()
         {
-            if(Context.User.Id != 105497358833336320)
-            {
-                await Context.Channel.SendMessageAsync("🖕");
-                return;
-            }
-            await Context.Channel.SendMessageAsync("okey, goodbye");
+            await Context.Channel.SendMessageAsync("Initiating shutdown request...");
             TokenSource.Cancel();
         }
 

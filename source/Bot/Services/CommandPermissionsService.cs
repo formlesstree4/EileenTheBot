@@ -42,7 +42,7 @@ namespace Bot.Services
         public async Task SaveServiceAsync()
         {
             Write("Saving Changes...");
-            using (var session = ravenDatabaseService.GetCommandPermissionsConnection.OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_command_permissions").OpenAsyncSession())
             {
                 foreach (var entry in permissions)
                 {
@@ -74,7 +74,7 @@ namespace Bot.Services
 
         private async Task<Models.CommandPermissions.PermissionsEntry> GetPermissionsAsync(ulong serverId)
         {
-            using (var session = ravenDatabaseService.GetCommandPermissionsConnection.OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_command_permissions").OpenAsyncSession())
             {
                 Write($"Attempting to search for permissions for {serverId}");
                 return await session.LoadAsync<Models.CommandPermissions.PermissionsEntry>(serverId.ToString());
@@ -87,7 +87,7 @@ namespace Bot.Services
             {
                 Permissions = new List<Models.CommandPermissions.CommandEntry>()
             };
-            using (var session = ravenDatabaseService.GetCommandPermissionsConnection.OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_command_permissions").OpenAsyncSession())
             {
                 Write($"Creating permissions for {serverId}");
                 await session.StoreAsync(entity: newEntry, id: serverId.ToString());

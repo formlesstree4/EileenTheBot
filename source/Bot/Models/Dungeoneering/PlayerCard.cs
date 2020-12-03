@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Bot.Models.Dungeoneering
 {
@@ -36,12 +37,24 @@ namespace Bot.Models.Dungeoneering
         /// <summary>
         ///     Gets or sets the current gear the Player has equipped
         /// </summary>
-        public IEnumerable<Equipment> Gear { get; set; }
+        public List<Equipment> Gear { get; set; } = new List<Equipment>();
 
         /// <summary>
         ///     Gets or sets the collection of fights this Player has been part of
         /// </summary>
-        public IEnumerable<BattleLog> Battles { get; set; }
+        public List<BattleLog> Battles { get; set; } = new List<BattleLog>();
+
+        /// <summary>
+        ///     Gets or sets the current attack power of the Player
+        /// </summary>
+        /// <remarks>AttackPower is an ever adjusting stat that increments by 1 every time the Player wins and, upon defeat, gets halved, rounded down and a minimum value of 1.</remarks>
+        public int AttackPower { get; set; }
+
+        /// <summary>
+        ///     Gets the acceptable attack value of the Player based upon Gear and victories thus far
+        /// </summary>
+        /// <returns></returns>
+        public int GetActualPower() => AttackPower + (Gear?.Sum(c => c.AttackPower) ?? 0);
 
     }
 

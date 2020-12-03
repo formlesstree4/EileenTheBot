@@ -148,6 +148,7 @@ namespace Bot
             await services.GetRequiredService<GptService>().InitializeService();
             await services.GetRequiredService<CurrencyService>().InitializeService();
             await services.GetRequiredService<CommandPermissionsService>().InitializeService();
+            await services.GetRequiredService<MonsterService>().InitializeService();
             await services.GetRequiredService<DungeoneeringMainService>().InitializeService();
         }
 
@@ -187,7 +188,9 @@ namespace Bot
             .AddSingleton<GptService>()
             .AddSingleton<CurrencyService>()
             .AddSingleton<CommandPermissionsService>()
+            .AddSingleton<MonsterService>()
             .AddSingleton<DungeoneeringMainService>()
+            .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
             .BuildServiceProvider();
 
 

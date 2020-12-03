@@ -58,7 +58,7 @@ namespace Bot.Services
 
         public async Task SaveServiceAsync()
         {
-            using(var session = ravenDatabaseService.GetUserConnection.OpenAsyncSession())
+            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 Write($"Saving User Data to RavenDB...");
                 foreach (var entry in userContent)
@@ -73,7 +73,7 @@ namespace Bot.Services
 
         public async Task LoadServiceAsync()
         {
-            using(var session = ravenDatabaseService.GetUserConnection.OpenAsyncSession())
+            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 Write($"Loading User Data from RavenDB...");
                 var c = await session.Query<EileenUserData>().ToListAsync();
@@ -170,7 +170,7 @@ namespace Bot.Services
         {
             Write($"Creating new UserData for {userId}");
             var userData = new EileenUserData { UserId = userId };
-            using(var session = ravenDatabaseService.GetUserConnection.OpenAsyncSession())
+            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 await session.StoreAsync(userData, userId.ToString());
                 await session.SaveChangesAsync();

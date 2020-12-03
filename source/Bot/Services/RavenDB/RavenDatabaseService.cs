@@ -54,7 +54,7 @@ namespace Bot.Services.RavenDB
 
         public async Task InitializeService()
         {
-            GetBotConfiguration();            
+            await GetBotConfigurationAsync(reload: false);            
             await Task.Yield();
         }
 
@@ -63,6 +63,10 @@ namespace Bot.Services.RavenDB
             return stores.GetOrAdd(database, (name) => new Lazy<IDocumentStore>(CreateDocumentStore(name).Initialize())).Value;
         }
 
+        public async Task ReloadConfigurationAsync()
+        {
+            await GetBotConfigurationAsync(reload: true);
+        }
 
 
         private DocumentStore CreateDocumentStore(string databaseLocation)
@@ -74,13 +78,13 @@ namespace Bot.Services.RavenDB
             };
         }
 
-        private BotConfiguration GetBotConfiguration()
+        private async Task<BotConfiguration> GetBotConfigurationAsync(bool reload = false)
         {
-            if (ReferenceEquals(configuration, null))
+            if (ReferenceEquals(configuration, null) || reload)
             {
-                using (var session = GetOrAddDocumentStore("erector_core").OpenSession())
+                using (var session = GetOrAddDocumentStore("erector_core").OpenAsyncSession())
                 {
-                    configuration = session.Load<BotConfiguration>("configuration");
+                    configuration = await session.LoadAsync<BotConfiguration>("configuration");
                 }
             }
             return configuration;

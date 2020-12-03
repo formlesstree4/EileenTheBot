@@ -9,7 +9,7 @@ namespace Bot.Modules
     {
         private static readonly string[] s_faces = { "(\x30FB`\x03C9\x00B4\x30FB)", ";;w;;", "owo", "UwU", ">w<", "^w^", "◕w◕", "(⁄ʘ⁄⁄ω⁄⁄ʘ⁄)♡", "*𝓌𝒶𝓉𝓈 𝒹𝒾𝓈?*ღ(O꒳Oღ)", "( ͡o ꒳ ͡o )*𝔫𝔬𝔱𝔦𝔠𝔢𝔰 𝔟𝔲𝔩𝔤𝔢*" };
 
-        private readonly Random _rng = new Random();
+        public Random Rng { get; set; }
 
         [Command("owo")]
         [Summary("Crafts an amalgamation of text like if a furry said it")]
@@ -57,6 +57,6 @@ namespace Bot.Modules
             return Regex.Replace(result, "!{1,3}", _ => RandomFace());
         }
 
-        private string RandomFace() => $" {s_faces[_rng.Next(s_faces.Length)]} ";
+        private string RandomFace() => $" {s_faces[Rng.Next(s_faces.Length)]} ";
     }
 }

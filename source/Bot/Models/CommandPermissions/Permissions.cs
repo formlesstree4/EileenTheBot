@@ -16,7 +16,7 @@ namespace Bot.Models.CommandPermissions
 
         public CommandEntry GetOrAddCommand(CommandInfo cmd)
         {
-            var cmdPermissions = cmd.Attributes.FirstOrDefault(a => a.GetType() == typeof(UseErectorPermissions));
+            var cmdPermissions = cmd.Preconditions.FirstOrDefault(a => a.GetType() == typeof(UseErectorPermissions));
             if (cmdPermissions is null)
             {
                 return null;

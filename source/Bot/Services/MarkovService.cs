@@ -33,9 +33,13 @@ namespace Bot.Services
         private readonly Func<LogMessage, Task> WriteLog;
 
 
-        public MarkovService(IServiceProvider services, Func<LogMessage, Task> logger)
+        public MarkovService(
+            IServiceProvider services,
+            Func<LogMessage, Task> logger,
+            Random random)
         {
             WriteLog = logger ?? (message => Task.CompletedTask);
+            _random = random ?? throw new ArgumentNullException(nameof(random));
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _rdbs = services.GetRequiredService<RavenDatabaseService>();
             var configuration = _rdbs.Configuration;
@@ -44,7 +48,6 @@ namespace Bot.Services
             _triggerWord = configuration.MarkovTrigger;
             Write($"Trigger Word '{_triggerWord}'");
             _source = new List<string>();
-            _random = new SecureRandom();
             _chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
         }
 
@@ -52,7 +55,7 @@ namespace Bot.Services
         public async Task InitializeService()
         {
             Write("Querying the database for the markov source file...");
-            using(var markovFile = await _rdbs.GetCoreConnection.Operations.SendAsync(new GetAttachmentOperation(
+            using(var markovFile = await _rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
                 documentId: "configuration",
                 name: "markov.txt",
                 type: AttachmentType.Document,
@@ -80,7 +83,7 @@ namespace Bot.Services
         public async Task SaveServiceAsync()
         {
             Write($"Start Service Save...");
-            using(var session = _rdbs.GetMarkovConnection.OpenAsyncSession())
+            using(var session = _rdbs.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
             {
                 foreach (var kvp in _chains)
                 {
@@ -99,7 +102,7 @@ namespace Bot.Services
         public async Task LoadServiceAsync()
         {
             Write($"Start Service Load...");
-            using (var session = _rdbs.GetMarkovConnection.OpenAsyncSession())
+            using (var session = _rdbs.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
             {
                 _chains.Clear();
                 var content = await session.Query<MarkovContent>().ToListAsync();
