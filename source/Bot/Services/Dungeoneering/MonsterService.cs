@@ -53,7 +53,7 @@ namespace Bot.Services.Dungeoneering
             {
                 Equipment = new List<Equipment>(),
                 Name = selectedMonster.Monster,
-                TheoreticalPower = random.Next(level - 3, level)
+                TheoreticalPower = Math.Max(1, random.Next(level - 3, level))
             };
             return await Task.FromResult(monster);
         }
@@ -69,7 +69,7 @@ namespace Bot.Services.Dungeoneering
             {
                 Equipment = new List<Equipment>(),
                 Name = selectedMonster.Monster,
-                TheoreticalPower = random.Next(min, max)
+                TheoreticalPower = Math.Max(1, random.Next(min, max))
             };
             return await Task.FromResult(monster);
         }
