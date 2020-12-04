@@ -18,7 +18,7 @@ namespace Bot.Modules
         [Summary("Spends all of the User's available currency and level's them up to the next rank")]
         public async Task ProcessLevelRequestAsync()
         {
-            var userData = await UserService.GetOrCreateUserData(Context.User.Id);
+            var userData = await UserService.GetOrCreateUserData(Context.User);
             var currencyData = CurrencyService.GetOrCreateCurrencyData(userData);
             if (currencyData.Level == CurrencyService.MaximumLevel)
             {
@@ -38,7 +38,7 @@ namespace Bot.Modules
         [Summary("Resets a User's level and currency and increments their prestige number by one")]
         public async Task ProcessPrestigeRequestAsync()
         {
-            var userData = await UserService.GetOrCreateUserData(Context.User.Id);
+            var userData = await UserService.GetOrCreateUserData(Context.User);
             var currencyData = CurrencyService.GetOrCreateCurrencyData(userData);
             if (currencyData.Level != CurrencyService.MaximumLevel)
             {
@@ -57,7 +57,7 @@ namespace Bot.Modules
         [Summary("Processes a request to claim a finite amount of currency for this User based on their current level (and prestige)")]
         public async Task ProcessDailyCurrencyAsync()
         {
-            var userData = await UserService.GetOrCreateUserData(Context.User.Id);
+            var userData = await UserService.GetOrCreateUserData(Context.User);
             var currencyData = CurrencyService.GetOrCreateCurrencyData(userData);
             if (currencyData.DailyClaim != null)
             {

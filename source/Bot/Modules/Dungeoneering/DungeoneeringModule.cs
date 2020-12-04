@@ -70,16 +70,16 @@ namespace Bot.Modules.Dungeoneering
 
         private async Task HandleRegistrationAsync()
         {
-            if (await DungeoneeringService.IsUserRegisteredAsync(Context.User.Id))
+            if (await DungeoneeringService.IsUserRegisteredAsync(Context.User))
             {
                 await Context.Channel.SendMessageAsync("You are already registered for Dungeoneering! You can view your Player Card in your profile!");
                 return;
             }
-            await DungeoneeringService.RegisterPlayerAsync(Context.User.Id);
+            await DungeoneeringService.RegisterPlayerAsync(Context.User);
             await Context.Channel.SendMessageAsync("Congratulations and welcome to Dungeoneering! Your guild card has been created and is now part of your Profile!");
             await Context.Channel.SendMessageAsync("To know more about what you can do with Dungeoneering, just type in `dungeoneer help`");
             await Context.Channel.SendMessageAsync("All the commands will be printed so you can see what all is now accessible.");
-            var profileCallback = new ProfileCallback(await UserService.GetOrCreateUserData(Context.User.Id), Context.User, new Discord.EmbedBuilder());
+            var profileCallback = new ProfileCallback(await UserService.GetOrCreateUserData(Context.User), Context.User, new Discord.EmbedBuilder());
             var builder = await DungeoneeringService.CreateDungeoneeringProfilePage(profileCallback);
             await Context.Channel.SendMessageAsync(embed: builder.PageBuilder.Build());
         }
