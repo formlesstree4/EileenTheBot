@@ -18,56 +18,78 @@ namespace Bot.Modules
             [Remainder, Summary("A collection of parameters that are to be passed along for use with the given command")] string[] parameters = null
         )
         {
-            var userId = Context.User.Id;
-            switch (command)
+            switch (command.ToLowerInvariant())
             {
                 case null:
-                    await UserService.CreateUserProfileMessage(userId, Context.Channel);
+                    await UserService.CreateUserProfileMessage(Context.User, Context.Channel);
                     break;
-                case "setimg":
-                    var imageUrl = "";
-                    if (parameters?.Length >= 1) imageUrl = parameters[0];
-                    await SetProfileImageAsync(imageUrl);
+                case "clear":
+                    if ((parameters?.Length ?? 0) == 0)
+                    {
+                        await Context.Channel.SendMessageAsync("For the 'clear' command, please specify what you're clearing!");
+                        return;
+                    }
+                    switch (parameters[0].ToLowerInvariant())
+                    {
+                        case "image":
+                            await ClearProfileImageAsync();
+                            break;
+                        case "description":
+                            await UpdateProfileDescription(null);
+                            break;
+                    }
                     break;
-                case "rmimg":
-                    await ClearProfileImageAsync();
+                case "set":
+                    if ((parameters?.Length ?? 0) == 0)
+                    {
+                        await Context.Channel.SendMessageAsync("For the 'set' command, please specify what you're setting!");
+                        return;
+                    }
+                    switch (parameters[0].ToLowerInvariant())
+                    {
+                        case "image":
+                            await SetProfileImageAsync(parameters?.Length >= 2 ? parameters[1] : null);
+                            break;
+                        case "description":
+                            await UpdateProfileDescription(string.Join(' ', parameters));
+                            break;
+                    }
                     break;
+                // case "setimg":
+                //     await SetProfileImageAsync(parameters?.Length >= 1 ? parameters[0] : null);
+                //     break;
+                // case "rmimg":
+                //     await ClearProfileImageAsync();
+                //     break;
+                // case "description":
+                //     await UpdateProfileDescription(string.Join(' ', parameters));
+                //     break;
             }
         }
 
         private async Task SetProfileImageAsync(string imageUrl = null)
         {
-            var userData = await UserService.GetOrCreateUserData(Context.User.Id);
-            var fromAttachment = false;
-            if (string.IsNullOrWhiteSpace(imageUrl))
-            {
-                foreach(var attachment in Context.Message.Attachments)
-                {
-                    if (attachment.Height is null) continue;    
-                    imageUrl = attachment.Url;
-                    fromAttachment = true;
-                }
-            }
-            if (string.IsNullOrWhiteSpace(imageUrl))
+            var userData = await UserService.GetOrCreateUserData(Context.User);
+            if (string.IsNullOrWhiteSpace(imageUrl) && (Context.Message.Attachments.Count == 0 || Context.Message.Attachments.First().Height == null))
             {
                 await Context.Channel.SendMessageAsync("Please either supply an image URL OR attach an image!");
-                return;
+                return;            
             }
-            var message = "Your profile image has been updated successfully";
-            if (fromAttachment)
-            {
-                message += " from the attachment";
-            }
-            userData.ProfileImage = imageUrl;
-            await Context.Channel.SendMessageAsync(message);
+            userData.ProfileImage = imageUrl ?? Context.Message.Attachments.First().Url;
+            await Context.Channel.SendMessageAsync("Your profile image has been updated successfully!");
         }
-
 
         private async Task ClearProfileImageAsync()
         {
-            var userData = await UserService.GetOrCreateUserData(Context.User.Id);
+            var userData = await UserService.GetOrCreateUserData(Context.User);
             userData.ProfileImage = "";
-            await Context.Channel.SendMessageAsync("Your profile image has been updated successfully");
+            await Context.Channel.SendMessageAsync("Your profile image has been cleared successfully!");
+        }
+
+        private async Task UpdateProfileDescription(string desc)
+        {
+            var userData = await UserService.GetOrCreateUserData(Context.User);
+            userData.Description = desc;
         }
 
     }
