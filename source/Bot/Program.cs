@@ -192,6 +192,7 @@ namespace Bot
             .AddSingleton<MonsterService>()
             .AddSingleton<DungeoneeringMainService>()
             .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
+            .AddSingleton<ReactionHelperService>()
             .BuildServiceProvider();
 
 
