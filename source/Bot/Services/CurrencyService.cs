@@ -43,7 +43,7 @@ namespace Bot.Services
                 var currencyData = GetOrCreateCurrencyData(embedDetails.UserData);
                 embedDetails.PageBuilder
                     .AddField(new EmbedFieldBuilder()
-                        .WithName("Currency")
+                        .WithName("Amount")
                         .WithValue($"{currencyData.Currency:N0}/{currencyData.MaxCurrency:N0}")
                         .WithIsInline(true))
                     .AddField(new EmbedFieldBuilder()
@@ -58,7 +58,7 @@ namespace Bot.Services
                         .WithName("Daily Claim")
                         .WithValue(GetDailyClaimLabelValue(currencyData))
                         .WithIsInline(true))
-                    .WithTitle("Currency Details");
+                    .WithTitle("Currency Overview");
                 return await Task.FromResult(embedDetails);
             });
             Write("Initialization has finished");

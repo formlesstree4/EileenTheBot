@@ -102,6 +102,7 @@ namespace Bot.Services
             var discordInfo = await (client as IDiscordClient).GetUserAsync(userId);
             var mainProfilePageBuilder =
                 new EmbedBuilder()
+                    .WithTitle("About Me")
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Description")
                         .WithValue(!string.IsNullOrWhiteSpace(userData.Description) ? userData.Description : "_No Description Set_")
