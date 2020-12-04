@@ -15,6 +15,9 @@ namespace Bot.Models
         public ulong UserId { get; set; }
 
         [JsonProperty]
+        public string Description { get; set; }
+
+        [JsonProperty]
         public DateTime Created { get; set; } = DateTime.Now;
 
         [JsonProperty]
