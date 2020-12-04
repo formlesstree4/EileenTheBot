@@ -19,12 +19,17 @@ namespace Bot.Models.Dungeoneering
         /// <remarks>
         ///     Generally means nothing
         /// </remarks>
-        public Races Race { get; set; }
+        public string Race { get; set; }
 
         /// <summary>
         ///     Gets or sets the number of victories for this Player
         /// </summary>
         public int Victories { get; set; }
+
+        /// <summary>
+        ///     Gets or sets a small description about the Player
+        /// </summary>
+        public string Description { get; set; }
 
         /// <summary>
         ///     Gets or sets the number of defeats for this Player

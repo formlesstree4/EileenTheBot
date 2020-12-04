@@ -116,7 +116,7 @@ namespace Bot.Services.Dungeoneering
                 Defeats = 0,
                 Gear = new List<Equipment>(),
                 IsConfirmed = false,
-                Race = GetRandomRace(),
+                Race = GetRandomRace().ToString(),
                 Victories = 0
             };
             userData.SetTagData(TagName, playerCard);
@@ -156,6 +156,7 @@ namespace Bot.Services.Dungeoneering
             var user = profileCallback.CurrentUser;
             var dungeoneerData = userData.GetTagData<PlayerCard>(TagName);
             profileCallback.PageBuilder
+                .WithTitle("Dungeoneering Card")
                 .AddField(new EmbedFieldBuilder()
                         .WithName("Race")
                         .WithValue(dungeoneerData.Race.ToString())
