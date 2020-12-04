@@ -365,11 +365,11 @@ namespace Bot.Services
                 {
                     var embed = embedList[pg];
                     var eBuilder = new EmbedBuilder();
-                    eBuilder.AddField(pageText, $"{pg + 1}/{embedList.Count:N0}", true);
                     foreach (var field in embed.Fields)
                     {
                         eBuilder.AddField(field.Name, field.Value, field.Inline);
                     }
+                    eBuilder.AddField(pageText, $"{pg + 1}/{embedList.Count:N0}", true);
 
                     if(embed.Author != null)
                     {
