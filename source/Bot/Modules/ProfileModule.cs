@@ -58,6 +58,7 @@ namespace Bot.Modules
             {
                 message += " from the attachment";
             }
+            userData.ProfileImage = imageUrl;
             await Context.Channel.SendMessageAsync(message);
         }
 
