@@ -24,7 +24,7 @@ namespace Bot.Services
         private readonly StupidTextService stupidTextService;
         private readonly HangfireToDiscordComm hangfireToDiscordComm;
         private readonly ConcurrentDictionary<ulong, EileenUserData> userContent;
-        private readonly List<Func<EileenUserData, IUser, Task<Embed>>> profilePageCallbacks;
+        private readonly List<Func<ProfileCallback, Task<ProfileCallback>>> profilePageCallbacks;
 
         public UserService(
             RavenDatabaseService ravenDatabaseService,
@@ -35,7 +35,7 @@ namespace Bot.Services
             Func<LogMessage, Task> logger)
         {
             this.userContent = new ConcurrentDictionary<ulong, EileenUserData>();
-            this.profilePageCallbacks = new List<Func<EileenUserData, IUser, Task<Embed>>>();
+            this.profilePageCallbacks = new List<Func<ProfileCallback, Task<ProfileCallback>>>();
             this.ravenDatabaseService = ravenDatabaseService;
             this.paginationService = paginationService;
             this.client = client;
@@ -102,12 +102,10 @@ namespace Bot.Services
             var discordInfo = await (client as IDiscordClient).GetUserAsync(userId);
             var mainProfilePageBuilder =
                 new EmbedBuilder()
-                    .WithAuthor(new EmbedAuthorBuilder()
-                        .WithName(discordInfo.Username)
-                        .WithIconUrl(discordInfo.GetAvatarUrl() ?? discordInfo.GetDefaultAvatarUrl()))
-                    .WithColor(new Color(152, 201, 124))
-                    .WithCurrentTimestamp()
-                    .WithFooter(stupidTextService.GetRandomStupidText())
+                    .AddField(new EmbedFieldBuilder()
+                        .WithName("Description")
+                        .WithValue(!string.IsNullOrWhiteSpace(userData.Description) ? userData.Description : "_No Description Set_")
+                        .WithIsInline(false))
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Created")
                         .WithValue(userData.Created.ToString("yyyy-MM-dd"))
@@ -116,15 +114,15 @@ namespace Bot.Services
                         .WithName("Servers In")
                         .WithValue(userData.ServersOn.Count.ToString("N0"))
                         .WithIsInline(true));
-            if (!string.IsNullOrWhiteSpace(userData.ProfileImage))
-            {
-                mainProfilePageBuilder.WithImageUrl(userData.ProfileImage);
-            }
+            EnsureDefaults(mainProfilePageBuilder, discordInfo, userData);
             var mainProfilePage = mainProfilePageBuilder.Build();
             var profilePages = new List<Embed> { mainProfilePage };
             foreach(var callback in profilePageCallbacks)
             {
-                profilePages.Add(await callback.Invoke(userData, discordInfo));
+                var pcb = new ProfileCallback(userData, discordInfo, new EmbedBuilder());
+                var pcbResult = await callback(pcb);
+                EnsureDefaults(pcbResult.PageBuilder, discordInfo, userData);
+                profilePages.Add(pcbResult.PageBuilder.Build());
             }
             await paginationService.Send(channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, discordInfo));
         }
@@ -146,15 +144,27 @@ namespace Bot.Services
             await Task.Yield();
         }
 
-        public void RegisterProfileCallback(Func<EileenUserData, IUser, Task<Embed>> callback)
+        public void RegisterProfileCallback(Func<ProfileCallback, Task<ProfileCallback>> callback)
         {
-            Write("Registering a callback...", LogSeverity.Verbose);
+            Write("A profile callback is being registered with the UserService", LogSeverity.Verbose);
             profilePageCallbacks.Add(callback);
         }
 
         public IEnumerable<EileenUserData> WalkUsers() => userContent.Values.ToList();
 
-
+        private void EnsureDefaults(EmbedBuilder builder, IUser discordInfo, EileenUserData userData)
+        {
+            builder.WithAuthor(new EmbedAuthorBuilder()
+                    .WithName(builder?.Author?.Name ?? $"Profile For {discordInfo.Username}")
+                    .WithIconUrl(discordInfo.GetAvatarUrl() ?? discordInfo.GetDefaultAvatarUrl()))
+                    .WithColor(new Color(152, 201, 124))
+                    .WithCurrentTimestamp()
+                    .WithFooter(stupidTextService.GetRandomStupidText());
+            if (!string.IsNullOrWhiteSpace(userData.ProfileImage) && string.IsNullOrWhiteSpace(builder.ThumbnailUrl))
+            {
+                builder.WithThumbnailUrl(userData.ProfileImage);
+            }
+        }
 
         private EileenUserData GetUserData(ulong userId)
         {

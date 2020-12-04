@@ -39,13 +39,9 @@ namespace Bot.Services
             RecurringJob.AddOrUpdate("currencyUpdate", () => UpdateUserCurrency(), Cron.Hourly);
             RecurringJob.AddOrUpdate("currencyDailyReset", () => ResetDailyClaim(), Cron.Daily);
             Write($"Registering profile service callback");
-            userService.RegisterProfileCallback(async (userData, discordInfo) => {
-                var embedBuilder = new EmbedBuilder();
-                var currencyData = GetOrCreateCurrencyData(userData);
-                embedBuilder
-                    .WithAuthor(new EmbedAuthorBuilder()
-                        .WithName(discordInfo.Username)
-                        .WithIconUrl(discordInfo.GetAvatarUrl() ?? discordInfo.GetDefaultAvatarUrl()))
+            userService.RegisterProfileCallback(async (embedDetails) => {
+                var currencyData = GetOrCreateCurrencyData(embedDetails.UserData);
+                embedDetails.PageBuilder
                     .AddField(new EmbedFieldBuilder()
                         .WithName("Currency")
                         .WithValue($"{currencyData.Currency:N0}/{currencyData.MaxCurrency:N0}")
@@ -62,11 +58,8 @@ namespace Bot.Services
                         .WithName("Daily Claim")
                         .WithValue(GetDailyClaimLabelValue(currencyData))
                         .WithIsInline(true))
-                    .WithColor(new Color(152, 201, 124))
-                    .WithCurrentTimestamp()
-                    .WithFooter(stupidTextService.GetRandomStupidText())
                     .WithTitle("Currency Details");
-                return await Task.FromResult(embedBuilder.Build());
+                return await Task.FromResult(embedDetails);
             });
             Write("Initialization has finished");
             await Task.Yield();

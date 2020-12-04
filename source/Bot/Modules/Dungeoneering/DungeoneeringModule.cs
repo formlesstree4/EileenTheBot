@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bot.Models;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Dungeoneering;
@@ -78,7 +79,9 @@ namespace Bot.Modules.Dungeoneering
             await Context.Channel.SendMessageAsync("Congratulations and welcome to Dungeoneering! Your guild card has been created and is now part of your Profile!");
             await Context.Channel.SendMessageAsync("To know more about what you can do with Dungeoneering, just type in `dungeoneer help`");
             await Context.Channel.SendMessageAsync("All the commands will be printed so you can see what all is now accessible.");
-            await Context.Channel.SendMessageAsync(embed: await DungeoneeringService.CreateDungeoneeringProfilePage(await UserService.GetOrCreateUserData(Context.User.Id), Context.User));
+            var profileCallback = new ProfileCallback(await UserService.GetOrCreateUserData(Context.User.Id), Context.User, new Discord.EmbedBuilder());
+            var builder = await DungeoneeringService.CreateDungeoneeringProfilePage(profileCallback);
+            await Context.Channel.SendMessageAsync(embed: builder.PageBuilder.Build());
         }
 
         private async Task HandleFightAsync()
@@ -142,6 +145,16 @@ namespace Bot.Modules.Dungeoneering
                 await DungeoneeringService.HandleFleeAsync(playerCard, encounter);
             }
 
+        }
+
+        private async Task HandleStatusAsync()
+        {
+            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
+            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            if (encounter == null)
+            {
+                await Context.Channel.SendMessageAsync("There is no encounter at this time!");
+            }
         }
 
     }

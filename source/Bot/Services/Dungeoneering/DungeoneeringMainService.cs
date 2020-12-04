@@ -150,15 +150,12 @@ namespace Bot.Services.Dungeoneering
         public async Task<Encounter> GetEncounterAsync(ulong channelId)
             => await Task.FromResult(currentEncounters.TryGetValue(channelId, out var e) ? e : null);
 
-        public Task<Embed> CreateDungeoneeringProfilePage(EileenUserData userData, IUser user)
+        public Task<ProfileCallback> CreateDungeoneeringProfilePage(ProfileCallback profileCallback)
         {
+            var userData = profileCallback.UserData;
+            var user = profileCallback.CurrentUser;
             var dungeoneerData = userData.GetTagData<PlayerCard>(TagName);
-            var builder = new EmbedBuilder()
-                .WithAuthor(new EmbedAuthorBuilder()
-                    .WithName(user.Username)
-                    .WithIconUrl(user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl()))
-                .WithColor(new Color(152, 201, 124))
-                .WithCurrentTimestamp()
+            profileCallback.PageBuilder
                 .AddField(new EmbedFieldBuilder()
                         .WithName("Race")
                         .WithValue(dungeoneerData.Race.ToString())
@@ -175,7 +172,7 @@ namespace Bot.Services.Dungeoneering
                     .WithName("Power")
                     .WithValue(dungeoneerData.GetActualPower().ToString("N0"))
                     .WithIsInline(true));
-            return Task.FromResult(builder.Build());
+            return Task.FromResult(profileCallback);
         }
 
 
