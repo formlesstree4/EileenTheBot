@@ -11,6 +11,10 @@ namespace Bot.Modules
 
         public UserService UserService { get; set; }
 
+        public ReactionHelperService ReactionHelperService { get; set; }
+
+
+
         [Command("profile")]
         [Summary("Pulls up the User Profile information")]
         public async Task ProfileAsync(
@@ -27,6 +31,7 @@ namespace Bot.Modules
                     if ((parameters?.Length ?? 0) == 0)
                     {
                         await Context.Channel.SendMessageAsync("For the 'clear' command, please specify what you're clearing!");
+                        await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                         return;
                     }
                     switch (parameters[0].ToLowerInvariant())
@@ -43,6 +48,7 @@ namespace Bot.Modules
                     if ((parameters?.Length ?? 0) == 0)
                     {
                         await Context.Channel.SendMessageAsync("For the 'set' command, please specify what you're setting!");
+                        await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                         return;
                     }
                     switch (parameters[0].ToLowerInvariant())
@@ -55,15 +61,6 @@ namespace Bot.Modules
                             break;
                     }
                     break;
-                // case "setimg":
-                //     await SetProfileImageAsync(parameters?.Length >= 1 ? parameters[0] : null);
-                //     break;
-                // case "rmimg":
-                //     await ClearProfileImageAsync();
-                //     break;
-                // case "description":
-                //     await UpdateProfileDescription(string.Join(' ', parameters));
-                //     break;
             }
         }
 
@@ -72,24 +69,25 @@ namespace Bot.Modules
             var userData = await UserService.GetOrCreateUserData(Context.User);
             if (string.IsNullOrWhiteSpace(imageUrl) && (Context.Message.Attachments.Count == 0 || Context.Message.Attachments.First().Height == null))
             {
-                await Context.Channel.SendMessageAsync("Please either supply an image URL OR attach an image!");
+                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                 return;            
             }
             userData.ProfileImage = imageUrl ?? Context.Message.Attachments.First().Url;
-            await Context.Channel.SendMessageAsync("Your profile image has been updated successfully!");
+            await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
         }
 
         private async Task ClearProfileImageAsync()
         {
             var userData = await UserService.GetOrCreateUserData(Context.User);
             userData.ProfileImage = "";
-            await Context.Channel.SendMessageAsync("Your profile image has been cleared successfully!");
+            await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
         }
 
         private async Task UpdateProfileDescription(string desc)
         {
             var userData = await UserService.GetOrCreateUserData(Context.User);
             userData.Description = desc;
+            await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
         }
 
     }

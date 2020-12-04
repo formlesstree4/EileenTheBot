@@ -14,6 +14,9 @@ namespace Bot.Modules
 
         public UserService UserService { get; set; }
 
+        public ReactionHelperService ReactionHelperService { get; set; }
+
+
         [Command("rankup")]
         [Summary("Spends all of the User's available currency and level's them up to the next rank")]
         public async Task ProcessLevelRequestAsync()
@@ -61,11 +64,11 @@ namespace Bot.Modules
             var currencyData = CurrencyService.GetOrCreateCurrencyData(userData);
             if (currencyData.DailyClaim != null)
             {
-                await Context.Message.AddReactionAsync(new Emoji("👎"));
+                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                 return;
             }
             CurrencyService.ProcessDailyClaimOfCurrency(currencyData);
-            await Context.Message.AddReactionAsync(new Emoji("👍"));
+            await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
         }
 
     }

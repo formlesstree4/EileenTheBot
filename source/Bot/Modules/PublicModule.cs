@@ -33,6 +33,7 @@ namespace Bot.Modules
 
         public UserService UserService { get; set; }
 
+        public ReactionHelperService ReactionHelperService { get; set; }
 
 
         [Command("help")]
@@ -72,11 +73,11 @@ namespace Bot.Modules
             try
             {
                 RecurringJob.Trigger(jobName);
-                await Context.Message.AddReactionAsync(new Emoji("👍"));
+                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
             }
             catch
             {
-                await Context.Message.AddReactionAsync(new Emoji("👎"));
+                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
             }
         }
 
