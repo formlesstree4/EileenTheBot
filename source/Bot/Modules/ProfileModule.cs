@@ -18,7 +18,7 @@ namespace Bot.Modules
             [Remainder, Summary("A collection of parameters that are to be passed along for use with the given command")] string[] parameters = null
         )
         {
-            switch (command.ToLowerInvariant())
+            switch (command?.ToLowerInvariant())
             {
                 case null:
                     await UserService.CreateUserProfileMessage(Context.User, Context.Channel);
@@ -51,7 +51,7 @@ namespace Bot.Modules
                             await SetProfileImageAsync(parameters?.Length >= 2 ? parameters[1] : null);
                             break;
                         case "description":
-                            await UpdateProfileDescription(string.Join(' ', parameters));
+                            await UpdateProfileDescription(string.Join(' ', parameters.Skip(1)));
                             break;
                     }
                     break;
