@@ -85,6 +85,9 @@ namespace Bot.Services
             }
         }
 
+        public async Task<EileenUserData> GetOrCreateUserData(IUser user)
+            => await GetOrCreateUserData(user.Id);
+
         public async Task<EileenUserData> GetOrCreateUserData(ulong userId)
         {
             Write($"Retrieving UserData for {userId}");
@@ -94,6 +97,9 @@ namespace Bot.Services
             }
             return GetUserData(userId);
         }
+
+        public async Task CreateUserProfileMessage(IUser user, IMessageChannel channel)
+            => await CreateUserProfileMessage(user.Id, channel);
 
         public async Task CreateUserProfileMessage(ulong userId, IMessageChannel channel)
         {
