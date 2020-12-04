@@ -21,11 +21,23 @@ namespace Bot.TypeReaders
             var result = new List<string>();
             foreach(Match item in content)
             {
-                result.Add(item.Value);
+                var value = ApplyAdditionalEscapes(item.Value.Trim());
+                if (string.IsNullOrWhiteSpace(value)) continue;
+                result.Add(value);
             }
             return Task.FromResult(TypeReaderResult.FromSuccess(result.ToArray()));
         }
-    }
 
+        /// <summary>
+        ///     You know who you are.
+        /// </summary>
+        /// <param name="input">The input string to attempt additional sanitizations with</param>
+        /// <returns>Cleaned up string</returns>
+        private string ApplyAdditionalEscapes(string input)
+        {
+            return input.Replace("\u200B", "");
+        }
+
+    }
 
 }
