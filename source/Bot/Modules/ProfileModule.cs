@@ -57,7 +57,13 @@ namespace Bot.Modules
                             await SetProfileImageAsync(parameters?.Length >= 2 ? parameters[1] : null);
                             break;
                         case "description":
-                            await UpdateProfileDescription(string.Join(' ', parameters.Skip(1)));
+                            var description = parameters.Skip(1).ToList();
+                            if (description.Count == 0) 
+                            {
+                                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
+                                return;
+                            }
+                            await UpdateProfileDescription(string.Join(' ', description));
                             break;
                     }
                     break;
