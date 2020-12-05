@@ -13,7 +13,8 @@ namespace Bot.Modules
 
         public ReactionHelperService ReactionHelperService { get; set; }
 
-        [Command("prefix")]
+        [Command("setp")]
+        [Summary("Alters the character prefix the bot will use in order to be triggered")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(Discord.GuildPermission.ManageGuild)]
         public async Task SetPrefixAsync([Summary("The new prefix to use")]char prefix)
