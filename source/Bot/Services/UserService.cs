@@ -49,7 +49,7 @@ namespace Bot.Services
             Write("Initializing the UserService");
             await LoadServiceAsync();
             Write("Setting up recurring jobs...");
-            RecurringJob.AddOrUpdate("usersAutoSave", () => SaveServiceAsync(), Cron.Minutely());
+            RecurringJob.AddOrUpdate("usersAutoSave", () => SaveServiceAsync(), Cron.Hourly());
             RecurringJob.AddOrUpdate("usersUpdateServerPresence", () => UpdateUserDataServerAwareness(), Cron.Hourly());
             RecurringJob.AddOrUpdate("tellCoolswiftHello", () => hangfireToDiscordComm.SendMessageToUser(143551309776289792, "Hey mom!"), Cron.Hourly);
             Write("UserService has been initialized");
