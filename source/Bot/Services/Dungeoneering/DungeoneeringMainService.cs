@@ -164,7 +164,7 @@ namespace Bot.Services.Dungeoneering
                     AttackPower = 0,
                     Defeats = 0,
                     Description = "_Not Registered_",
-                    Race = "**Unknown**",
+                    Race = "_Unknown_",
                     Victories = 0,
                     IsConfirmed = false,
                     Gear = null,
