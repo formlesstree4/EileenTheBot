@@ -18,18 +18,6 @@ namespace Bot.Services.RavenDB
         private readonly ConcurrentDictionary<string, Lazy<IDocumentStore>> stores;
         private readonly Func<LogMessage, Task> logger;
 
-        [Obsolete("Use GetOrAddDocumentStore()")]
-        public IDocumentStore GetCoreConnection => GetOrAddDocumentStore("erector_core");
-
-        [Obsolete("Use GetOrAddDocumentStore()")]
-        public IDocumentStore GetUserConnection => GetOrAddDocumentStore("erector_users");
-
-        [Obsolete("Use GetOrAddDocumentStore()")]
-        public IDocumentStore GetMarkovConnection => GetOrAddDocumentStore("erector_markov");
-
-        [Obsolete("Use GetOrAddDocumentStore()")]
-        public IDocumentStore GetCommandPermissionsConnection => GetOrAddDocumentStore("erector_command_permissions");
-
 
         public BotConfiguration Configuration => configuration;
 
@@ -45,7 +33,6 @@ namespace Bot.Services.RavenDB
             GetOrAddDocumentStore("erector_core");
             GetOrAddDocumentStore("erector_users");
             GetOrAddDocumentStore("erector_markov");
-            GetOrAddDocumentStore("erector_command_permissions");
             GetOrAddDocumentStore("erector_dungeoneering");
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }

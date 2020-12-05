@@ -109,7 +109,7 @@ namespace Bot
             await services.GetRequiredService<UserService>().SaveServiceAsync();
             await services.GetRequiredService<MarkovService>().SaveServiceAsync();
             await services.GetRequiredService<DungeoneeringMainService>().SaveServiceAsync();
-            await services.GetRequiredService<CommandPermissionsService>().SaveServiceAsync();
+            await services.GetRequiredService<ServerConfigurationService>().SaveServiceAsync();
         }
 
         private LogSeverity ParseEnvironmentLogLevel()
@@ -148,7 +148,6 @@ namespace Bot
             await services.GetRequiredService<StupidTextService>().InitializeService();
             await services.GetRequiredService<GptService>().InitializeService();
             await services.GetRequiredService<CurrencyService>().InitializeService();
-            await services.GetRequiredService<CommandPermissionsService>().InitializeService();
             await services.GetRequiredService<MonsterService>().InitializeService();
             await services.GetRequiredService<DungeoneeringMainService>().InitializeService();
         }
@@ -193,6 +192,7 @@ namespace Bot
             .AddSingleton<DungeoneeringMainService>()
             .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
             .AddSingleton<ReactionHelperService>()
+            .AddSingleton<ServerConfigurationService>()
             .BuildServiceProvider();
 
 

@@ -15,18 +15,22 @@ namespace Bot.Services
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
-        private readonly char _prefix;
+        private readonly ServerConfigurationService _serverConfiguration;
+        private readonly Func<LogMessage, Task> _logger;
+        private readonly char _defaultPrefix;
 
         public CommandHandlingService(IServiceProvider services)
         {
             _commands = services.GetRequiredService<CommandService>();
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            _prefix = services.GetRequiredService<RavenDatabaseService>().Configuration.CommandPrefix;
+            _serverConfiguration = services.GetRequiredService<ServerConfigurationService>();
+            _defaultPrefix = services.GetRequiredService<RavenDatabaseService>().Configuration.CommandPrefix;
+            _logger = services.GetRequiredService<Func<LogMessage, Task>>();
             _services = services;
 
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;
-            _commands.Log += services.GetRequiredService<Func<LogMessage, Task>>();
+            _commands.Log += _logger;
             // Hook MessageReceived so we can process each message to see
             // if it qualifies as a command.
             _discord.MessageReceived += MessageReceivedAsync;
@@ -47,10 +51,19 @@ namespace Bot.Services
 
             // This value holds the offset where the prefix ends
             var argPos = 0;
+            var prefix = _defaultPrefix;
+
+            if (message.Channel is SocketGuildChannel sgc)
+            {
+                var serverConfig = await _serverConfiguration.GetOrCreateConfigurationAsync(sgc.Guild);
+                prefix = serverConfig.CommandPrefix;
+                Write($"Overriding Command Prefix for {sgc.Guild.Id} (from {_defaultPrefix} to {prefix})");
+            }
+
             // Perform prefix check. You may want to replace this with
             // (!message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             // for a less traditional command format like @bot help.
-            if (!message.HasCharPrefix(_prefix, ref argPos)) return;
+            if (!message.HasCharPrefix(prefix, ref argPos)) return;
 
             var context = new SocketCommandContext(_discord, message);
             // Perform the execution of the command. In this method,
@@ -72,5 +85,11 @@ namespace Bot.Services
             // the command failed, let's notify the user that something happened.
             await context.Channel.SendMessageAsync($"error: {result.ErrorReason}");
         }
+
+        private void Write(string message, LogSeverity severity = LogSeverity.Info)
+        {
+            _logger(new LogMessage(severity, nameof(CommandHandlingService), message));
+        }
+
     }
 }
