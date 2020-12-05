@@ -55,7 +55,9 @@ namespace Bot.Services
         
         private async Task OnGuildJoined(SocketGuild arg)
         {
+            Write($"A new guild has been detected. Creating defaults...");
             await GetOrCreateConfigurationAsync(arg);
+            Write($"Guild configuration created.");
         }
 
         private async Task OnClientConnected()
@@ -71,6 +73,7 @@ namespace Bot.Services
                     Write($"Loaded {guild.Id}!", LogSeverity.Verbose);
                 }
             }
+            Write($"Configurations have been loaded!");
         }
 
         private async Task OnClientDisconnected(Exception arg)
@@ -84,7 +87,7 @@ namespace Bot.Services
 
         public async Task<ServerConfigurationData> GetOrCreateConfigurationAsync(ulong id)
         {
-            Write("Fetching Guild Configuration Data...");
+            Write("Fetching Guild Configuration Data...", LogSeverity.Verbose);
             return await Task.FromResult(configurations.GetOrAdd(id, guildId => new ServerConfigurationData
             {
                 ServerId = guildId,

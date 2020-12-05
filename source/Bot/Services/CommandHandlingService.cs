@@ -57,7 +57,7 @@ namespace Bot.Services
             {
                 var serverConfig = await _serverConfiguration.GetOrCreateConfigurationAsync(sgc.Guild);
                 prefix = serverConfig.CommandPrefix;
-                Write($"Overriding Command Prefix for {sgc.Guild.Id} (from {_defaultPrefix} to {prefix})");
+                Write($"Overriding Command Prefix for {sgc.Guild.Id} (from {_defaultPrefix} to {prefix})", LogSeverity.Verbose);
             }
 
             // Perform prefix check. You may want to replace this with
