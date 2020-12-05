@@ -6,6 +6,7 @@ using Bot.Models;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.WebSocket;
+using Hangfire;
 
 namespace Bot.Services
 {
@@ -30,6 +31,7 @@ namespace Bot.Services
             this.client.Connected += OnClientConnected;
             this.client.Disconnected += OnClientDisconnected;
             this.client.JoinedGuild += OnGuildJoined;
+            RecurringJob.AddOrUpdate("serverConfigAutoSave", () => SaveServiceAsync(), Cron.Hourly);
         }
 
         public async Task SaveServiceAsync()
