@@ -150,13 +150,33 @@ namespace Bot.Services.Dungeoneering
         public async Task<Encounter> GetEncounterAsync(ulong channelId)
             => await Task.FromResult(currentEncounters.TryGetValue(channelId, out var e) ? e : null);
 
-        public Task<ProfileCallback> CreateDungeoneeringProfilePage(ProfileCallback profileCallback)
+        public async Task<ProfileCallback> CreateDungeoneeringProfilePage(ProfileCallback profileCallback)
         {
             var userData = profileCallback.UserData;
             var user = profileCallback.CurrentUser;
-            var dungeoneerData = userData.GetTagData<PlayerCard>(TagName);
+            var isRegistered = await IsUserRegisteredAsync(profileCallback.CurrentUser);
+            PlayerCard dungeoneerData;
+
+            if (!isRegistered)
+            {
+                dungeoneerData = new PlayerCard
+                {
+                    AttackPower = 0,
+                    Defeats = 0,
+                    Description = "_Not Registered_",
+                    Race = "**Unknown**",
+                    Victories = 0,
+                    IsConfirmed = false,
+                    Gear = null,
+                    Battles = null
+                };
+            }
+            else
+            {
+                dungeoneerData = userData.GetTagData<PlayerCard>(TagName);
+            }
             profileCallback.PageBuilder
-                .WithTitle("Dungeoneering Card")
+                .WithTitle(isRegistered ? "Dungeoneering Card" : "Guest Pass")
                 .AddField(new EmbedFieldBuilder()
                         .WithName("Race")
                         .WithValue(dungeoneerData.Race.ToString())
@@ -173,7 +193,7 @@ namespace Bot.Services.Dungeoneering
                     .WithName("Power")
                     .WithValue(dungeoneerData.GetActualPower().ToString("N0"))
                     .WithIsInline(true));
-            return Task.FromResult(profileCallback);
+            return await Task.FromResult(profileCallback);
         }
 
 
