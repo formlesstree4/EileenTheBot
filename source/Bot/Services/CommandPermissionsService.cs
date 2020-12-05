@@ -29,6 +29,9 @@ namespace Bot.Services
         }
 
 
+        public async Task<PermissionsEntry> GetOrCreatePermissionsAsync(IGuild guild)
+            => await GetOrCreatePermissionsAsync(guild.Id);
+
         public async Task<PermissionsEntry> GetOrCreatePermissionsAsync(ulong serverId)
         {
             Write($"Retreiving permissions for {serverId}...");

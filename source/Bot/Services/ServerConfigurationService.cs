@@ -61,10 +61,15 @@ namespace Bot.Services
         private async Task OnClientConnected()
         {
             Write($"{nameof(OnClientConnected)} has been invoked. Loading configuration for {client.Guilds.Count} guild(s)");
-            foreach(var guild in client.Guilds)
+            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
             {
-                Write($"Initial load for {guild.Id}", LogSeverity.Verbose);
-                await GetOrCreateConfigurationAsync(guild);
+                foreach(var guild in client.Guilds)
+                {
+                    Write($"Initial load for {guild.Id}", LogSeverity.Verbose);
+                    var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
+                    configurations.AddOrUpdate(guild.Id, (guildId) => data, (guildId, original) => data);
+                    Write($"Loaded {guild.Id}!", LogSeverity.Verbose);
+                }
             }
         }
 

@@ -52,7 +52,7 @@ namespace Bot.Preconditions
                     PreconditionResult.FromError("This command is not allowed to run in the given channel");
             }
 
-            var serverPermissions = await permissions.GetOrCreatePermissionsAsync(context.Guild.Id);
+            var serverPermissions = await permissions.GetOrCreatePermissionsAsync(context.Guild);
             var commandPermission = serverPermissions.Permissions.FirstOrDefault(c => c.Command.Equals(command.Name, StringComparison.OrdinalIgnoreCase));
             if (commandPermission is null)
             {
