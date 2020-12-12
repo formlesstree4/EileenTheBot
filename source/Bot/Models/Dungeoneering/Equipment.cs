@@ -25,9 +25,15 @@ namespace Bot.Models.Dungeoneering
         public Races? EquippableBy { get; set; }
 
         /// <summary>
+        ///     Gets or sets an overridable price for this piece of Equipment
+        /// </summary>
+        /// <value></value>
+        public int? Price { get; set; } = null;
+
+        /// <summary>
         ///     Gets the value that this piece of equipment can be sold for
         /// </summary>
-        public int GetSellValue() => (int)Math.Min(1, Math.Floor(AttackPower * 1.5));
+        public override int GetSellValue() => Price ?? (int)Math.Min(1, Math.Floor(AttackPower * 1.5));
 
         /// <summary>
         ///     Returns a nice string representation of the Equipment

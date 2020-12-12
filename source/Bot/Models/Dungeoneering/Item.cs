@@ -19,6 +19,12 @@ namespace Bot.Models.Dungeoneering
         public int BaseValue { get; set; }
 
         /// <summary>
+        ///     Gets the value that this item can be sold for
+        /// </summary>
+        /// <returns></returns>
+        public virtual int GetSellValue() => BaseValue;
+
+        /// <summary>
         ///     Returns a string representation of the Item
         /// </summary>
         public override string ToString() => Name;

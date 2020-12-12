@@ -6,7 +6,9 @@ using Bot.Models;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Dungeoneering;
+using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 
 namespace Bot.Modules.Dungeoneering
 {
@@ -16,9 +18,11 @@ namespace Bot.Modules.Dungeoneering
 
         public DungeoneeringMainService DungeoneeringService { get; set; }
 
+        public BetterPaginationService PaginationService { get; set; }
+
         public UserService UserService { get; set; }
 
-        public BetterPaginationService PaginationService { get; set; }
+        public DiscordSocketClient Client { get; set; }
 
         public Random Rng { get; set; }
 
@@ -53,6 +57,13 @@ namespace Bot.Modules.Dungeoneering
                     await HandleFleeAsync();
                     break;
                 case "STATUS":
+                    await HandleStatusAsync();
+                    break;
+                case "ASSIST":
+                    await Context.Channel.SendMessageAsync("Assisting is not supported yet!");
+                    break;
+                case "DETER":
+                    await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
                     break;
             }
         }
@@ -150,11 +161,15 @@ namespace Bot.Modules.Dungeoneering
         private async Task HandleStatusAsync()
         {
             var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
             if (encounter == null)
             {
                 await Context.Channel.SendMessageAsync("There is no encounter at this time!");
+                return;
             }
+            var playerCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
+            var userDetails = await (Client as IDiscordClient).GetUserAsync(encounter.PlayerId);
+            await Context.Channel.SendMessageAsync($"{userDetails.Mention} is fighting '{encounter.ActiveMonster.Name}' with a power of {encounter.ActiveMonster.GetActualPower()}");
+            await Context.Channel.SendMessageAsync($"{userDetails.Mention} has a power of {playerCard.GetActualPower()}.");
         }
 
     }
