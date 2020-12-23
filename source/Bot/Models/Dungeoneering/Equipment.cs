@@ -27,8 +27,12 @@ namespace Bot.Models.Dungeoneering
         /// <summary>
         ///     Gets or sets an overridable price for this piece of Equipment
         /// </summary>
-        /// <value></value>
         public int? Price { get; set; } = null;
+
+        /// <summary>
+        ///     Gets or sets the location the equipment can be equipped
+        /// </summary>
+        public string Location { get; set; } = "";
 
         /// <summary>
         ///     Gets the value that this piece of equipment can be sold for
