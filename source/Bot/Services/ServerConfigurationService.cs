@@ -63,9 +63,15 @@ namespace Bot.Services
         private async Task OnClientConnected()
         {
             Write($"{nameof(OnClientConnected)} has been invoked. Loading configuration for {client.Guilds.Count} guild(s)");
-            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
+            await LoadServerConfigurations();
+            Write($"Configurations have been loaded!");
+        }
+
+        private async Task LoadServerConfigurations()
+        {
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
             {
-                foreach(var guild in client.Guilds)
+                foreach (var guild in client.Guilds)
                 {
                     Write($"Initial load for {guild.Id}", LogSeverity.Verbose);
                     var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
@@ -73,7 +79,6 @@ namespace Bot.Services
                     Write($"Loaded {guild.Id}!", LogSeverity.Verbose);
                 }
             }
-            Write($"Configurations have been loaded!");
         }
 
         private async Task OnClientDisconnected(Exception arg)
@@ -94,6 +99,24 @@ namespace Bot.Services
                 CommandPrefix = ravenDatabaseService.Configuration.CommandPrefix
             }));
         }
+
+        public async Task ReloadAll()
+        {
+            Write($"Reloading ALL server configurations");
+            await LoadServerConfigurations();
+            Write($"All configurations loaded successfully");
+        }
+
+        public async Task ReloadGuild(ulong guildId)
+        {
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
+            {
+                var data = await session.LoadAsync<ServerConfigurationData>(id: guildId.ToString());
+                configurations.AddOrUpdate(guildId, (guildId) => data, (guildId, original) => data);
+            }
+        }
+
+        public async Task ReloadGuild(IGuild guild) => await ReloadGuild(guild.Id);
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {

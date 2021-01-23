@@ -25,23 +25,26 @@ namespace Bot.Services
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
         private readonly RavenDatabaseService _rdbs;
+        private readonly ServerConfigurationService _serverConfigurationService;
         private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
         private readonly List<string> _source;
         private readonly Random _random;
         private readonly char _prefix;
-        private readonly ulong _validServerId = 167274926883995648;
         private readonly Func<LogMessage, Task> WriteLog;
 
 
         public MarkovService(
-            IServiceProvider services,
+            DiscordSocketClient client,
+            RavenDatabaseService ravenDatabaseService,
+            ServerConfigurationService serverConfigurationService,
             Func<LogMessage, Task> logger,
             Random random)
         {
             WriteLog = logger ?? (message => Task.CompletedTask);
             _random = random ?? throw new ArgumentNullException(nameof(random));
-            _discord = services.GetRequiredService<DiscordSocketClient>();
-            _rdbs = services.GetRequiredService<RavenDatabaseService>();
+            _discord = client;
+            _rdbs = ravenDatabaseService;
+            _serverConfigurationService = serverConfigurationService;
             var configuration = _rdbs.Configuration;
             Write("Setting Configuration...");
             _prefix = configuration.CommandPrefix;
@@ -135,7 +138,8 @@ namespace Bot.Services
             if (message.Channel is IGuildChannel gc)
             {
                 serverId = gc.GuildId;
-                if (gc.GuildId == _validServerId) return;
+                var cfg = await _serverConfigurationService.GetOrCreateConfigurationAsync(gc.GuildId);
+                if (cfg.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.Markov) return;
             }
             if (message.Channel is IPrivateChannel pc)
             {

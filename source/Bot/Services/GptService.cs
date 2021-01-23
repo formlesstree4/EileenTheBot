@@ -15,17 +15,21 @@ namespace Bot.Services
         
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
+        private readonly ServerConfigurationService _serverConfigurationService;
         private readonly LinkedList<string> _archiveOfMessages;
-        private readonly ulong _validServerId = 167274926883995648;
         private readonly int _backlogToKeep;
         private readonly string _endpointUrl;
         private readonly HttpClient _client = new HttpClient();
         private readonly string _replacementName = "Coolswift";
 
-        public GptService(IServiceProvider services)
+        public GptService(
+            DiscordSocketClient client,
+            RavenDatabaseService ravenDatabaseService,
+            ServerConfigurationService serverConfigurationService)
         {
-            _discord = services.GetRequiredService<DiscordSocketClient>();
-            var configuration = services.GetRequiredService<RavenDatabaseService>().Configuration;
+            _discord = client;
+            this._serverConfigurationService = serverConfigurationService;
+            var configuration = ravenDatabaseService.Configuration;
 
             _triggerWord = configuration.MarkovTrigger ?? "erector";
             _endpointUrl = configuration.GptUrl;
@@ -47,7 +51,8 @@ namespace Bot.Services
         {
             if (!(rawMessage is SocketUserMessage message)) return;
             if (!(message.Channel is IGuildChannel gc)) return;
-            if (gc.GuildId != _validServerId) return;
+            var cfg = await _serverConfigurationService.GetOrCreateConfigurationAsync(gc.GuildId);
+            if (cfg.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.GPT) return;
 
             var username = message.Author.Id == _discord.CurrentUser.Id ? _replacementName : message.Author.Username;
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
