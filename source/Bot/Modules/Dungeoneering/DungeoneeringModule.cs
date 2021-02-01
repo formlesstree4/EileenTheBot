@@ -13,6 +13,7 @@ using Discord.WebSocket;
 namespace Bot.Modules.Dungeoneering
 {
 
+    [Group("dungeoneer")]
     public sealed class DungeoneeringModule : ModuleBase<SocketCommandContext>
     {
 
@@ -27,46 +28,72 @@ namespace Bot.Modules.Dungeoneering
         public Random Rng { get; set; }
 
 
+
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("dungeoneer")]
-        [Summary("The entrypoint into everything relating to Dungeoneering! You can use the 'help' command (dungeoneer help) for all the details")]
-        public async Task DungeoneerCommandBroker(
-            [Summary("The actual command you want to execute for Dungeoneer")]string command,
-            [Remainder, Summary("A collection of parameters that are to be passed along for use with the given command")] string[] parameters = null)
+        [Command("help")]
+        public async Task HelpCommandAsync()
         {
-
-            switch(command.ToUpperInvariant())
-            {
-                // setup commands
-                case "HELP":
-                    await HandleHelpAsync();
-                    break;
-                case "REGISTER":
-                    await HandleRegistrationAsync();
-                    break;
-
-                // encounter commands
-                case "FIGHT":
-                    await HandleFightAsync();
-                    break;
-                case "ATTACK":
-                    await HandleAttackAsync();
-                    break;
-                case "RUN":
-                    await HandleFleeAsync();
-                    break;
-                case "STATUS":
-                    await HandleStatusAsync();
-                    break;
-                case "ASSIST":
-                    await Context.Channel.SendMessageAsync("Assisting is not supported yet!");
-                    break;
-                case "DETER":
-                    await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
-                    break;
-            }
+            await HandleHelpAsync();
         }
+        
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("register")]
+        public async Task RegisterCommandAsync()
+        {
+            await HandleRegistrationAsync();
+        }
+
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("fight")]
+        public async Task FightCommandAsync()
+        {
+            await HandleFightAsync();
+        }
+
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("attack")]
+        public async Task AttackCommandAsync()
+        {
+            await HandleAttackAsync();
+        }
+
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("run")]
+        public async Task RunAwayCommandAsync()
+        {
+            await HandleFleeAsync();
+        }
+
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("status")]
+        public async Task StatusCommandAsync()
+        {
+            await HandleStatusAsync();
+        }
+
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("assist")]
+        public async Task AssistCommandAsync()
+        {
+            await Context.Channel.SendMessageAsync("Assisting is not supported yet!");
+        }
+
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("deter")]
+        public async Task DeterCommandAsync()
+        {
+            await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
+        }
+        
+
 
         private async Task HandleHelpAsync()
         {
