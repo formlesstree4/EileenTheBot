@@ -20,11 +20,6 @@ namespace Bot.Models.Dungeoneering
         public int AttackPower { get; set; }
 
         /// <summary>
-        ///     Gets or sets whether or not this weapon has a race restriction
-        /// </summary>
-        public Races? EquippableBy { get; set; }
-
-        /// <summary>
         ///     Gets or sets an overridable price for this piece of Equipment
         /// </summary>
         public int? Price { get; set; } = null;
@@ -48,7 +43,7 @@ namespace Bot.Models.Dungeoneering
             {
                 return $"{Type} (+{AttackPower:N0})";
             }
-            return $"{Type} of {Name}";
+            return $"{Name} (+{AttackPower:N0})";
         }
 
     }
