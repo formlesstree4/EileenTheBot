@@ -35,6 +35,8 @@ namespace Bot.Modules
 
         public ReactionHelperService ReactionHelperService { get; set; }
 
+        public ServerConfigurationService ServerConfigurationService { get; set; }
+
 
         [Command("help")]
         public async Task HelpAsync()
@@ -89,6 +91,8 @@ namespace Bot.Modules
             Summary("The optional title of the poem"),
             Remainder]string title = "")
         {
+            var config = await ServerConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
+            if (config.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.GPT) return;
             var url = Rdbs.Configuration.GptUrl;
             if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
             url = url.Replace(t.Port.ToString(), "8081");
