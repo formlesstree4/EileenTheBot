@@ -25,14 +25,14 @@ namespace Bot.Modules
             var currencyData = CurrencyService.GetOrCreateCurrencyData(userData);
             if (currencyData.Level == CurrencyService.MaximumLevel)
             {
-                await Context.Channel.SendMessageAsync($"You have reached the maximum level of {CurrencyService.MaximumLevel}. Consider using the prestige command instead.");
+                await ReplyAsync($"You have reached the maximum level of {CurrencyService.MaximumLevel}. Consider using the prestige command instead.");
             }
             if (currencyData.Currency >= currencyData.MaxCurrency)
             {
                 currencyData.Currency -= currencyData.MaxCurrency;
                 currencyData.Level += 1;
                 CurrencyService.UpdateCurrencyDataLevels(currencyData);
-                await Context.Channel.SendMessageAsync($"Congratuations! You've reached Level {currencyData.Level}!");
+                await ReplyAsync($"Congratuations! You've reached Level {currencyData.Level}!");
             }
 
         }
@@ -45,14 +45,14 @@ namespace Bot.Modules
             var currencyData = CurrencyService.GetOrCreateCurrencyData(userData);
             if (currencyData.Level != CurrencyService.MaximumLevel)
             {
-                await Context.Channel.SendMessageAsync("You have not yet reached the maximum level for Prestige.");
+                await ReplyAsync("You have not yet reached the maximum level for Prestige.");
                 return;
             }
             currencyData.Prestige += 1;
             currencyData.Level = 1;
             currencyData.Currency = 0;
             CurrencyService.UpdateCurrencyDataLevels(currencyData);
-            await Context.Channel.SendMessageAsync($"You have successfully incremented your Prestige! You are now");
+            await ReplyAsync($"You have successfully incremented your Prestige! You are now");
         }
 
 

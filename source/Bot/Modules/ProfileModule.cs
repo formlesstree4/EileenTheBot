@@ -30,7 +30,7 @@ namespace Bot.Modules
                 case "clear":
                     if ((parameters?.Length ?? 0) == 0)
                     {
-                        await Context.Channel.SendMessageAsync("For the 'clear' command, please specify what you're clearing!");
+                        await ReplyAsync("For the 'clear' command, please specify what you're clearing!");
                         await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                         return;
                     }
@@ -47,7 +47,7 @@ namespace Bot.Modules
                 case "set":
                     if ((parameters?.Length ?? 0) == 0)
                     {
-                        await Context.Channel.SendMessageAsync("For the 'set' command, please specify what you're setting!");
+                        await ReplyAsync("For the 'set' command, please specify what you're setting!");
                         await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                         return;
                     }

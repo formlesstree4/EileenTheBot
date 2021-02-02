@@ -148,7 +148,7 @@ namespace Bot.Modules
             {
                 if (!results.Any())
                 {
-                    await Context.Channel.SendMessageAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", criteria)})");
+                    await ReplyAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", criteria)})");
                     return;
                 }
                 foreach (var booruPost in results)

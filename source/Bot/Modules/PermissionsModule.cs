@@ -29,13 +29,13 @@ namespace Bot.Modules
             var discordCommand = CommandService.Commands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
             if (discordCommand is null)
             {
-                await Context.Channel.SendMessageAsync($"The command '{command}' does not exist in the Bot");
+                await ReplyAsync($"The command '{command}' does not exist in the Bot");
                 return;
             }
             var commandPermissions = permissions.GetOrAddCommand(discordCommand);
             if (commandPermissions is null)
             {
-                await Context.Channel.SendMessageAsync($"The command '{command}' does not integrate into the Permissions System");
+                await ReplyAsync($"The command '{command}' does not integrate into the Permissions System");
                 return;
             }
             if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
@@ -46,7 +46,7 @@ namespace Bot.Modules
             {
                 commandPermissions.Channels.Blocked.Remove(Context.Channel.Id);
             }
-            await Context.Channel.SendMessageAsync($"The command '{command}' has been enabled for <#{Context.Channel.Id}>");
+            await ReplyAsync($"The command '{command}' has been enabled for <#{Context.Channel.Id}>");
         }
 
         [Command("denycmd")]
@@ -58,13 +58,13 @@ namespace Bot.Modules
             var discordCommand = CommandService.Commands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
             if (discordCommand is null)
             {
-                await Context.Channel.SendMessageAsync($"The command '{command}' does not exist in the Bot");
+                await ReplyAsync($"The command '{command}' does not exist in the Bot");
                 return;
             }
             var commandPermissions = permissions.GetOrAddCommand(discordCommand);
             if (commandPermissions is null)
             {
-                await Context.Channel.SendMessageAsync($"The command '{command}' does not integrate into the Permissions System");
+                await ReplyAsync($"The command '{command}' does not integrate into the Permissions System");
                 return;
             }
             if (commandPermissions.Channels.IsChannelAllowed(Context.Channel))
@@ -75,7 +75,7 @@ namespace Bot.Modules
             {
                 commandPermissions.Channels.Blocked.Add(Context.Channel.Id);
             }
-            await Context.Channel.SendMessageAsync($"The command '{command}' has been disabled for <#{Context.Channel.Id}>");
+            await ReplyAsync($"The command '{command}' has been disabled for <#{Context.Channel.Id}>");
         }
 
     }
