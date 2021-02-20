@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Bot.Services.RavenDB;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 
@@ -54,7 +55,9 @@ namespace Bot.Services
             if (!(rawMessage is SocketUserMessage message)) return;
             if (!(message.Channel is IGuildChannel gc)) return;
             var cfg = await _serverConfigurationService.GetOrCreateConfigurationAsync(gc.GuildId);
+            var position = 0;
             if (cfg.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.GPT) return;
+            if (message.HasCharPrefix(cfg.CommandPrefix, ref position)) return;
 
             var username = message.Author.Id == _discord.CurrentUser.Id ? _replacementName : message.Author.Username;
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
