@@ -76,13 +76,13 @@ sealed class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetProjectFile(Solution)
-                .SetAssemblyVersion(GitVersion.AssemblySemVer)
-                .SetFileVersion(GitVersion.AssemblySemFileVer)
-                .SetInformationalVersion(GitVersion.InformationalVersion)
-                .SetOutputDirectory(OutputDirectory)
-                .EnableNoRestore());
+            // DotNetBuild(s => s
+            //     .SetProjectFile(Solution)
+            //     .SetAssemblyVersion(GitVersion.AssemblySemVer)
+            //     .SetFileVersion(GitVersion.AssemblySemFileVer)
+            //     .SetInformationalVersion(GitVersion.InformationalVersion)
+            //     .SetOutputDirectory(OutputDirectory)
+            //     .EnableNoRestore());
         });
 
 }

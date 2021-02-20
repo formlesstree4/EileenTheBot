@@ -12,6 +12,8 @@ WORKDIR /app
 COPY --from=build /app .
 
 ENV RavenIP ""
+ENV LogLevel ""
+
 EXPOSE 5000
 
 WORKDIR /app
