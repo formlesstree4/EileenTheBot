@@ -60,6 +60,8 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             DockerBuild(o => o
+                .RemoveTag("eileen:latest")
+                .SetTag("eileen:latest")
                 .SetTag($"eileen:{GitVersion.Sha}")
                 .SetPath(Solution.Path.Parent));
         });
