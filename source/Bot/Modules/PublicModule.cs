@@ -27,12 +27,6 @@ namespace Bot.Modules
 
         public RavenDatabaseService Rdbs { get; set; }
 
-        public MarkovService MarkovService { get; set; }
-
-        public CancellationTokenSource TokenSource { get; set; }
-
-        public UserService UserService { get; set; }
-
         public ReactionHelperService ReactionHelperService { get; set; }
 
         public ServerConfigurationService ServerConfigurationService { get; set; }
@@ -66,23 +60,6 @@ namespace Bot.Modules
             await PaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
         }
 
-
-        [Command("run")]
-        [Summary("Runs a recurring job that the server maintains")]
-        [TrustedUsersPrecondition]
-        public async Task RunRecurringJob([Summary("The unique name of the job to run")]string jobName)
-        {
-            try
-            {
-                RecurringJob.Trigger(jobName);
-                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
-            }
-            catch
-            {
-                await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
-            }
-        }
-
         #pragma warning disable CS1998
         [Command("poem")]
         [Summary("Generates a poem with an optional title")]
@@ -114,40 +91,6 @@ namespace Bot.Modules
         }
         #pragma warning restore CS1998
 
-        [Command("kill"), TrustedUsersPrecondition]
-        public async Task KillAsync()
-        {
-            await Context.Channel.SendMessageAsync("Initiating shutdown request...");
-            TokenSource.Cancel();
-        }
-
-
-        [Command("chat"),
-        Summary("Sets the responder type for the server"),
-        TrustedUsersPrecondition,
-        RequireContext(ContextType.Guild)]
-        public async Task SetResponderAsync(
-            [Name("Type"),
-            Summary("The type of chat responder to use. Supported ones are: gpt, markov")]string type = "")
-        {
-            var scs = await ServerConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
-            switch(type.ToLowerInvariant())
-            {
-                case "gpt":
-                    scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.GPT;
-                    await ServerConfigurationService.SaveServiceAsync();
-                    await ReplyAsync($"This Guild is now using {scs.ResponderType}");
-                    break;
-                case "markov":
-                    scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.Markov;
-                    await ServerConfigurationService.SaveServiceAsync();
-                    await ReplyAsync($"This Guild is now using {scs.ResponderType}");
-                    break;
-                default:
-                    await ReplyAsync($"This Guild is currently using {scs.ResponderType}");
-                    break;
-            }
-        }
 
         private static string BoolToYesNo(bool b) => b ? "Yes": "No";
 
