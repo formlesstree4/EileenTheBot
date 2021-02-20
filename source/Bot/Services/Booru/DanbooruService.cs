@@ -9,7 +9,7 @@ namespace Bot.Services.Booru
     /// <summary>
     ///     A simplified querying engine for Danbooru.
     /// </summary>
-    public sealed class Danbooru : BooruService<Post[], Post>
+    public sealed class Danbooru : BooruService<Post[], Post>, IEileenService
     {
         public Danbooru(CredentialsService credentials) : base(credentials) { }
 

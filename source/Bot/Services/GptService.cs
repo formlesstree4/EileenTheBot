@@ -5,12 +5,11 @@ using System.Threading.Tasks;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
 namespace Bot.Services
 {
-    public sealed class GptService
+    public sealed class GptService : IEileenService
     {
         
         private readonly string _triggerWord;

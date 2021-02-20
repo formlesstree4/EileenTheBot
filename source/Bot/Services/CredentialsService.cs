@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 namespace Bot.Services
 {
 
-    public sealed class CredentialsService
+    public sealed class CredentialsService : IEileenService
     {
 
         public IReadOnlyList<Bot.Models.CredentialsEntry> Credentials { get; private set; }

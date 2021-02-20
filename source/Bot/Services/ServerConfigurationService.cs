@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.RavenDB;
@@ -11,7 +10,7 @@ using Hangfire;
 namespace Bot.Services
 {
 
-    public sealed class ServerConfigurationService
+    public sealed class ServerConfigurationService : IEileenService
     {
         private readonly DiscordSocketClient client;
         private readonly RavenDatabaseService ravenDatabaseService;

@@ -9,7 +9,7 @@ using Discord;
 namespace Bot.Services.Dungeoneering
 {
 
-    public sealed class MonsterService
+    public sealed class MonsterService : IEileenService
     {
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly Random random;

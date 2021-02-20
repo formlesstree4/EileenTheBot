@@ -4,7 +4,7 @@ using Discord;
 namespace Bot.Services
 {
 
-    public sealed class ReactionHelperService
+    public sealed class ReactionHelperService : IEileenService
     {
 
         private readonly Emoji disapprovalEmoji = new Emoji("👎");

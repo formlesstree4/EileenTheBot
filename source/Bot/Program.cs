@@ -8,6 +8,7 @@ using Bot.Services;
 using System.Threading;
 using Bot.Services.Booru;
 using AutoMapper;
+using System.Linq;
 using System.Reflection;
 using Bot.Services.RavenDB;
 using Hangfire;
@@ -22,6 +23,8 @@ using Microsoft.AspNetCore;
 using Hangfire.Dashboard;
 using Hangfire.Annotations;
 using Bot.Services.Dungeoneering;
+using Bot.Models;
+using System.Collections.Generic;
 
 namespace Bot
 {
@@ -42,7 +45,9 @@ namespace Bot
             currentLogLevel = ParseEnvironmentLogLevel();
             await LogAsync($"Current Log Level: {currentLogLevel}", LogSeverity.Verbose);
             await LogAsync("Invoking ConfigureServices()...", LogSeverity.Verbose);
-            var services = ConfigureServices();
+            var serviceConfiguration = await ConfigureServices();
+            var services = serviceConfiguration.Item1;
+
             await LogAsync("ConfigureServices() has completed.", LogSeverity.Verbose);
             var client = services.GetRequiredService<DiscordSocketClient>();
             var cts = services.GetRequiredService<CancellationTokenSource>();
@@ -90,7 +95,7 @@ namespace Bot
             await LogAsync("Job Server has been setup and configured.");
             await LogAsync("Initializing the remaining Eileen services...");
 
-            await InitializeServices(services);
+            await InitializeServices(services, serviceConfiguration.Item2);
             await LogAsync("All services initialized, logging into Discord");
             await client.LoginAsync(TokenType.Bot, configuration.DiscordToken);
             await client.StartAsync();
@@ -119,11 +124,7 @@ namespace Bot
             }
             await LogAsync("Shutting down Hangfire...");
             bjs.Dispose();
-            await LogAsync("Saving data to RavenDB...");
-            await services.GetRequiredService<UserService>().SaveServiceAsync();
-            await services.GetRequiredService<MarkovService>().SaveServiceAsync();
-            await services.GetRequiredService<DungeoneeringMainService>().SaveServiceAsync();
-            await services.GetRequiredService<ServerConfigurationService>().SaveServiceAsync();
+            await SaveServices(services, serviceConfiguration.Item2);
             await LogAsync("Tasks all completed - Going offline");
         }
 
@@ -181,27 +182,58 @@ namespace Bot
             throw new InvalidOperationException("Somehow failed to parse the logging level");
         }
 
-        private async Task InitializeServices(ServiceProvider services)
+        private async Task InitializeServices(ServiceProvider services, IEnumerable<Type> serviceTypes)
         {
-            await services.GetRequiredService<HangfireToDiscordComm>().InitializeService();
+            // Manually start up UserService first. Then handle everything else.
             await services.GetRequiredService<UserService>().InitializeService();
-            await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
-            await services.GetRequiredService<MarkovService>().InitializeService();
-            await services.GetRequiredService<StupidTextService>().InitializeService();
-            await services.GetRequiredService<GptService>().InitializeService();
-            await services.GetRequiredService<CurrencyService>().InitializeService();
-            await services.GetRequiredService<MonsterService>().InitializeService();
-            await services.GetRequiredService<DungeoneeringMainService>().InitializeService();
+            foreach (var type in serviceTypes)
+            {
+                var service = services.GetRequiredService(type);
+                if (service is null)
+                {
+                    await LogAsync($"Unable to locate {type.Name}", LogSeverity.Warning);
+                    continue;
+                }
+                await LogAsync($"Initializing {type.Name}...");
+                await (service as IEileenService).InitializeService();
+            }
+            await services.GetRequiredService<CommandHandlingService>().InitializeService();
         }
 
-        private ServiceProvider ConfigureServices()
+        private async Task SaveServices(ServiceProvider services, IEnumerable<Type> serviceTypes)
         {
-            return new ServiceCollection()
+            foreach (var type in serviceTypes)
+            {
+                var service = services.GetRequiredService(type);
+                if (service is null)
+                {
+                    await LogAsync($"Unable to locate {type.Name}", LogSeverity.Warning);
+                    continue;
+                }
+                await LogAsync($"Saving {type.Name}...");
+                await (service as IEileenService).SaveServiceAsync();
+            }
+        }
+
+        private async Task<Tuple<ServiceProvider, IEnumerable<Type>>> ConfigureServices()
+        {
+            // Let's discover all the types that implement
+            // IEileenService and ensure we register them
+            // as Singletons inside the ServiceCollection.
+            var eileenServices = (from assemblies in AppDomain.CurrentDomain.GetAssemblies()
+                                    let types = assemblies.GetTypes()
+                                    let services = (from t in types
+                                                    where t.IsAssignableTo(typeof(IEileenService)) &&
+                                                    !t.IsAbstract && !t.IsInterface
+                                                    select t)
+                                    select services).SelectMany(c => c).ToList();
+            
+            var svc = new ServiceCollection()
+                // Manually add services that do NOT implement IEileenService
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
-                .AddSingleton<Func<LogMessage, Task>>(LogAsync)
-                .AddSingleton<RavenDatabaseService>()
+                .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
                 .AddSingleton<CancellationTokenSource>()
-                .AddSingleton<UserService>()
+                .AddSingleton<Func<LogMessage, Task>>(LogAsync)
                 .AddSingleton<DiscordSocketClient>((services) => {
                     var config = new DiscordSocketConfig
                     {
@@ -217,27 +249,51 @@ namespace Bot
                     var dsc = new DiscordSocketClient(config);
                     return dsc;
                 })
-                .AddSingleton<HangfireToDiscordComm>()
-                .AddSingleton<CredentialsService>()
-                .AddSingleton<Danbooru>()
-                .AddSingleton<e621>()
-                .AddSingleton<Gelbooru>()
-                .AddSingleton<SafeBooru>()
-                .AddSingleton<Yandere>()
-                .AddSingleton<CommandService>()
-                .AddSingleton<CommandHandlingService>()
-                .AddSingleton<BetterPaginationService>()
-                .AddSingleton<StupidTextService>()
-                .AddSingleton<MarkovService>()
-                .AddSingleton<GptService>()
-                .AddSingleton<CurrencyService>()
-                .AddSingleton<CommandPermissionsService>()
-                .AddSingleton<MonsterService>()
-                .AddSingleton<DungeoneeringMainService>()
-                .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
-                .AddSingleton<ReactionHelperService>()
-                .AddSingleton<ServerConfigurationService>()
-                .BuildServiceProvider();
+                .AddSingleton<CommandService>();
+
+
+                // .AddSingleton<RavenDatabaseService>()
+                // .AddSingleton<UserService>()
+                // .AddSingleton<HangfireToDiscordComm>()
+                // .AddSingleton<CredentialsService>()
+                // .AddSingleton<Danbooru>()
+                // .AddSingleton<e621>()
+                // .AddSingleton<Gelbooru>()
+                // .AddSingleton<SafeBooru>()
+                // .AddSingleton<Yandere>()
+                // .AddSingleton<CommandHandlingService>()
+                // .AddSingleton<BetterPaginationService>()
+                // .AddSingleton<StupidTextService>()
+                // .AddSingleton<MarkovService>()
+                // .AddSingleton<GptService>()
+                // .AddSingleton<CurrencyService>()
+                // .AddSingleton<CommandPermissionsService>()
+                // .AddSingleton<MonsterService>()
+                // .AddSingleton<DungeoneeringMainService>()
+                // .AddSingleton<ReactionHelperService>()
+                // .AddSingleton<ServerConfigurationService>();
+
+            await LogAsync($"Discovered {eileenServices.Count} service(s)");
+            foreach(var s in eileenServices)
+            {
+                var attr = s.GetCustomAttribute<ServiceTypeAttribute>();
+                var serviceType = attr?.ServiceType ?? ServiceType.Singleton;
+                await LogAsync($"Registering {s.Name} as {serviceType}");
+                switch (serviceType)
+                {
+                    case ServiceType.Scoped:
+                        svc.AddScoped(s);
+                        break;
+                    case ServiceType.Transient:
+                        svc.AddTransient(s);
+                        break;
+                    case ServiceType.Singleton:
+                        svc.AddSingleton(s);
+                        break;
+                }
+            }
+
+            return new Tuple<ServiceProvider, IEnumerable<Type>>(svc.BuildServiceProvider(), eileenServices);
         }
 
 

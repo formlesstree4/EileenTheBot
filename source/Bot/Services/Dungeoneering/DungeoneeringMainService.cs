@@ -11,7 +11,7 @@ using Discord;
 namespace Bot.Services.Dungeoneering
 {
 
-    public sealed class DungeoneeringMainService
+    public sealed class DungeoneeringMainService : IEileenService
     {
         private const string TagName = "dungeoneering";
         private readonly Random random;

@@ -9,7 +9,7 @@ namespace Bot.Services
 {
 
 
-    public sealed class CommandPermissionsService
+    public sealed class CommandPermissionsService : IEileenService
     {
         private readonly DiscordSocketClient client;
         private readonly ServerConfigurationService serverConfigurationService;

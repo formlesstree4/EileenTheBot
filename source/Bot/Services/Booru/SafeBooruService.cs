@@ -3,7 +3,7 @@ using Bot.Models.Safebooru;
 
 namespace Bot.Services.Booru
 {
-    public sealed class SafeBooru : BooruService<Post[], Post>
+    public sealed class SafeBooru : BooruService<Post[], Post>, IEileenService
     {
         public SafeBooru(CredentialsService credentials) : base(credentials) { }
 

@@ -3,7 +3,7 @@ using Bot.Models.Yandere;
 
 namespace Bot.Services.Booru
 {
-    public sealed class Yandere : BooruService<Post[], Post>
+    public sealed class Yandere : BooruService<Post[], Post>, IEileenService
     {
         public Yandere(CredentialsService credentials) : base(credentials) { }
 

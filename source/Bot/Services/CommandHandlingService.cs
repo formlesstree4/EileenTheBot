@@ -10,7 +10,7 @@ using Bot.TypeReaders;
 
 namespace Bot.Services
 {
-    public sealed class CommandHandlingService
+    public sealed class CommandHandlingService : IEileenService
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
@@ -36,12 +36,14 @@ namespace Bot.Services
             _discord.MessageReceived += MessageReceivedAsync;
         }
 
-        public async Task InitializeAsync()
+        public async Task InitializeService()
         {
             // Register modules that are public and inherit ModuleBase<T>.
             _commands.AddTypeReader(typeof(string[]), new StringArrayTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
+
+        public bool AutoInitialize() => false;
 
         public async Task MessageReceivedAsync(SocketMessage rawMessage)
         {

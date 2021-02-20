@@ -4,7 +4,7 @@ using Bot.Models.e621;
 namespace Bot.Services.Booru
 {
 
-    public sealed class e621 : BooruService<PostResponse, Post>
+    public sealed class e621 : BooruService<PostResponse, Post>, IEileenService
     {
         public e621(CredentialsService credentials) : base(credentials) { }
 

@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Bot.Models.Raven;
 using Discord;
-using Hangfire;
 using Raven.Client.Documents;
 
 namespace Bot.Services.RavenDB
 {
-    public sealed class RavenDatabaseService
+    public sealed class RavenDatabaseService : IEileenService
     {
 
         private BotConfiguration configuration;
@@ -44,6 +41,8 @@ namespace Bot.Services.RavenDB
             await GetBotConfigurationAsync(reload: false);            
             await Task.Yield();
         }
+
+        public bool AutoInitialize() => false;
 
         public IDocumentStore GetOrAddDocumentStore(string database)
         {

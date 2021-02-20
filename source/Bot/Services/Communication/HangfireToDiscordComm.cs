@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Bot.Services.Communication
 {
-    public sealed class HangfireToDiscordComm
+    public sealed class HangfireToDiscordComm : IEileenService
     {
 
         private readonly IServiceProvider services;

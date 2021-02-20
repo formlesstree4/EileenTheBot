@@ -14,7 +14,7 @@ using Raven.Client.Documents;
 namespace Bot.Services
 {
 
-    public sealed class UserService
+    public sealed class UserService : IEileenService
     {
 
         private readonly Func<LogMessage, Task> logger;
@@ -84,6 +84,8 @@ namespace Bot.Services
                 }
             }
         }
+
+        public bool AutoInitialize() => false;
 
         public async Task<EileenUserData> GetOrCreateUserData(IUser user)
             => await GetOrCreateUserData(user.Id);

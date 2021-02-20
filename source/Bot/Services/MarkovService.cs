@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.Markov;
@@ -12,14 +11,13 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
-using Microsoft.Extensions.DependencyInjection;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Attachments;
 using Raven.Client.Documents.Operations.Attachments;
 
 namespace Bot.Services
 {
-    public sealed class MarkovService
+    public sealed class MarkovService : IEileenService
     {
 
         private readonly string _triggerWord;

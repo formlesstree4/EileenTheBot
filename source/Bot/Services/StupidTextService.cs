@@ -8,7 +8,7 @@ using Raven.Client.Documents.Operations.Attachments;
 
 namespace Bot.Services
 {
-    public sealed class StupidTextService
+    public sealed class StupidTextService : IEileenService
     {
         
         private readonly List<string> _statements = new List<string>();

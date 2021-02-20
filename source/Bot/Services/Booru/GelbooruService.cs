@@ -4,7 +4,7 @@ using Bot.Models.Gelbooru;
 namespace Bot.Services.Booru
 {
 
-    public sealed class Gelbooru : BooruService<Post[], Post>
+    public sealed class Gelbooru : BooruService<Post[], Post>, IEileenService
     {
         public Gelbooru(CredentialsService credentials) : base(credentials) { }
 

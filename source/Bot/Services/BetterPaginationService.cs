@@ -15,7 +15,7 @@ namespace Bot.Services
     /// <summary>
     ///     Defines a service that is responsible for handling paginated messages to <see cref="IUser"/>
     /// </summary>
-    public sealed class BetterPaginationService : IDisposable
+    public sealed class BetterPaginationService : IDisposable, IEileenService
     {
 
         private const string AGREE = "👍";

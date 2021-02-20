@@ -9,7 +9,7 @@ using Hangfire;
 namespace Bot.Services
 {
 
-    public sealed class CurrencyService
+    public sealed class CurrencyService : IEileenService
     {
 
         public const byte MaximumLevel = 30;
