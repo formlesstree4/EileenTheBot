@@ -249,30 +249,8 @@ namespace Bot
                     var dsc = new DiscordSocketClient(config);
                     return dsc;
                 })
-                .AddSingleton<CommandService>();
-
-
-                // .AddSingleton<RavenDatabaseService>()
-                // .AddSingleton<UserService>()
-                // .AddSingleton<HangfireToDiscordComm>()
-                // .AddSingleton<CredentialsService>()
-                // .AddSingleton<Danbooru>()
-                // .AddSingleton<e621>()
-                // .AddSingleton<Gelbooru>()
-                // .AddSingleton<SafeBooru>()
-                // .AddSingleton<Yandere>()
-                // .AddSingleton<CommandHandlingService>()
-                // .AddSingleton<BetterPaginationService>()
-                // .AddSingleton<StupidTextService>()
-                // .AddSingleton<MarkovService>()
-                // .AddSingleton<GptService>()
-                // .AddSingleton<CurrencyService>()
-                // .AddSingleton<CommandPermissionsService>()
-                // .AddSingleton<MonsterService>()
-                // .AddSingleton<DungeoneeringMainService>()
-                // .AddSingleton<ReactionHelperService>()
-                // .AddSingleton<ServerConfigurationService>();
-
+                .AddSingleton<CommandService>()
+                .AddSingleton<ServiceManager>();
             await LogAsync($"Discovered {eileenServices.Count} service(s)");
             foreach(var s in eileenServices)
             {
