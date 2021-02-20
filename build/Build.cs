@@ -56,13 +56,21 @@ sealed class Build : NukeBuild
 
 
     Target BuildDockerImage => _ => _
+        .After(RemoveExistingImage)
         .DependsOn(Compile)
         .Executes(() =>
         {
-            // Docker("rmi eileen:latest", logOutput: false);
             DockerBuild(o => o
                 .SetTag($"eileen:{GitVersion.Sha}", "eileen:latest")
                 .SetPath(Solution.Path.Parent));
+        });
+
+    Target RemoveExistingImage => _ => _
+        .Before(BuildDockerImage)
+        .ProceedAfterFailure()
+        .Executes(() => 
+        {
+            Docker("rmi eileen:latest", logOutput: false);
         });
 
     Target Compile => _ => _
