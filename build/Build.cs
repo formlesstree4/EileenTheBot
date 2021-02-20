@@ -56,7 +56,6 @@ sealed class Build : NukeBuild
 
 
     Target BuildDockerImage => _ => _
-        .After(RemoveExistingImage)
         .DependsOn(Compile)
         .Executes(() =>
         {
@@ -66,7 +65,7 @@ sealed class Build : NukeBuild
         });
 
     Target RemoveExistingImage => _ => _
-        .Before(BuildDockerImage)
+        .After(Compile)
         .ProceedAfterFailure()
         .Executes(() => 
         {
