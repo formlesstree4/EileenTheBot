@@ -19,18 +19,25 @@ namespace Bot.Services
         private readonly Func<LogMessage, Task> _logger;
         private readonly char _defaultPrefix;
 
-        public CommandHandlingService(IServiceProvider services)
+        public CommandHandlingService(
+            CommandService commandService,
+            DiscordSocketClient client,
+            ServerConfigurationService serverConfiguration,
+            RavenDatabaseService ravenDatabaseService,
+            Func<LogMessage, Task> logger,
+            IServiceProvider provider)
         {
-            _commands = services.GetRequiredService<CommandService>();
-            _discord = services.GetRequiredService<DiscordSocketClient>();
-            _serverConfiguration = services.GetRequiredService<ServerConfigurationService>();
-            _defaultPrefix = services.GetRequiredService<RavenDatabaseService>().Configuration.CommandPrefix;
-            _logger = services.GetRequiredService<Func<LogMessage, Task>>();
-            _services = services;
+            _commands = commandService;
+            _discord = client;
+            _serverConfiguration = serverConfiguration;
+            _defaultPrefix = ravenDatabaseService.Configuration.CommandPrefix;
+            _logger = logger;
+            _services = provider;
 
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;
             _commands.Log += _logger;
+            
             // Hook MessageReceived so we can process each message to see
             // if it qualifies as a command.
             _discord.MessageReceived += MessageReceivedAsync;
