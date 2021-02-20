@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 
 namespace Bot.Services
 {
 
+    [Summary("Makes it easy to add general reactions to specified messages")]
     public sealed class ReactionHelperService : IEileenService
     {
 

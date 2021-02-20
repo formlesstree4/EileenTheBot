@@ -34,6 +34,16 @@ namespace Bot.Services
         public IEnumerable<string> GetServiceNames() => eileenServices.Select(c => c.Name);
 
         /// <summary>
+        /// Retrieves the service type for the given name
+        /// </summary>
+        /// <param name="name">The name of the service to locate</param>
+        /// <returns>The Type representation</returns>
+        public Type GetServiceType(string name)
+        {
+            return eileenServices.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
         /// Retrieves an existing IEileenService by its name (provided it exists)
         /// </summary>
         /// <param name="name">The name of the service, case insensitive</param>

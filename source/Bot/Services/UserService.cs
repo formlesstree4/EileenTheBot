@@ -7,6 +7,7 @@ using Bot.Models;
 using Bot.Services.Communication;
 using Bot.Services.RavenDB;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
 using Raven.Client.Documents;
@@ -14,6 +15,7 @@ using Raven.Client.Documents;
 namespace Bot.Services
 {
 
+    [Summary("Maintains the relationship between EileenUserData and Discord IUser. Any and all services that interact with a Profile (such as Dungeoneering) go through this service in order provide data persistency automatically")]
     public sealed class UserService : IEileenService
     {
 

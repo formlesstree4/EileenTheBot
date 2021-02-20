@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using Bot.Models.Gelbooru;
+using Discord.Commands;
 
 namespace Bot.Services.Booru
 {
 
+    [Summary("Provides access to the Gelbooru API in order to find images for browsing or downloading")]
     public sealed class Gelbooru : BooruService<Post[], Post>, IEileenService
     {
         public Gelbooru(CredentialsService credentials) : base(credentials) { }

@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using Bot.Models.e621;
+using Discord.Commands;
 
 namespace Bot.Services.Booru
 {
 
+    [Summary("Provides access to the e621 API in order to find images for browsing or downloading")]
     public sealed class e621 : BooruService<PostResponse, Post>, IEileenService
     {
         public e621(CredentialsService credentials) : base(credentials) { }

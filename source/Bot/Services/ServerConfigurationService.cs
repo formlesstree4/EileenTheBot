@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.RavenDB;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
 
 namespace Bot.Services
 {
 
+    [Summary("Maintains all Guild related information (command prefix, sub-service configuration data, permissions), including detecting when the Bot joins a new Guild and must setup the defaults.")]
     public sealed class ServerConfigurationService : IEileenService
     {
         private readonly DiscordSocketClient client;

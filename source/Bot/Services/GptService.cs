@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 
 namespace Bot.Services
 {
+
+    [Summary("Provides a pass-through to a web service that provides GPT-2 responses based upon the last handful of messages in the Channel for context. This only works for Guilds and will not work in private message groups with the Bot")]
     public sealed class GptService : IEileenService
     {
         

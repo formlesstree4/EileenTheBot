@@ -17,6 +17,8 @@ using Raven.Client.Documents.Operations.Attachments;
 
 namespace Bot.Services
 {
+
+    [Summary("Provides simplified management of the Markov Chains across all Guilds, Groups, and Private Channels")]
     public sealed class MarkovService : IEileenService
     {
 

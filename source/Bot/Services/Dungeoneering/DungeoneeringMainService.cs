@@ -7,10 +7,12 @@ using Bot.Models;
 using Bot.Models.Dungeoneering;
 using Bot.Services.RavenDB;
 using Discord;
+using Discord.Commands;
 
 namespace Bot.Services.Dungeoneering
 {
 
+    [Summary("The main service for the Dungeoneering minigame. Primarily responsible for state management of the User details and Battles (both ongoing and historical)")]
     public sealed class DungeoneeringMainService : IEileenService
     {
         private const string TagName = "dungeoneering";

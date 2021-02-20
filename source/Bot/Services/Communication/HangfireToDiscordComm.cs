@@ -1,12 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
-using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Bot.Services.Communication
 {
+    [Summary("Communication service that exposes Discord to the Hangfire background services")]
     public sealed class HangfireToDiscordComm : IEileenService
     {
 

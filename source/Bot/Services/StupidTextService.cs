@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Bot.Services.RavenDB;
+using Discord.Commands;
 using Raven.Client.Documents.Attachments;
 using Raven.Client.Documents.Operations.Attachments;
 
 namespace Bot.Services
 {
+    [Summary("Pulls random one-liners out a fairly large resource file stored in RavenDB")]
     public sealed class StupidTextService : IEileenService
     {
         

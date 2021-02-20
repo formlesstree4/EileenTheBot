@@ -3,10 +3,13 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Bot.Models.Raven;
 using Discord;
+using Discord.Commands;
 using Raven.Client.Documents;
 
 namespace Bot.Services.RavenDB
 {
+
+    [Summary("Exposes access to the RavenDB backend for the Bot to utilize")]
     public sealed class RavenDatabaseService : IEileenService
     {
 

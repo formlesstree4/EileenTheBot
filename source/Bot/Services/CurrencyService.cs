@@ -3,12 +3,14 @@ using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Models.Currency;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
 
 namespace Bot.Services
 {
 
+    [Summary("Helps manage a User's 'Eileen' currency")]
     public sealed class CurrencyService : IEileenService
     {
 

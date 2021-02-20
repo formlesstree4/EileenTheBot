@@ -1,4 +1,5 @@
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Collections.Concurrent;
@@ -15,6 +16,7 @@ namespace Bot.Services
     /// <summary>
     ///     Defines a service that is responsible for handling paginated messages to <see cref="IUser"/>
     /// </summary>
+    [Summary("A simplified pagination service that handles rotating embeds using Reactions")]
     public sealed class BetterPaginationService : IDisposable, IEileenService
     {
 
@@ -77,9 +79,15 @@ namespace Bot.Services
             try
             {
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message}"));
+
                 var paginatedMessage = await channel.SendMessageAsync(embed: message.CurrentPage);
-                await paginatedMessage.AddReactionsAsync(new[] {new Emoji(FIRST), new Emoji(BACK), new Emoji(NEXT), new Emoji(END), new Emoji(STOP)});
-                await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
+                #pragma warning disable CS4014
+                Task.Run(async() =>
+                {
+                    await paginatedMessage.AddReactionsAsync(new[] {new Emoji(FIRST), new Emoji(BACK), new Emoji(NEXT), new Emoji(END), new Emoji(STOP)});
+                    await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
+                });
+                #pragma warning restore CS4014
                 _messages.TryAdd(paginatedMessage.Id, message);
                 return paginatedMessage;
             }

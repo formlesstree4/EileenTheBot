@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Bot.Models.Dungeoneering;
 using Bot.Services.RavenDB;
 using Discord;
+using Discord.Commands;
 
 namespace Bot.Services.Dungeoneering
 {
 
+    [Summary("A supporting service for the Dungeoneering minigame that provides randomly generated Monster information, even allowing for a series of Monsters to be generated at a variety of level ranges")]
     public sealed class MonsterService : IEileenService
     {
         private readonly RavenDatabaseService ravenDatabaseService;
