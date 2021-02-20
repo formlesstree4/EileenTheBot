@@ -194,48 +194,51 @@ namespace Bot
             await services.GetRequiredService<DungeoneeringMainService>().InitializeService();
         }
 
-        private ServiceProvider ConfigureServices() => new ServiceCollection()
-            .AddAutoMapper(Assembly.GetExecutingAssembly())
-            .AddSingleton<Func<LogMessage, Task>>(LogAsync)
-            .AddSingleton<RavenDatabaseService>()
-            .AddSingleton<CancellationTokenSource>()
-            .AddSingleton<UserService>()
-            .AddSingleton<DiscordSocketClient>((services) => {
-                var config = new DiscordSocketConfig
-                {
-                    AlwaysDownloadUsers = true,
-                    LogLevel = LogSeverity.Verbose,
-                    DefaultRetryMode = RetryMode.RetryRatelimit,
-                    UseSystemClock = true,
-                    ConnectionTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds,
-                    GatewayHost = null,
-                    HandlerTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds,
+        private ServiceProvider ConfigureServices()
+        {
+            return new ServiceCollection()
+                .AddAutoMapper(Assembly.GetExecutingAssembly())
+                .AddSingleton<Func<LogMessage, Task>>(LogAsync)
+                .AddSingleton<RavenDatabaseService>()
+                .AddSingleton<CancellationTokenSource>()
+                .AddSingleton<UserService>()
+                .AddSingleton<DiscordSocketClient>((services) => {
+                    var config = new DiscordSocketConfig
+                    {
+                        AlwaysDownloadUsers = true,
+                        LogLevel = LogSeverity.Verbose,
+                        DefaultRetryMode = RetryMode.RetryRatelimit,
+                        UseSystemClock = true,
+                        ConnectionTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds,
+                        GatewayHost = null,
+                        HandlerTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds,
 
-                };
-                var dsc = new DiscordSocketClient(config);
-                return dsc;
-            })
-            .AddSingleton<HangfireToDiscordComm>()
-            .AddSingleton<CredentialsService>()
-            .AddSingleton<Danbooru>()
-            .AddSingleton<e621>()
-            .AddSingleton<Gelbooru>()
-            .AddSingleton<SafeBooru>()
-            .AddSingleton<Yandere>()
-            .AddSingleton<CommandService>()
-            .AddSingleton<CommandHandlingService>()
-            .AddSingleton<BetterPaginationService>()
-            .AddSingleton<StupidTextService>()
-            .AddSingleton<MarkovService>()
-            .AddSingleton<GptService>()
-            .AddSingleton<CurrencyService>()
-            .AddSingleton<CommandPermissionsService>()
-            .AddSingleton<MonsterService>()
-            .AddSingleton<DungeoneeringMainService>()
-            .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
-            .AddSingleton<ReactionHelperService>()
-            .AddSingleton<ServerConfigurationService>()
-            .BuildServiceProvider();
+                    };
+                    var dsc = new DiscordSocketClient(config);
+                    return dsc;
+                })
+                .AddSingleton<HangfireToDiscordComm>()
+                .AddSingleton<CredentialsService>()
+                .AddSingleton<Danbooru>()
+                .AddSingleton<e621>()
+                .AddSingleton<Gelbooru>()
+                .AddSingleton<SafeBooru>()
+                .AddSingleton<Yandere>()
+                .AddSingleton<CommandService>()
+                .AddSingleton<CommandHandlingService>()
+                .AddSingleton<BetterPaginationService>()
+                .AddSingleton<StupidTextService>()
+                .AddSingleton<MarkovService>()
+                .AddSingleton<GptService>()
+                .AddSingleton<CurrencyService>()
+                .AddSingleton<CommandPermissionsService>()
+                .AddSingleton<MonsterService>()
+                .AddSingleton<DungeoneeringMainService>()
+                .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
+                .AddSingleton<ReactionHelperService>()
+                .AddSingleton<ServerConfigurationService>()
+                .BuildServiceProvider();
+        }
 
 
 
