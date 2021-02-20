@@ -15,6 +15,7 @@ namespace Bot.Services
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
         private readonly ServerConfigurationService _serverConfigurationService;
+        private readonly Func<LogMessage, Task> logger;
         private readonly LinkedList<string> _archiveOfMessages;
         private readonly int _backlogToKeep;
         private readonly string _endpointUrl;
@@ -24,17 +25,19 @@ namespace Bot.Services
         public GptService(
             DiscordSocketClient client,
             RavenDatabaseService ravenDatabaseService,
-            ServerConfigurationService serverConfigurationService)
+            ServerConfigurationService serverConfigurationService,
+            Func<LogMessage, Task> logger)
         {
             _discord = client;
             this._serverConfigurationService = serverConfigurationService;
+            this.logger = logger;
             var configuration = ravenDatabaseService.Configuration;
 
             _triggerWord = configuration.MarkovTrigger ?? "erector";
             _endpointUrl = configuration.GptUrl;
             _backlogToKeep = configuration.History;
-            Console.WriteLine($"Trigger Word: {_triggerWord}");
-            Console.WriteLine($"Historical Context: {_backlogToKeep}");
+            Write($"Trigger Word: {_triggerWord}");
+            Write($"Historical Context: {_backlogToKeep}");
             _archiveOfMessages = new LinkedList<string>();
         }
 
@@ -57,7 +60,7 @@ namespace Bot.Services
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
             var replacedMessage = escapedMessage.Replace("erector", _replacementName, true, System.Globalization.CultureInfo.InvariantCulture);
             var formattedMessage = $"{username}: {replacedMessage}";
-            Console.WriteLine(formattedMessage);
+            Write(formattedMessage);
             var payload = "";
 
             // Keep this lock on for the entire duration
@@ -84,9 +87,9 @@ namespace Bot.Services
                 using (message.Channel.EnterTypingState())
                 {
                     var finalPayload = payload + '\n' + $"{_replacementName}: ";
-                    Console.WriteLine("Requesting Response...");
+                    Write("Requesting Response...");
                     var response = await GetGptResponse(finalPayload);
-                    Console.WriteLine("... response received!");
+                    Write("... response received!");
                     var fullResponse = $"> {escapedMessage}" + "\n" + response;
                     await message.Channel.SendMessageAsync(fullResponse);
                 }
@@ -102,14 +105,19 @@ namespace Bot.Services
             var message = JsonConvert.SerializeObject(new { prefix = context, length = 50 });
             var anonType = new { text = "" };
             var stringContent = new StringContent(message);
-            Console.WriteLine($"Outgoing: {message}");
+            Write($"Outgoing: {message}");
             var clientResults = await _client.PostAsync(_endpointUrl, stringContent);
             var jsonResponse = await clientResults.Content.ReadAsStringAsync();
-            Console.WriteLine($"Incoming: {jsonResponse}");
+            Write($"Incoming: {jsonResponse}");
             var gptResponse = JsonConvert.DeserializeAnonymousType(jsonResponse, anonType);
             var text = gptResponse.text.Remove(0, context.Length).Split(new[] { '\n', '\r' })[0];
             if (string.IsNullOrWhiteSpace(text)) return await GetGptResponse(context, counter += 1);
             return text;
+        }
+
+        private void Write(string message, LogSeverity severity = LogSeverity.Info)
+        {
+            logger(new LogMessage(severity, nameof(GptService), message));
         }
 
     }
