@@ -34,6 +34,8 @@ sealed class Build : NukeBuild
     [GitRepository] readonly GitRepository GitRepository;
     [GitVersion] readonly GitVersion GitVersion;
 
+    [Parameter("The directory to export the container to")] readonly string Destination;
+
     AbsolutePath SourceDirectory => RootDirectory / "source";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath OutputDirectory => RootDirectory / "output";
@@ -62,6 +64,14 @@ sealed class Build : NukeBuild
             DockerBuild(o => o
                 .SetTag($"eileen:{GitVersion.Sha}", "eileen:latest")
                 .SetPath(Solution.Path.Parent));
+        });
+
+    Target SaveImage => _ => _
+        .DependsOn(BuildDockerImage)
+        .Requires(() => Destination)
+        .Executes(() =>
+        {
+            Docker($"save -o {Destination}/eileen-the-bot-{DateTime.Now:yyyyMMddhhmmssff}.tar eileen:latest");
         });
 
     Target RemoveExistingImage => _ => _
