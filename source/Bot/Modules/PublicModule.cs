@@ -121,6 +121,34 @@ namespace Bot.Modules
             TokenSource.Cancel();
         }
 
+
+        [Command("chat"),
+        Summary("Sets the responder type for the server"),
+        TrustedUsersPrecondition,
+        RequireContext(ContextType.Guild)]
+        public async Task SetResponderAsync(
+            [Name("Type"),
+            Summary("The type of chat responder to use. Supported ones are: gpt, markov")]string type = "")
+        {
+            var scs = await ServerConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
+            switch(type.ToLowerInvariant())
+            {
+                case "gpt":
+                    scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.GPT;
+                    await ServerConfigurationService.SaveServiceAsync();
+                    await ReplyAsync($"This Guild is now using {scs.ResponderType}");
+                    break;
+                case "markov":
+                    scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.Markov;
+                    await ServerConfigurationService.SaveServiceAsync();
+                    await ReplyAsync($"This Guild is now using {scs.ResponderType}");
+                    break;
+                default:
+                    await ReplyAsync($"This Guild is currently using {scs.ResponderType}");
+                    break;
+            }
+        }
+
         private static string BoolToYesNo(bool b) => b ? "Yes": "No";
 
         private static string GetContext(RequireContextAttribute attribute)
