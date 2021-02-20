@@ -59,10 +59,9 @@ sealed class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
+            // Docker("rmi eileen:latest", logOutput: false);
             DockerBuild(o => o
-                .RemoveTag("eileen:latest")
-                .SetTag("eileen:latest")
-                .SetTag($"eileen:{GitVersion.Sha}")
+                .SetTag($"eileen:{GitVersion.Sha}", "eileen:latest")
                 .SetPath(Solution.Path.Parent));
         });
 
