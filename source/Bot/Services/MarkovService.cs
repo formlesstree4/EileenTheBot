@@ -27,7 +27,6 @@ namespace Bot.Services
         private ConcurrentDictionary<ulong, MarkovServerInstance> _chains;
         private readonly List<string> _source;
         private readonly Random _random;
-        private readonly char _prefix;
         private readonly Func<LogMessage, Task> WriteLog;
 
 
@@ -45,7 +44,6 @@ namespace Bot.Services
             _serverConfigurationService = serverConfigurationService;
             var configuration = _rdbs.Configuration;
             Write("Setting Configuration...");
-            _prefix = configuration.CommandPrefix;
             _triggerWord = configuration.MarkovTrigger;
             Write($"Trigger Word '{_triggerWord}'");
             _source = new List<string>();
@@ -132,12 +130,12 @@ namespace Bot.Services
 
             if (!(rawMessage is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
-            if (message.HasCharPrefix(_prefix, ref position)) return;
             if (message.Channel is IGuildChannel gc)
             {
                 serverId = gc.GuildId;
                 var cfg = await _serverConfigurationService.GetOrCreateConfigurationAsync(gc.GuildId);
                 if (cfg.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.Markov) return;
+                if (message.HasCharPrefix(cfg.CommandPrefix, ref position)) return;
             }
             if (message.Channel is IPrivateChannel pc)
             {
