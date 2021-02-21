@@ -1,6 +1,6 @@
 # Eileen
 
-Eileen is a Discord bot that I've been working on for a decent amount of time that has a small number of very useless, but enjoyable, features.
+Eileen is a Discord bot that I've been working on for a decent amount of time that has a small number of very useless but enjoyable features.
 
 If you want to add this Bot to your own Server, hit me up on Discord: formlesstree4#2035
 
@@ -9,7 +9,7 @@ Some features are fully fleshed out while others are still a bit of a work in pr
 
 1. Multiple Booru Support
 1. Dungeoneering Mini-Game (similar to the Munchkin card game)
-1. Markov Chain discussions when you say the key phrase (erector)
+1. Markov Chain discussions when you say the key phrase (Erector)
 1. A currency system that will eventually tie into other features of the Bot
 1. Command Permissions (restricted to Dungeoneering but the framework is in place for others)
 1. Background Job running
@@ -17,11 +17,11 @@ Some features are fully fleshed out while others are still a bit of a work in pr
 
 ## Booru
 The Booru system actually supports several different Booru sites:
-- Danbooru
-- Gelbooru
-- e621
-- SafeBooru
-- Yandere
+- [Danbooru](http://danbooru.me/explore/posts/popular) (NSFW)
+- [Gelbooru](https://gelbooru.com/) (NSFW)
+- [e621](https://e621.net/) (NSFW, furry)
+- [SafeBooru](https://safebooru.org/) (Probably NSFW)
+- [Yandere](https://yande.re/post) (NSFW)
 
 The BooruService base class makes it fairly easy to add more Boorus that follow the same sort of setup like Danbooru.
 
@@ -32,7 +32,7 @@ Each time you beat a Monster you level up until you reach a level cap. At that l
 
 Eventually, similarly to Munchkin (the inspiration for this mini-game), other Users on the same server will be able to assist you or the Monster you're fighting by providing temporary buffs (via equipment).
 
-There's no theoretical cap to the system right now. However, at some point, engaging in fights will being to cost currency which means any excess gear / loot not being used should be sold!
+There's no theoretical cap to the system right now. However, at some point, engaging in fights will begin to cost currency which means any excess gear / loot not being used should be sold!
 
 Long term goals are to put items up into an auction house to attempt to milk higher than market value out of a rare item drop.
 
