@@ -175,6 +175,16 @@ namespace Bot.Services
                 }
             }
 
+            ulong botId = _discord.CurrentUser.Id;
+            containsTriggerWord |= message.MentionedUsers.Any(s => s.Id == botId); // The bot was mentionned.
+            if (!containsTriggerWord && message.Reference.MessageId.IsSpecified)
+            {
+                // AFAIK there is no reason that it's not a message channel
+                IMessageChannel messageChannel = (IMessageChannel)_discord.GetChannel(message.Reference.ChannelId);
+                IMessage msg = await messageChannel.GetMessageAsync(message.Reference.MessageId.Value);
+                if (msg.Author.Id == botId) containsTriggerWord = true;
+            }
+
             lock (serverInstance)
             {
                 serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
