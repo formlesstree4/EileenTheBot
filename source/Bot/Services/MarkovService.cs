@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.Markov;
 using Bot.Services.RavenDB;
@@ -8,12 +14,6 @@ using Hangfire;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Attachments;
 using Raven.Client.Documents.Operations.Attachments;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -130,7 +130,7 @@ namespace Bot.Services
             var serverId = 0UL;
             var isPrivate = false;
 
-            if (!(rawMessage is SocketUserMessage message)) return;
+            if (rawMessage is not SocketUserMessage message) return;
             if (message.Source != MessageSource.User) return;
             if (message.Channel is IGuildChannel gc)
             {
@@ -157,44 +157,50 @@ namespace Bot.Services
             string messageToSend = null;
             Write($"Using Instance: {serverInstance.ServerId}");
             Write($"Acquiring exclusive lock on {serverInstance.ServerId}", LogSeverity.Verbose);
-            lock (serverInstance)
+
+
+            // Break apart the message into fragments to filter out the trigger word.
+            // Add it to the historical message for that instance.
+            var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
+            var containsTriggerWord = false;
+            Write($"Looking for trigger word in the message...");
+            for (var i = messageFragments.Count - 1; i >= 0; i--)
             {
-
-                // Break apart the message into fragments to filter out the trigger word.
-                // Add it to the historical message for that instance.
-                var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
-                var containsTriggerWord = false;
-                Write($"Looking for trigger word in the message...");
-                for (var i = messageFragments.Count - 1; i >= 0; i--)
+                var insensitive = messageFragments[i].ToLowerInvariant();
+                if (insensitive.Equals(_triggerWord, StringComparison.OrdinalIgnoreCase) || insensitive.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
                 {
-                    var insensitive = messageFragments[i].ToLowerInvariant();
-                    if (insensitive.Equals(_triggerWord, StringComparison.OrdinalIgnoreCase) || insensitive.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
-                    {
-                        Write($"Trigger word found in the message... remove it and get ready to send a new message", LogSeverity.Verbose);
-                        containsTriggerWord = true;
-                        messageFragments.RemoveAt(i);
-                    }
+                    Write($"Trigger word found in the message... remove it and get ready to send a new message", LogSeverity.Verbose);
+                    containsTriggerWord = true;
+                    messageFragments.RemoveAt(i);
                 }
-                serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
-                if (!containsTriggerWord && !isPrivate) return;
-
-                // We need to generate a message in response since we were directly referenced.
-                Write($"Generating a response...");
-                var attempts = 0;
-                while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
-                {
-                    messageToSend = serverInstance.GetNextMessage();
-                    Write($"Response: '{messageToSend}'", LogSeverity.Verbose);
-                }
-                Write($"Response generated!");
-
             }
 
-            if (!string.IsNullOrWhiteSpace(messageToSend))
+            lock (serverInstance)
             {
-                Write($"Submitting Response...");
-                using (message.Channel.EnterTypingState())
+                serverInstance.AddHistoricalMessage(string.Join(" ", messageFragments));
+            }
+            if (!containsTriggerWord && !isPrivate) return;
+
+            using (message.Channel.EnterTypingState()) // Send typing before starting to generate the response.
+            {
+                lock (serverInstance)
                 {
+                    // We need to generate a message in response since we were directly referenced.
+                    Write($"Generating a response...");
+                    var attempts = 0;
+                    while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
+                    {
+                        messageToSend = serverInstance.GetNextMessage();
+                        Write($"Response: '{messageToSend}'", LogSeverity.Verbose);
+                    }
+                    Write($"Response generated!");
+
+                }
+
+                if (!string.IsNullOrWhiteSpace(messageToSend))
+                {
+                    Write($"Submitting Response...");
+
                     await message.Channel.SendMessageAsync(messageToSend);
                 }
             }
