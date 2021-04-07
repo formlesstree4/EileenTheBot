@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using Bot.Models.e621;
 using Discord.Commands;
+using System.Collections.Generic;
 
 namespace Bot.Services.Booru
 {
@@ -15,7 +15,7 @@ namespace Bot.Services.Booru
         protected override string GetCredentialsKey() => "e621";
 
         protected override string GetSearchString(int limit, int page, string searchTags) => $"https://e621.net/posts.json?limit={limit}&page={page}&tags={searchTags}";
-        
+
     }
 
 }

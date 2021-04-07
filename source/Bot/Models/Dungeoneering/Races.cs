@@ -27,7 +27,7 @@ namespace Bot.Models.Dungeoneering
         ///     but their strength, vitality, and endurance far and beyond make up for it.
         /// </summary>
         Orc,
-        
+
         /// <summary>
         ///     Highly intelligent, magical creatures with absurd strength. However their lack of a faith
         ///     means that any religious individual from the other races can potentially

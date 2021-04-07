@@ -1,8 +1,8 @@
+using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord.Commands;
 
 namespace Bot.TypeReaders
 {
@@ -19,7 +19,7 @@ namespace Bot.TypeReaders
         {
             var content = CommandParseExpression.Matches(input);
             var result = new List<string>();
-            foreach(Match item in content)
+            foreach (Match item in content)
             {
                 var value = ApplyAdditionalEscapes(item.Value.Trim());
                 if (string.IsNullOrWhiteSpace(value)) continue;

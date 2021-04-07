@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.Markov;
 using Bot.Services.RavenDB;
@@ -14,6 +8,12 @@ using Hangfire;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Attachments;
 using Raven.Client.Documents.Operations.Attachments;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -56,7 +56,7 @@ namespace Bot.Services
         public async Task InitializeService()
         {
             Write("Querying the database for the markov source file...");
-            using(var markovFile = await _rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
+            using (var markovFile = await _rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
                 documentId: "configuration",
                 name: "markov.txt",
                 type: AttachmentType.Document,
@@ -69,7 +69,7 @@ namespace Bot.Services
                 }
                 Write("Done! Source finished...", LogSeverity.Verbose);
             }
-            
+
             Write($"Shuffling {_source.Count:N0} item(s)", LogSeverity.Verbose);
             _source.Shuffle(_random);
             Write("Shuffling complete", LogSeverity.Verbose);
@@ -84,7 +84,7 @@ namespace Bot.Services
         public async Task SaveServiceAsync()
         {
             Write($"Start Service Save...");
-            using(var session = _rdbs.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
+            using (var session = _rdbs.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
             {
                 foreach (var kvp in _chains)
                 {
@@ -107,12 +107,12 @@ namespace Bot.Services
             {
                 _chains.Clear();
                 var content = await session.Query<MarkovContent>().ToListAsync();
-                foreach(var mc in content)
+                foreach (var mc in content)
                 {
                     Write($"Loading {mc.ServerId}...", LogSeverity.Verbose);
                     var msi = new MarkovServerInstance(mc.ServerId, GetSeedContent());
                     Write($"Inserting Historical Context", LogSeverity.Verbose);
-                    foreach(var c in mc.Context)
+                    foreach (var c in mc.Context)
                     {
                         msi.AddHistoricalMessage(c);
                     }

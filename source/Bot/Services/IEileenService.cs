@@ -32,7 +32,7 @@ namespace Bot.Services
         /// </summary>
         /// <returns>bool</returns>
         bool AutoInitialize() => true;
-        
+
     }
 
 

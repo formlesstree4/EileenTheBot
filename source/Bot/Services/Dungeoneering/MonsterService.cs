@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Models.Dungeoneering;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Services.Dungeoneering
 {

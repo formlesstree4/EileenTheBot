@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Discord.WebSocket;
 
 namespace Bot.Services.Markov
 {
@@ -28,7 +27,7 @@ namespace Bot.Services.Markov
             _random = new SecureRandom();
             _chain = new MarkovChain<string>(_random);
             _seed = seed;
-            foreach(var i in _seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            foreach (var i in _seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
         }
 
 
@@ -47,7 +46,7 @@ namespace Bot.Services.Markov
         private void CreateChain()
         {
             _chain = new MarkovChain<string>(_random);
-            foreach(var i in _historicalMessages)
+            foreach (var i in _historicalMessages)
             {
                 _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
             }
@@ -59,7 +58,7 @@ namespace Bot.Services.Markov
 
         private void CleanHistory()
         {
-            for(var i = 0; i < ChainRefreshCount; i++)
+            for (var i = 0; i < ChainRefreshCount; i++)
             {
                 _historicalMessages.Dequeue();
             }

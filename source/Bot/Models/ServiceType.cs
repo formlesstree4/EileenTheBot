@@ -11,8 +11,8 @@ namespace Bot.Models
 
     public sealed class ServiceTypeAttribute : Attribute
     {
-        
-        public ServiceType ServiceType { get; init ;}
+
+        public ServiceType ServiceType { get; init; }
 
         public ServiceTypeAttribute(ServiceType type) => this.ServiceType = type;
 

@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Models.CommandPermissions;
 using Bot.Services;
 using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Preconditions
 {
@@ -48,7 +48,7 @@ namespace Bot.Preconditions
             if (context.Guild is null && (context.Channel is IPrivateChannel || context.Channel is IDMChannel))
             {
                 return this.Private ?
-                    PreconditionResult.FromSuccess():
+                    PreconditionResult.FromSuccess() :
                     PreconditionResult.FromError("This command is not allowed to run in the given channel");
             }
 

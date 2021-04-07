@@ -1,13 +1,13 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Models.Dungeoneering;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Services.Dungeoneering
 {
@@ -61,7 +61,7 @@ namespace Bot.Services.Dungeoneering
                     Write("No active encounters recorded, or the entry hasn't existed yet");
                     return;
                 }
-                foreach(var encounter in activeEncounters.ExistingEncounters)
+                foreach (var encounter in activeEncounters.ExistingEncounters)
                 {
                     Write($"Attempting to reload encounter for Channel {encounter.Key}");
                     currentEncounters.TryAdd(encounter.Key, encounter.Value);
@@ -285,13 +285,13 @@ namespace Bot.Services.Dungeoneering
 
         private Races GetRandomRace()
         {
-            var v = Enum.GetValues (typeof (Races));
-            return (Races) v.GetValue (SafeNext(v.Length));
+            var v = Enum.GetValues(typeof(Races));
+            return (Races)v.GetValue(SafeNext(v.Length));
         }
 
         private int SafeNext(int min, int max)
         {
-            lock(random)
+            lock (random)
             {
                 return random.Next(min, max);
             }
@@ -299,7 +299,7 @@ namespace Bot.Services.Dungeoneering
 
         private int SafeNext(int max)
         {
-            lock(random)
+            lock (random)
             {
                 return random.Next(max);
             }

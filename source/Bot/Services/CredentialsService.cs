@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Bot.Services.RavenDB;
-using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Bot.Services
 {

@@ -6,7 +6,7 @@ namespace Bot.Models.Dungeoneering
     /// </summary>
     public class Item
     {
-        
+
         /// <summary>
         ///     Gets or sets the name of this Item
         /// </summary>

@@ -1,7 +1,7 @@
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Services;
 using Discord.Commands;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Modules
 {
@@ -18,7 +18,7 @@ namespace Bot.Modules
         [Command("profile")]
         [Summary("Pulls up the User Profile information")]
         public async Task ProfileAsync(
-            [Summary("The actual command you want to execute for the Profile")]string command = null,
+            [Summary("The actual command you want to execute for the Profile")] string command = null,
             [Remainder, Summary("A collection of parameters that are to be passed along for use with the given command")] string[] parameters = null
         )
         {
@@ -58,7 +58,7 @@ namespace Bot.Modules
                             break;
                         case "description":
                             var description = parameters.Skip(1).ToList();
-                            if (description.Count == 0) 
+                            if (description.Count == 0)
                             {
                                 await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
                                 return;
@@ -76,7 +76,7 @@ namespace Bot.Modules
             if (string.IsNullOrWhiteSpace(imageUrl) && (Context.Message.Attachments.Count == 0 || Context.Message.Attachments.First().Height == null))
             {
                 await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
-                return;            
+                return;
             }
             userData.ProfileImage = imageUrl ?? Context.Message.Attachments.First().Url;
             await ReactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);

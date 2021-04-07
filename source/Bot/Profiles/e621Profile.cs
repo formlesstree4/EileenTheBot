@@ -1,10 +1,10 @@
-using System.Linq;
 using AutoMapper;
+using System.Linq;
 
 namespace Bot.Profiles
 {
 
-    public sealed class e621Profile: Profile
+    public sealed class e621Profile : Profile
     {
 
         public e621Profile()

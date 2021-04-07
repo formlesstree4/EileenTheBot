@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -14,7 +14,7 @@ namespace Bot.Services
     [Summary("Provides a pass-through to a web service that provides GPT-2 responses based upon the last handful of messages in the Channel for context. This only works for Guilds and will not work in private message groups with the Bot")]
     public sealed class GptService : IEileenService
     {
-        
+
         private readonly string _triggerWord;
         private readonly DiscordSocketClient _discord;
         private readonly ServerConfigurationService _serverConfigurationService;
@@ -51,7 +51,7 @@ namespace Bot.Services
         }
 
         // Suppress the warning about using an async method when no code is async.
-        #pragma warning disable CS1998
+#pragma warning disable CS1998
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
         {
             if (!(rawMessage is SocketUserMessage message)) return;
@@ -78,7 +78,7 @@ namespace Bot.Services
                 }
                 payload = string.Join('\n', _archiveOfMessages);
             }
-            
+
             // Don't let erector respond to itself. However, we do need to keep track of
             // what erector HAS said so if erector did say something, then that's OK.
             if (escapedMessage.IndexOf(_triggerWord, StringComparison.OrdinalIgnoreCase) == -1) return;
@@ -87,8 +87,9 @@ namespace Bot.Services
             // time to get the response
             // Disable warning that we are not using await here
             // as we do not want to wait for this to finish!
-            #pragma warning disable CS4014
-            Task.Factory.StartNew(async () => {
+#pragma warning disable CS4014
+            Task.Factory.StartNew(async () =>
+            {
                 using (message.Channel.EnterTypingState())
                 {
                     var finalPayload = payload + '\n' + $"{_replacementName}: ";
@@ -99,10 +100,10 @@ namespace Bot.Services
                     await message.Channel.SendMessageAsync(fullResponse);
                 }
             });
-            #pragma warning restore CS4014
+#pragma warning restore CS4014
 
         }
-        #pragma warning restore CS1998
+#pragma warning restore CS1998
 
         private async Task<string> GetGptResponse(string context, int counter = 1)
         {

@@ -1,10 +1,10 @@
+using Bot.Preconditions;
+using Bot.Services;
+using Discord.Commands;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Bot.Preconditions;
-using Bot.Services;
-using Discord.Commands;
 
 namespace Bot.Modules
 {
@@ -71,11 +71,11 @@ namespace Bot.Modules
 
 
             [Command("save"), Summary("Forcibly saves any given collection of services")]
-            public async Task SaveService([Summary("The collection of services, separated by spaces")]params string[] names)
+            public async Task SaveService([Summary("The collection of services, separated by spaces")] params string[] names)
             {
                 var services = new List<IEileenService>(GetQualifyingServices(names));
                 await ReplyAsync("Saving services, please wait...");
-                foreach(var service in services)
+                foreach (var service in services)
                 {
                     await service.SaveServiceAsync();
                 }
@@ -83,11 +83,11 @@ namespace Bot.Modules
             }
 
             [Command("load"), Summary("Forcibly loads any given collection of services")]
-            public async Task LoadService([Summary("The collection of services, separated by spaces")]params string[] names)
+            public async Task LoadService([Summary("The collection of services, separated by spaces")] params string[] names)
             {
                 var services = new List<IEileenService>(GetQualifyingServices(names));
                 await ReplyAsync("Reloading services, please wait...");
-                foreach(var service in services)
+                foreach (var service in services)
                 {
                     await service.LoadServiceAsync();
                 }

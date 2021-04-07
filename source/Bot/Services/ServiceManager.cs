@@ -1,7 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Bot.Services
 {
@@ -11,19 +11,19 @@ namespace Bot.Services
     /// </summary>
     public sealed class ServiceManager
     {
-        
+
         private readonly IEnumerable<Type> eileenServices;
         private readonly IServiceProvider provider;
 
         public ServiceManager(IServiceProvider provider)
         {
             eileenServices = (from assemblies in AppDomain.CurrentDomain.GetAssemblies()
-                                    let types = assemblies.GetTypes()
-                                    let services = (from t in types
-                                                    where t.IsAssignableTo(typeof(IEileenService)) &&
-                                                    !t.IsAbstract && !t.IsInterface
-                                                    select t)
-                                    select services).SelectMany(c => c).ToList();
+                              let types = assemblies.GetTypes()
+                              let services = (from t in types
+                                              where t.IsAssignableTo(typeof(IEileenService)) &&
+                                              !t.IsAbstract && !t.IsInterface
+                                              select t)
+                              select services).SelectMany(c => c).ToList();
             this.provider = provider;
         }
 
@@ -51,8 +51,8 @@ namespace Bot.Services
         public IEileenService GetServiceByName(string name)
         {
             var serviceType = (from type in eileenServices
-                                where type.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
-                                select type).FirstOrDefault();
+                               where type.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
+                               select type).FirstOrDefault();
             if (serviceType is null) return null;
             var service = provider.GetRequiredService(serviceType);
             if (service is null) return null;
@@ -65,7 +65,7 @@ namespace Bot.Services
         /// <returns>A collection of IEileenService references</returns>
         public IEnumerable<IEileenService> GetServices()
         {
-            foreach(var type in eileenServices)
+            foreach (var type in eileenServices)
             {
                 yield return (IEileenService)provider.GetRequiredService(type);
             }

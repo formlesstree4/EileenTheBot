@@ -81,13 +81,13 @@ namespace Bot.Services
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message}"));
 
                 var paginatedMessage = await channel.SendMessageAsync(embed: message.CurrentPage);
-                #pragma warning disable CS4014
-                Task.Run(async() =>
+#pragma warning disable CS4014
+                Task.Run(async () =>
                 {
-                    await paginatedMessage.AddReactionsAsync(new[] {new Emoji(FIRST), new Emoji(BACK), new Emoji(NEXT), new Emoji(END), new Emoji(STOP)});
+                    await paginatedMessage.AddReactionsAsync(new[] { new Emoji(FIRST), new Emoji(BACK), new Emoji(NEXT), new Emoji(END), new Emoji(STOP) });
                     await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Monitoring {paginatedMessage.Id}"));
                 });
-                #pragma warning restore CS4014
+#pragma warning restore CS4014
                 _messages.TryAdd(paginatedMessage.Id, message);
                 return paginatedMessage;
             }
@@ -112,7 +112,7 @@ namespace Bot.Services
             var message = await (messageParam.GetOrDownloadAsync());
 
             if (!await HandleMessageValidation(message, reaction)) return;
-            if (!_messages.TryGetValue(message.Id, out BetterPaginationMessage betterMessage)) 
+            if (!_messages.TryGetValue(message.Id, out BetterPaginationMessage betterMessage))
             {
                 await WriteLog(new LogMessage(LogSeverity.Warning, nameof(BetterPaginationService), "An expired message was reacted to. Discarding / ignoring for the time being"));
                 await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
@@ -290,7 +290,7 @@ namespace Bot.Services
         {
             var messageIds = _messages.Keys.ToList();
             var messages = _messages.Values.ToList();
-            for(var index = _messages.Count - 1; index >= 0; index--)
+            for (var index = _messages.Count - 1; index >= 0; index--)
             {
                 var messageId = messageIds[index];
                 var message = messages[index];
@@ -379,7 +379,7 @@ namespace Bot.Services
                     }
                     eBuilder.AddField(pageText, $"{pg + 1}/{embedList.Count:N0}", true);
 
-                    if(embed.Author != null)
+                    if (embed.Author != null)
                     {
                         eBuilder.Author = new EmbedAuthorBuilder()
                             .WithIconUrl(embed.Author.Value.IconUrl)
@@ -393,7 +393,7 @@ namespace Bot.Services
                         eBuilder.Footer = new EmbedFooterBuilder()
                             .WithText(embed.Footer.Value.Text);
                     }
-                    if(embed.Image != null)
+                    if (embed.Image != null)
                     {
                         eBuilder.ImageUrl = embed.Image.Value.Url;
                     }
@@ -405,12 +405,12 @@ namespace Bot.Services
                     eBuilder.Title = embed.Title;
                     eBuilder.Url = embed.Url;
                     embedList[pg] = eBuilder.Build();
-                    
+
                 }
             }
 
             _pages = embedList;
-            
+
         }
 
         public override string ToString()

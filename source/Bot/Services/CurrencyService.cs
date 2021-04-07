@@ -1,11 +1,11 @@
-using System;
-using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Models.Currency;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
+using System;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -41,7 +41,8 @@ namespace Bot.Services
             RecurringJob.AddOrUpdate("currencyUpdate", () => UpdateUserCurrency(), Cron.Hourly);
             RecurringJob.AddOrUpdate("currencyDailyReset", () => ResetDailyClaim(), Cron.Daily);
             Write($"Registering profile service callback");
-            userService.RegisterProfileCallback(async (embedDetails) => {
+            userService.RegisterProfileCallback(async (embedDetails) =>
+            {
                 var currencyData = GetOrCreateCurrencyData(embedDetails.UserData);
                 embedDetails.PageBuilder
                     .AddField(new EmbedFieldBuilder()
@@ -70,14 +71,14 @@ namespace Bot.Services
         public async Task UpdateUserCurrency()
         {
             Write("Running hourly task of updating user currency...");
-            
+
             // Inside each UserData object is a Tag instance of the CurrencyData.
             // This currency data is solely responsible for holding things like:
             //  1. The User's current 'currency level'
             //  2. The User's current currency value
             //  3. The User's current prestige value
             //  4. The User's soft-cap for currency
-            foreach(var userData in userService.WalkUsers())
+            foreach (var userData in userService.WalkUsers())
             {
                 var currencyData = GetOrCreateCurrencyData(userData);
                 Write($"Performing passive check for {userData.UserId}...", LogSeverity.Verbose);
@@ -93,7 +94,7 @@ namespace Bot.Services
         public async Task ResetDailyClaim()
         {
             Write("Running Daily Task of resetting the daily claim...");
-            foreach(var userData in userService.WalkUsers())
+            foreach (var userData in userService.WalkUsers())
             {
                 var currencyData = GetOrCreateCurrencyData(userData);
                 Write($"Resetting {userData.UserId}...", LogSeverity.Verbose);

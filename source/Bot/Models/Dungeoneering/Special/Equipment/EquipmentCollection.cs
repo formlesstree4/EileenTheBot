@@ -1,7 +1,7 @@
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 
 namespace Bot.Models.Dungeoneering.Special.Equipment
 {
@@ -49,7 +49,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         public WrappedEquipment GetWeaponById(int id)
         {
             return (from e in Equipment
-                   let we = new WrappedEquipment(e)
+                    let we = new WrappedEquipment(e)
                     where we.WeaponId == id
                     select we).First();
         }
@@ -102,7 +102,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
 
 
 
-        public WrappedEquipment(JObject sourceData) 
+        public WrappedEquipment(JObject sourceData)
         {
             backingData = sourceData;
             ReadObject();
@@ -129,7 +129,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         private string GetEquipmentLocation(JToken location)
         {
             if (!location.HasValues) return "";
-            foreach(var c in location.Values<JProperty>())
+            foreach (var c in location.Values<JProperty>())
             {
                 var name = c.Name;
                 var canEquip = c?.First?.Value<bool>() ?? false;

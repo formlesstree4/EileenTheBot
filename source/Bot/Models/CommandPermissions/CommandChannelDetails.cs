@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using Discord;
+using System.Collections.Generic;
 
 namespace Bot.Models.CommandPermissions
 {
