@@ -1,8 +1,8 @@
+using Bot.Preconditions;
+using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Bot.Preconditions;
-using Discord.Commands;
 
 namespace Bot.Models.CommandPermissions
 {
@@ -22,7 +22,7 @@ namespace Bot.Models.CommandPermissions
                 return null;
             }
             var permissions = cmdPermissions as UseErectorPermissions;
-            if(Permissions.FirstOrDefault(c => c.Command.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase)) is null)
+            if (Permissions.FirstOrDefault(c => c.Command.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase)) is null)
             {
                 Permissions.Add(new CommandEntry
                 {

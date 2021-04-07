@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.Communication;
 using Bot.Services.RavenDB;
@@ -11,6 +6,11 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
 using Raven.Client.Documents;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -60,7 +60,7 @@ namespace Bot.Services
 
         public async Task SaveServiceAsync()
         {
-            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 Write($"Saving User Data to RavenDB...");
                 foreach (var entry in userContent)
@@ -75,12 +75,12 @@ namespace Bot.Services
 
         public async Task LoadServiceAsync()
         {
-            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 Write($"Loading User Data from RavenDB...");
                 var c = await session.Query<EileenUserData>().ToListAsync();
                 Write($"Discovered {c.Count} item(s) to load!");
-                foreach(var userData in c)
+                foreach (var userData in c)
                 {
                     userContent.TryAdd(userData.UserId, userData);
                 }
@@ -97,7 +97,7 @@ namespace Bot.Services
             Write($"Retrieving UserData for {userId}");
             if (!userContent.ContainsKey(userId))
             {
-                userContent.TryAdd(userId, await(CreateUserContent(userId)));
+                userContent.TryAdd(userId, await (CreateUserContent(userId)));
             }
             return GetUserData(userId);
         }
@@ -128,7 +128,7 @@ namespace Bot.Services
             EnsureDefaults(mainProfilePageBuilder, discordInfo, userData);
             var mainProfilePage = mainProfilePageBuilder.Build();
             var profilePages = new List<Embed> { mainProfilePage };
-            foreach(var callback in profilePageCallbacks)
+            foreach (var callback in profilePageCallbacks)
             {
                 var pcb = new ProfileCallback(userData, discordInfo, new EmbedBuilder());
                 var pcbResult = await callback(pcb);
@@ -142,7 +142,7 @@ namespace Bot.Services
         {
             Write("Synchronizing Users Server List with available Guilds");
             var servers = client.Guilds.ToList();
-            foreach(var ud in userContent)
+            foreach (var ud in userContent)
             {
                 Write($"Identifying Servers {ud.Key} is located on", LogSeverity.Verbose);
                 ud.Value.ServersOn = (from c in servers
@@ -180,7 +180,7 @@ namespace Bot.Services
         private EileenUserData GetUserData(ulong userId)
         {
             Write($"Retrieving UserData for {userId} from cache (aka NOT going to RavenDB)");
-            if(!userContent.TryGetValue(userId, out var d))
+            if (!userContent.TryGetValue(userId, out var d))
             {
                 throw new ArgumentException(nameof(userId));
             }
@@ -191,7 +191,7 @@ namespace Bot.Services
         {
             Write($"Creating new UserData for {userId}");
             var userData = new EileenUserData { UserId = userId };
-            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 await session.StoreAsync(userData, userId.ToString());
                 await session.SaveChangesAsync();

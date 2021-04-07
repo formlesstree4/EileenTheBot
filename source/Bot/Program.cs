@@ -1,30 +1,27 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using AutoMapper;
+using Bot.Models;
+using Bot.Services;
+using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Bot.Services;
-using System.Threading;
-using Bot.Services.Booru;
-using AutoMapper;
-using System.Linq;
-using System.Reflection;
-using Bot.Services.RavenDB;
 using Hangfire;
+using Hangfire.Annotations;
+using Hangfire.Dashboard;
 using Hangfire.PostgreSql;
-using Bot.Services.Communication;
 using Hangfire.States;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore;
-using Hangfire.Dashboard;
-using Hangfire.Annotations;
-using Bot.Services.Dungeoneering;
-using Bot.Models;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Bot
 {
@@ -130,7 +127,7 @@ namespace Bot
 
         private LogSeverity ParseEnvironmentLogLevel()
         {
-            switch(Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
+            switch (Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
             {
                 case "CRITICAL":
                 case "0":
@@ -157,7 +154,7 @@ namespace Bot
 
         private Hangfire.Logging.LogLevel ParseEnvironmentLogLevelForHangfire()
         {
-            switch(Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
+            switch (Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
             {
                 case "CRITICAL":
                 case "0":
@@ -221,20 +218,21 @@ namespace Bot
             // IEileenService and ensure we register them
             // as Singletons inside the ServiceCollection.
             var eileenServices = (from assemblies in AppDomain.CurrentDomain.GetAssemblies()
-                                    let types = assemblies.GetTypes()
-                                    let services = (from t in types
-                                                    where t.IsAssignableTo(typeof(IEileenService)) &&
-                                                    !t.IsAbstract && !t.IsInterface
-                                                    select t)
-                                    select services).SelectMany(c => c).ToList();
-            
+                                  let types = assemblies.GetTypes()
+                                  let services = (from t in types
+                                                  where t.IsAssignableTo(typeof(IEileenService)) &&
+                                                  !t.IsAbstract && !t.IsInterface
+                                                  select t)
+                                  select services).SelectMany(c => c).ToList();
+
             var svc = new ServiceCollection()
                 // Manually add services that do NOT implement IEileenService
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
                 .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
                 .AddSingleton<CancellationTokenSource>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
-                .AddSingleton<DiscordSocketClient>((services) => {
+                .AddSingleton<DiscordSocketClient>((services) =>
+                {
                     var config = new DiscordSocketConfig
                     {
                         AlwaysDownloadUsers = true,
@@ -252,7 +250,7 @@ namespace Bot
                 .AddSingleton<CommandService>()
                 .AddSingleton<ServiceManager>();
             await LogAsync($"Discovered {eileenServices.Count} service(s)");
-            foreach(var s in eileenServices)
+            foreach (var s in eileenServices)
             {
                 var attr = s.GetCustomAttribute<ServiceTypeAttribute>();
                 var serviceType = attr?.ServiceType ?? ServiceType.Singleton;
@@ -304,7 +302,7 @@ namespace Bot
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHangfire(config =>
-		        config.UsePostgreSqlStorage(Configuration.GetValue<string>("connection-string")));
+                config.UsePostgreSqlStorage(Configuration.GetValue<string>("connection-string")));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -336,7 +334,7 @@ namespace Bot
         {
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
         }
-            
+
 
         public override object ActivateJob(Type jobType)
         {

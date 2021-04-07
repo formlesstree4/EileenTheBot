@@ -1,14 +1,14 @@
-using System.Threading.Tasks;
-using Discord.Commands;
-using Bot.Services;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text;
-using Discord;
-using Bot.Services.Booru;
 using AutoMapper;
 using Bot.Models;
+using Bot.Services;
+using Bot.Services.Booru;
+using Discord;
+using Discord.Commands;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Bot.Modules
 {

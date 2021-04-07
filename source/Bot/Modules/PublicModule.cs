@@ -1,16 +1,14 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
-using Hangfire;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Bot.Modules
 {
@@ -39,7 +37,7 @@ namespace Bot.Modules
             this.serverConfigurationService = serverConfigurationService ?? throw new System.ArgumentNullException(nameof(serverConfigurationService));
         }
 
-        #pragma warning disable CS1998
+#pragma warning disable CS1998
         [Command("poem")]
         [Summary("Generates a poem with an optional title")]
         public async Task PoetryAsync(
@@ -52,8 +50,9 @@ namespace Bot.Modules
             var url = ravenDatabaseService.Configuration.GptUrl;
             if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
             url = url.Replace(t.Port.ToString(), "8081");
-            #pragma warning disable CS4014
-            Task.Factory.StartNew(async() => {
+#pragma warning disable CS4014
+            Task.Factory.StartNew(async () =>
+            {
                 using (Context.Channel.EnterTypingState())
                 {
                     var payload = new { title = (title ?? "") };
@@ -66,9 +65,9 @@ namespace Bot.Modules
                     await Context.Channel.SendMessageAsync(responseString);
                 }
             });
-            #pragma warning restore CS4014
+#pragma warning restore CS4014
         }
-        #pragma warning restore CS1998
+#pragma warning restore CS1998
 
 
 
@@ -129,7 +128,7 @@ namespace Bot.Modules
         }
 
         [Command("service"), Summary("Provides some information about a particular service and what it does")]
-        public async Task ServiceHelpAsync([Summary("The service to look up information over")]string serviceName)
+        public async Task ServiceHelpAsync([Summary("The service to look up information over")] string serviceName)
         {
             var serviceType = serviceManager.GetServiceType(serviceName);
             if (serviceType is null)
@@ -146,7 +145,7 @@ namespace Bot.Modules
             await ReplyAsync($"{serviceName}: {attr.Text}");
         }
 
-        private static string BoolToYesNo(bool b) => b ? "Yes": "No";
+        private static string BoolToYesNo(bool b) => b ? "Yes" : "No";
 
         private static string GetContext(RequireContextAttribute attribute)
         {

@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using Bot.Models.Raven;
 using Discord;
 using Discord.Commands;
 using Raven.Client.Documents;
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace Bot.Services.RavenDB
 {
@@ -41,7 +41,7 @@ namespace Bot.Services.RavenDB
 
         public async Task InitializeService()
         {
-            await GetBotConfigurationAsync(reload: false);            
+            await GetBotConfigurationAsync(reload: false);
             await Task.Yield();
         }
 

@@ -3,7 +3,6 @@ namespace Bot.Services.Markov
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Newtonsoft.Json;
 
     // Some code used from https://github.com/otac0n/markov 
     // I have modified it to my needs.
@@ -18,7 +17,7 @@ namespace Bot.Services.Markov
         public int Order => order;
         public ulong Size => (ulong)items.Count + (ulong)terminals.Count;
 
-        public MarkovChain(): this(new Random()) { }
+        public MarkovChain() : this(new Random()) { }
 
         public MarkovChain(Random random) : this(1, random) { }
 
@@ -133,7 +132,7 @@ namespace Bot.Services.Markov
         }
 
 
-        
+
 
         // --- PRIVATE --- //
 

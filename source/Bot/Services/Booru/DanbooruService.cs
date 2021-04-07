@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using Bot.Models.Danbooru;
 using Discord.Commands;
+using System.Collections.Generic;
 
 namespace Bot.Services.Booru
 {

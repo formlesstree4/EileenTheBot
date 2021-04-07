@@ -1,8 +1,8 @@
+using Bot.Services;
+using Discord.Commands;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Bot.Services;
-using Discord.Commands;
 
 namespace Bot.Modules
 {
@@ -23,7 +23,7 @@ namespace Bot.Modules
         [Summary("Enables a command for a particular room. If a command does NOT hook into the command permissions system, this will do nothing.")]
         [RequireUserPermission(Discord.GuildPermission.ManageChannels)]
         [RequireContext(ContextType.Guild)]
-        public async Task HandleAllowCommand([Summary("The command to allow")]string command)
+        public async Task HandleAllowCommand([Summary("The command to allow")] string command)
         {
             var permissions = await CommandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
             var discordCommand = CommandService.Commands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
@@ -52,7 +52,7 @@ namespace Bot.Modules
         [Command("denycmd")]
         [Summary("Disables a command for a particular room. If a command does NOT hook into the command permissions system, this will do nothing.")]
         [RequireUserPermission(Discord.GuildPermission.ManageChannels)]
-        public async Task HandleDenyCommand([Summary("The command to deny")]string command)
+        public async Task HandleDenyCommand([Summary("The command to deny")] string command)
         {
             var permissions = await CommandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
             var discordCommand = CommandService.Commands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));

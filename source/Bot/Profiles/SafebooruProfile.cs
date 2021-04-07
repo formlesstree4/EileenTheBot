@@ -3,7 +3,7 @@ using AutoMapper;
 namespace Bot.Profiles
 {
 
-    public sealed class SafebooruProfile: Profile
+    public sealed class SafebooruProfile : Profile
     {
 
         public SafebooruProfile()

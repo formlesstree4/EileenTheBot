@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
 using Bot.Services;
-using Discord;
 using Discord.Commands;
+using System.Threading.Tasks;
 
 namespace Bot.Modules
 {

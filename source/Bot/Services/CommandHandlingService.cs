@@ -1,12 +1,11 @@
-using System;
-using System.Reflection;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+using Bot.Services.RavenDB;
+using Bot.TypeReaders;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Bot.Services.RavenDB;
-using Bot.TypeReaders;
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -37,7 +36,7 @@ namespace Bot.Services
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;
             _commands.Log += _logger;
-            
+
             // Hook MessageReceived so we can process each message to see
             // if it qualifies as a command.
             _discord.MessageReceived += MessageReceivedAsync;
@@ -56,7 +55,7 @@ namespace Bot.Services
         {
             // Ignore system messages, or messages from other bots
             if (!(rawMessage is SocketUserMessage message)) return;
-            if (message.Source != MessageSource.User) return;         
+            if (message.Source != MessageSource.User) return;
 
             // This value holds the offset where the prefix ends
             var argPos = 0;
@@ -78,7 +77,7 @@ namespace Bot.Services
             // Perform the execution of the command. In this method,
             // the command service will perform precondition and parsing check
             // then execute the command if one is matched.
-            await _commands.ExecuteAsync(context, argPos, _services); 
+            await _commands.ExecuteAsync(context, argPos, _services);
             // Note that normally a result will be returned by this format, but here
             // we will handle the result in CommandExecutedAsync,
         }

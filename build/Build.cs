@@ -1,8 +1,3 @@
-using System;
-using System.Configuration;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
@@ -12,7 +7,7 @@ using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
-
+using System;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.Docker.DockerTasks;
@@ -28,7 +23,7 @@ sealed class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    public static int Main () => Execute<Build>(x => x.Compile);
+    public static int Main() => Execute<Build>(x => x.Compile);
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
@@ -77,7 +72,7 @@ sealed class Build : NukeBuild
     Target RemoveExistingImage => _ => _
         .After(Compile)
         .ProceedAfterFailure()
-        .Executes(() => 
+        .Executes(() =>
         {
             Docker("rmi eileen:latest", logOutput: false);
         });

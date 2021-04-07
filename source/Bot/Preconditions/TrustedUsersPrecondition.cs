@@ -1,9 +1,9 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Bot.Services.RavenDB;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Bot.Preconditions
 {
@@ -18,7 +18,7 @@ namespace Bot.Preconditions
             var ravenDatabaseService = services.GetRequiredService<RavenDatabaseService>();
             var configuration = ravenDatabaseService.Configuration;
             return await Task.FromResult(configuration.TrustedUsers.Contains(context.User.Id) ?
-                PreconditionResult.FromSuccess():
+                PreconditionResult.FromSuccess() :
                 PreconditionResult.FromError("You are not allowed to perform this command!"));
         }
     }

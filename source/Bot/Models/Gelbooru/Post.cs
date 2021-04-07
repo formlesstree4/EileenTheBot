@@ -61,7 +61,7 @@ namespace Bot.Models.Gelbooru
 
 
         public string GetPageUrl() => $"https://gelbooru.com/index.php?page=post&s=view&id={Id}";
-        
+
     }
 
 }

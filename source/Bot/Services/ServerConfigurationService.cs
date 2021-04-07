@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -38,9 +38,9 @@ namespace Bot.Services
         public async Task SaveServiceAsync()
         {
             Write($"Saving...");
-            using(var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
+            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
             {
-                foreach(var configuration in configurations)
+                foreach (var configuration in configurations)
                 {
                     Write($"Saving {configuration.Key}...", LogSeverity.Verbose);
                     await session.StoreAsync(
@@ -53,7 +53,7 @@ namespace Bot.Services
             }
             Write($"Saved!");
         }
-        
+
         private async Task OnGuildJoined(SocketGuild arg)
         {
             Write($"A new guild has been detected. Creating defaults...");

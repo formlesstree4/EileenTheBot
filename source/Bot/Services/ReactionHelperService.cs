@@ -1,6 +1,6 @@
-using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using System.Threading.Tasks;
 
 namespace Bot.Services
 {
@@ -17,7 +17,7 @@ namespace Bot.Services
 
         public async Task AddMessageReaction(IMessage message, ReactionType type)
         {
-            switch(type)
+            switch (type)
             {
                 case ReactionType.Approval:
                     await message.AddReactionAsync(approvalEmoji);

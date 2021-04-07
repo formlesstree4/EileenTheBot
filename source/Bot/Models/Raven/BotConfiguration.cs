@@ -4,7 +4,7 @@ namespace Bot.Models.Raven
 {
     public sealed class BotConfiguration
     {
-        
+
         public string DiscordToken { get; set; }
 
         public IList<Bot.Models.CredentialsEntry> Credentials { get; set; }

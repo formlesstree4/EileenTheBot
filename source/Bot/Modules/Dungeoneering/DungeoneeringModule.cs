@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Bot.Models;
 using Bot.Preconditions;
 using Bot.Services;
@@ -9,6 +5,10 @@ using Bot.Services.Dungeoneering;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Bot.Modules.Dungeoneering
 {
@@ -36,7 +36,7 @@ namespace Bot.Modules.Dungeoneering
         {
             await HandleHelpAsync();
         }
-        
+
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
         [Command("register")]
@@ -92,7 +92,7 @@ namespace Bot.Modules.Dungeoneering
         {
             await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
         }
-        
+
 
 
         private async Task HandleHelpAsync()
