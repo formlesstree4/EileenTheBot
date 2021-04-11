@@ -18,6 +18,13 @@ namespace Bot.Services.Dungeoneering
 
         public ReadOnlyCollection<WrappedEquipment> Equipment { get; private set; }
 
+        public ReadOnlyCollection<WrappedEquipment> Weapons =>
+            Equipment.Where(c => c.EquipmentType.Equals("weapon", StringComparison.OrdinalIgnoreCase)).ToList().AsReadOnly();
+
+        public ReadOnlyCollection<WrappedEquipment> Armor =>
+            Equipment.Where(c => c.EquipmentType.Equals("armor", StringComparison.OrdinalIgnoreCase)).ToList().AsReadOnly();
+
+
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly Func<LogMessage, Task> logger;
         private readonly Random rng;
