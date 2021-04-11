@@ -6,6 +6,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -197,6 +198,93 @@ namespace Bot.Modules.Dungeoneering
             var userDetails = await (Client as IDiscordClient).GetUserAsync(encounter.PlayerId);
             await ReplyAsync($"{userDetails.Mention} is fighting '{encounter.ActiveMonster.Name}' with a power of {encounter.ActiveMonster.GetActualPower()}");
             await ReplyAsync($"{userDetails.Mention} has a power of {playerCard.GetActualPower()}.");
+        }
+
+
+        [Group("query")]
+        public sealed class DungeoneeringResearchModule : ModuleBase<SocketCommandContext>
+        {
+            private readonly EquipmentService equipmentService;
+            private readonly BetterPaginationService paginationService;
+
+            public DungeoneeringResearchModule(
+                EquipmentService equipmentService,
+                BetterPaginationService paginationService)
+            {
+                this.equipmentService = equipmentService ?? throw new ArgumentNullException(nameof(equipmentService));
+                this.paginationService = paginationService ?? throw new ArgumentNullException(nameof(paginationService));
+            }
+
+
+            [UseErectorPermissions(false, true)]
+            [RequireContext(ContextType.Guild)]
+            [Command]
+            public async Task QueryInfoAsync()
+            {
+                await ReplyAsync("You can query using the `weapon` and `armor` as sub-text searches. For example: `dungeoneer query weapon Sword` will return all weapons of the name 'Sword'");
+            }
+
+            [UseErectorPermissions(false, true)]
+            [RequireContext(ContextType.Guild)]
+            [Command("weapon")]
+            public async Task LookupWeaponAsync([Remainder] string name)
+            {
+                var weapons = equipmentService.Weapons
+                    .Where(c => c.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(c => c.EquipmentLevel);
+
+                var embeds = new List<Embed>();
+
+                foreach(var weapon in weapons)
+                {
+                    var w = weapon.ToEquipment();
+                    embeds.Add(
+                        new EmbedBuilder()
+                            .AddField("Power", w.AttackPower, true)
+                            .AddField("Value", w.Price, true)
+                            .AddField("Location", w.Location, true)
+                            .WithTitle(weapon.Name)
+                            .WithCurrentTimestamp()
+                            .Build());
+                }
+
+                await paginationService.Send(
+                    Context.Channel,
+                    new BetterPaginationMessage(embeds, false, Context.User));
+
+            }
+
+            [UseErectorPermissions(false, true)]
+            [RequireContext(ContextType.Guild)]
+            [Command("armor")]
+            public async Task LookupArmorAsync([Remainder] string name)
+            {
+                var armor = equipmentService.Armor
+                    .Where(c => c.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(c => c.EquipmentLevel);
+
+                var embeds = new List<Embed>();
+
+                foreach(var armorPiece in armor)
+                {
+                    var w = armorPiece.ToEquipment();
+                    embeds.Add(
+                        new EmbedBuilder()
+                            .AddField("Power", w.AttackPower, true)
+                            .AddField("Value", w.Price, true)
+                            .AddField("Location", w.Location, true)
+                            .WithTitle(armorPiece.Name)
+                            .WithCurrentTimestamp()
+                            .Build());
+                }
+
+                await paginationService.Send(
+                    Context.Channel,
+                    new BetterPaginationMessage(embeds, false, Context.User));
+
+            }
+
+
         }
 
     }
