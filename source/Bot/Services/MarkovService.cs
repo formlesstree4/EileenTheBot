@@ -139,6 +139,11 @@ namespace Bot.Services
                 if (cfg.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.Markov) return;
                 if (message.HasCharPrefix(cfg.CommandPrefix, ref position)) return;
             }
+            if (message.Channel is ITextChannel tc && tc.IsNsfw)
+            {
+                // Ignore NSFW channels
+                return;
+            }
             if (message.Channel is IPrivateChannel pc)
             {
                 isPrivate = true;
