@@ -143,11 +143,11 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         {
             return new Dungeoneering.Equipment
             {
-                AttackPower = this.Power,
+                AttackPower = this.EquipmentLevel ?? 1,
                 BaseValue = this.Value,
                 Name = this.Name,
                 Location = this.EquipLocation,
-                Price = this.Value,
+                Price = this.Power,
                 Type = this.EquipmentType
             };
         }
