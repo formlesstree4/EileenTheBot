@@ -53,7 +53,7 @@ namespace Bot.Preconditions
             }
 
             var serverPermissions = await permissions.GetOrCreatePermissionsAsync(context.Guild);
-            var commandPermission = serverPermissions.Permissions.FirstOrDefault(c => c.Command.Equals(command.Name, StringComparison.OrdinalIgnoreCase));
+            var commandPermission = serverPermissions.Permissions.FirstOrDefault(c => c.Command.Equals(command.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase));
             if (commandPermission is null)
             {
                 // add it to the server
@@ -64,7 +64,7 @@ namespace Bot.Preconditions
                         Allowed = new List<ulong>(),
                         Blocked = new List<ulong>()
                     },
-                    Command = command.Name,
+                    Command = command.GetFullCommandPath(),
                     Default = this.Default,
                     Private = this.Private
                 });

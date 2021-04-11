@@ -86,7 +86,7 @@ namespace Bot.Modules
         {
             var permissions = await CommandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
             var commands = CommandService.Commands
-                .Where(c => !string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase))
+                .Where(c => (!string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase)) || IsCommandParentInGroup(c.Module, group))
                 .Distinct(new CommandInfoComparer())
                 .ToList();
 
@@ -102,7 +102,7 @@ namespace Bot.Modules
                 var commandPermissions = permissions.GetOrAddCommand(discordCommand);
                 if (commandPermissions is null)
                 {
-                    responseBuilder.AppendLine($"The command '{discordCommand.Name}' does not integrate into the Permissions System");
+                    responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' does not integrate into the Permissions System");
                     continue;
                 }
                 if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
@@ -113,7 +113,7 @@ namespace Bot.Modules
                 {
                     commandPermissions.Channels.Blocked.Remove(Context.Channel.Id);
                 }
-                responseBuilder.AppendLine($"The command '{discordCommand.Name}' has been enabled for <#{Context.Channel.Id}>");
+                responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' has been enabled for <#{Context.Channel.Id}>");
             }
             await ReplyAsync(responseBuilder.ToString());
         }
@@ -124,7 +124,7 @@ namespace Bot.Modules
         {
             var permissions = await CommandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
             var commands = CommandService.Commands
-                .Where(c => !string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase))
+                .Where(c => (!string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase)) || IsCommandParentInGroup(c.Module, group))
                 .Distinct(new CommandInfoComparer())
                 .ToList();
 
@@ -140,36 +140,45 @@ namespace Bot.Modules
                 var commandPermissions = permissions.GetOrAddCommand(discordCommand);
                 if (commandPermissions is null)
                 {
-                    responseBuilder.AppendLine($"The command '{discordCommand.Name}' does not integrate into the Permissions System");
+                    responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' does not integrate into the Permissions System");
                     continue;
                 }
-                if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
+                if (commandPermissions.Channels.IsChannelAllowed(Context.Channel))
                 {
                     commandPermissions.Channels.Allowed.Remove(Context.Channel.Id);
                 }
-                if (commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                if (!commandPermissions.Channels.IsChannelBlocked(Context.Channel))
                 {
                     commandPermissions.Channels.Blocked.Add(Context.Channel.Id);
                 }
-                responseBuilder.AppendLine($"The command '{discordCommand.Name}' has been enabled for <#{Context.Channel.Id}>");
+                responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' has been disabled for <#{Context.Channel.Id}>");
             }
 
             await ReplyAsync(responseBuilder.ToString());
         }
 
 
+        private bool IsCommandParentInGroup(ModuleInfo command, string group)
+        {
+            if (command.Parent is not null)
+            {
+                return IsCommandParentInGroup(command.Parent, group);
+            }
+            if (string.IsNullOrWhiteSpace(command.Group)) return false;
+            return command.Group.Equals(group, StringComparison.OrdinalIgnoreCase);
+        }
 
 
         private sealed class CommandInfoComparer : IEqualityComparer<CommandInfo>
         {
             public bool Equals(CommandInfo x, CommandInfo y)
             {
-                return x.Name.Equals(y.Name, StringComparison.OrdinalIgnoreCase);
+                return x.GetFullCommandPath().Equals(y.GetFullCommandPath());
             }
 
             public int GetHashCode([DisallowNull] CommandInfo obj)
             {
-                throw new NotImplementedException();
+                return obj.GetFullCommandPath().GetHashCode();
             }
         }
 

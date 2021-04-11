@@ -22,7 +22,7 @@ namespace Bot.Models.CommandPermissions
                 return null;
             }
             var permissions = cmdPermissions as UseErectorPermissions;
-            if (Permissions.FirstOrDefault(c => c.Command.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase)) is null)
+            if (Permissions.FirstOrDefault(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase)) is null)
             {
                 Permissions.Add(new CommandEntry
                 {
@@ -31,12 +31,12 @@ namespace Bot.Models.CommandPermissions
                         Allowed = new List<ulong>(),
                         Blocked = new List<ulong>()
                     },
-                    Command = cmd.Name,
+                    Command = cmd.GetFullCommandPath(),
                     Default = permissions.Default,
                     Private = permissions.Private
                 });
             }
-            return Permissions.First(c => c.Command.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase));
+            return Permissions.First(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase));
         }
 
     }
