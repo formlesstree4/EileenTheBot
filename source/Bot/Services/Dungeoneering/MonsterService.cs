@@ -14,16 +14,19 @@ namespace Bot.Services.Dungeoneering
     public sealed class MonsterService : IEileenService
     {
         private readonly RavenDatabaseService ravenDatabaseService;
+        private readonly EquipmentService equipmentService;
         private readonly Random random;
         private readonly Func<LogMessage, Task> logger;
         private readonly List<MonsterData> monsters;
 
         public MonsterService(
             RavenDatabaseService ravenDatabaseService,
+            EquipmentService equipmentService,
             Func<LogMessage, Task> logger,
             Random rng)
         {
             this.ravenDatabaseService = ravenDatabaseService ?? throw new System.ArgumentNullException(nameof(ravenDatabaseService));
+            this.equipmentService = equipmentService ?? throw new ArgumentNullException(nameof(equipmentService));
             this.random = rng ?? throw new ArgumentNullException(nameof(rng));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.monsters = new List<MonsterData>();
@@ -51,11 +54,12 @@ namespace Bot.Services.Dungeoneering
                                     where m.Levels.Contains(level)
                                     select m).ToList();
             var selectedMonster = eligibleMonsters[random.Next(eligibleMonsters.Count)];
+            var monsterLevel = Math.Max(1, random.Next(level - 3, level));
             var monster = new Monster
             {
-                Equipment = new List<Equipment>(),
+                Equipment = GetMonsterEquipment(level),
                 Name = selectedMonster.Monster,
-                TheoreticalPower = Math.Max(1, random.Next(level - 3, level))
+                TheoreticalPower = monsterLevel
             };
             return await Task.FromResult(monster);
         }
@@ -67,11 +71,12 @@ namespace Bot.Services.Dungeoneering
                                           m.Levels.Any(c => c <= max)
                                     select m).ToList();
             var selectedMonster = eligibleMonsters[random.Next(eligibleMonsters.Count)];
+            var monsterLevel = Math.Max(1, random.Next(min, max));
             var monster = new Monster
             {
-                Equipment = new List<Equipment>(),
+                Equipment = GetMonsterEquipment(monsterLevel),
                 Name = selectedMonster.Monster,
-                TheoreticalPower = Math.Max(1, random.Next(min, max))
+                TheoreticalPower = monsterLevel
             };
             return await Task.FromResult(monster);
         }
@@ -80,6 +85,17 @@ namespace Bot.Services.Dungeoneering
         {
             logger(new LogMessage(severity, nameof(MonsterService), message));
         }
+
+        private List<Equipment> GetMonsterEquipment(int level)
+        {
+            // for now weapons only
+            // eventually we'll bust out into armor
+            var equipment = new List<Equipment>();
+            var weapon = equipmentService.GetWeaponInRange(Math.Max(1, level - 3), level).FirstOrDefault();
+            equipment.Add(weapon.ToEquipment());
+            return equipment;
+        }
+
 
     }
 

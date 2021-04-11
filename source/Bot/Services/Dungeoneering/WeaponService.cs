@@ -48,14 +48,29 @@ namespace Bot.Services.Dungeoneering
             await Task.Yield();
         }
 
-        public IEnumerable<WrappedEquipment> GetEquipmentInRange(int minLevel, int maxLevel)
+        public IEnumerable<WrappedEquipment> GetEquipmentInRange(int minLevel, int maxLevel) =>
+            GetWeaponInRange(minLevel, maxLevel)
+                .Union(GetArmorInRange(minLevel, maxLevel));
+
+        public IEnumerable<WrappedEquipment> GetWeaponInRange(int minLevel, int maxLevel) =>
+            GetEquipmentTypeInRange(minLevel, maxLevel, "weapon");
+
+        public IEnumerable<WrappedEquipment> GetArmorInRange(int minLevel, int maxLevel) => 
+            GetEquipmentTypeInRange(minLevel, maxLevel, "armor");
+
+        public IEnumerable<string> GetEquipmentLocations() =>
+            Equipment.Select(c => c.EquipLocation).Distinct(StringComparer.OrdinalIgnoreCase);
+
+        private IEnumerable<WrappedEquipment> GetEquipmentTypeInRange(int minLevel, int maxLevel, string type)
         {
             return from e in Equipment
                    let we = e
-                   where we.EquipmentLevel != null && we.EquipmentLevel >= minLevel && we.EquipmentLevel <= maxLevel
+                   where we.EquipmentLevel != null &&
+                        we.EquipmentLevel >= minLevel &&
+                        we.EquipmentLevel <= maxLevel &&
+                        we.EquipmentType.Equals(type, StringComparison.OrdinalIgnoreCase)
                    select we;
         }
-
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
