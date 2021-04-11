@@ -29,7 +29,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         {
             return from e in Equipment
                    let we = new WrappedEquipment(e)
-                   where we.WeaponLevel != null && we.WeaponLevel >= minLevel && we.WeaponLevel <= maxLevel
+                   where we.EquipmentLevel != null && we.EquipmentLevel >= minLevel && we.EquipmentLevel <= maxLevel
                    select we;
         }
 
@@ -50,7 +50,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         {
             return (from e in Equipment
                     let we = new WrappedEquipment(e)
-                    where we.WeaponId == id
+                    where we.EquipmentId == id
                     select we).First();
         }
 
@@ -64,25 +64,25 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
 
 
         /// <summary>
-        ///     Gets the Weapon ID
+        ///     Gets the Equipment ID
         /// </summary>
         /// <value>An integer value that uniquely identifies the enemy</value>
-        public int WeaponId { get; private set; }
+        public int EquipmentId { get; private set; }
 
         /// <summary>
-        ///     Gets the name of the weapon
+        ///     Gets the name of the Equipment
         /// </summary>
         public string Name { get; private set; }
 
         /// <summary>
-        ///     gets the minimum level that this weapon can be equipped
+        ///     gets the minimum level that this Equipment can be equipped
         /// </summary>
-        public int? WeaponLevel { get; private set; }
+        public int? EquipmentLevel { get; private set; }
 
         /// <summary>
-        ///     Gets the TYPE of weapon
+        ///     Gets the TYPE of Equipment
         /// </summary>
-        public string WeaponType { get; private set; }
+        public string EquipmentType { get; private set; }
 
         /// <summary>
         ///     Gets the location of where it can be equipped
@@ -90,13 +90,13 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         public string EquipLocation { get; private set; }
 
         /// <summary>
-        ///     Gets the attack power of this weapon
+        ///     Gets the attack power of this Equipment
         /// </summary>
         /// <value></value>
-        public int AttackPower { get; private set; }
+        public int Power { get; private set; }
 
         /// <summary>
-        ///     Gets the VALUE of this weapon
+        ///     Gets the VALUE of this Equipment
         /// </summary>
         public int Value { get; private set; }
 
@@ -117,17 +117,18 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
             var power = backingData["Attack"];
             var price = backingData["Buy"];
 
-            WeaponId = weaponId.Value<int?>() ?? -1;
-            Name = name.Value<string>() ?? "";
-            WeaponLevel = level.Value<int?>() ?? 0;
-            WeaponType = type.Value<string>() ?? "";
+            EquipmentId = weaponId.Value<int?>() ?? -1;
+            Name = name?.Value<string>() ?? "";
+            EquipmentLevel = level?.Value<int?>() ?? 0;
+            EquipmentType = type?.Value<string>() ?? "";
             EquipLocation = GetEquipmentLocation(backingData["Locations"]);
-            AttackPower = (int)Math.Max(1, Math.Floor((power.Value<int?>() ?? 0.0f) / 10));
-            Value = price.Value<int?>() ?? (int)Math.Floor(AttackPower * 1.5f);
+            Power = (int)Math.Max(1, Math.Floor((power?.Value<int?>() ?? 0.0f) / 10));
+            Value = price?.Value<int?>() ?? (int)Math.Floor(Power * 1.5f);
         }
 
         private string GetEquipmentLocation(JToken location)
         {
+            if (location is null) return "";
             if (!location.HasValues) return "";
             foreach (var c in location.Values<JProperty>())
             {
@@ -142,12 +143,12 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         {
             return new Dungeoneering.Equipment
             {
-                AttackPower = this.AttackPower,
+                AttackPower = this.Power,
                 BaseValue = this.Value,
                 Name = this.Name,
                 Location = this.EquipLocation,
                 Price = this.Value,
-                Type = this.WeaponType
+                Type = this.EquipmentType
             };
         }
 
