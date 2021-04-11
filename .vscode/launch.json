@@ -10,12 +10,13 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/source/Bot/bin/Debug/netcoreapp3.1/Bot.dll",
+            "program": "${workspaceFolder}/source/Bot/bin/Debug/net5.0/Bot.dll",
             "args": [],
             "cwd": "${workspaceFolder}/source/Bot",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
-            "stopAtEntry": false
+            "stopAtEntry": false,
+            "env": {"RavenIP": "http://192.168.254.180:8080"}
         },
         {
             "name": ".NET Core Attach",

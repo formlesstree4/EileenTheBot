@@ -1,16 +1,16 @@
 using Bot.Services;
 using Discord.Commands;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Bot.Modules
 {
 
 
-    /// <summary>
-    ///     
-    /// </summary>
     public sealed class PermissionsModule : ModuleBase<SocketCommandContext>
     {
 
@@ -76,6 +76,101 @@ namespace Bot.Modules
                 commandPermissions.Channels.Blocked.Add(Context.Channel.Id);
             }
             await ReplyAsync($"The command '{command}' has been disabled for <#{Context.Channel.Id}>");
+        }
+
+
+
+        [Command("allowgrp")]
+        [RequireUserPermission(Discord.GuildPermission.ManageChannels)]
+        public async Task HandleAllowGroup([Summary("The group to allow")] string group)
+        {
+            var permissions = await CommandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
+            var commands = CommandService.Commands
+                .Where(c => !string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase))
+                .Distinct(new CommandInfoComparer())
+                .ToList();
+
+            if(!commands.Any())
+            {
+                await ReplyAsync($"The group '{group}' does not exist in the Bot");
+                return;
+            }
+
+            var responseBuilder = new StringBuilder();
+            foreach(var discordCommand in commands)
+            {
+                var commandPermissions = permissions.GetOrAddCommand(discordCommand);
+                if (commandPermissions is null)
+                {
+                    responseBuilder.AppendLine($"The command '{discordCommand.Name}' does not integrate into the Permissions System");
+                    continue;
+                }
+                if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
+                {
+                    commandPermissions.Channels.Allowed.Add(Context.Channel.Id);
+                }
+                if (commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                {
+                    commandPermissions.Channels.Blocked.Remove(Context.Channel.Id);
+                }
+                responseBuilder.AppendLine($"The command '{discordCommand.Name}' has been enabled for <#{Context.Channel.Id}>");
+            }
+            await ReplyAsync(responseBuilder.ToString());
+        }
+
+        [Command("denygrp")]
+        [RequireUserPermission(Discord.GuildPermission.ManageChannels)]
+        public async Task HandleDenyGroup([Summary("The group to deny")] string group)
+        {
+            var permissions = await CommandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
+            var commands = CommandService.Commands
+                .Where(c => !string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase))
+                .Distinct(new CommandInfoComparer())
+                .ToList();
+
+            if(!commands.Any())
+            {
+                await ReplyAsync($"The group '{group}' does not exist in the Bot");
+                return;
+            }
+
+            var responseBuilder = new StringBuilder();
+            foreach(var discordCommand in commands)
+            {
+                var commandPermissions = permissions.GetOrAddCommand(discordCommand);
+                if (commandPermissions is null)
+                {
+                    responseBuilder.AppendLine($"The command '{discordCommand.Name}' does not integrate into the Permissions System");
+                    continue;
+                }
+                if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
+                {
+                    commandPermissions.Channels.Allowed.Remove(Context.Channel.Id);
+                }
+                if (commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                {
+                    commandPermissions.Channels.Blocked.Add(Context.Channel.Id);
+                }
+                responseBuilder.AppendLine($"The command '{discordCommand.Name}' has been enabled for <#{Context.Channel.Id}>");
+            }
+
+            await ReplyAsync(responseBuilder.ToString());
+        }
+
+
+
+
+        private sealed class CommandInfoComparer : IEqualityComparer<CommandInfo>
+        {
+            public bool Equals(CommandInfo x, CommandInfo y)
+            {
+                return x.Name.Equals(y.Name, StringComparison.OrdinalIgnoreCase);
+            }
+
+            public int GetHashCode([DisallowNull] CommandInfo obj)
+            {
+                throw new NotImplementedException();
+            }
         }
 
     }
