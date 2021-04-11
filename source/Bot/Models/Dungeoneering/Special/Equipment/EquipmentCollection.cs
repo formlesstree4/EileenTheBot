@@ -113,7 +113,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
             var name = backingData["Name"];
             var weaponId = backingData["Id"];
             var type = backingData["Type"];
-            var level = backingData["EquipLevelMin"] ?? backingData["WeaponLevel"];
+            var level = backingData["EquipLevelMin"] ?? backingData["WeaponLevel"] ?? backingData["Defense"];
             var power = backingData["Attack"];
             var price = backingData["Buy"];
 
