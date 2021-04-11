@@ -88,11 +88,15 @@ namespace Bot.Services.Dungeoneering
 
         private List<Equipment> GetMonsterEquipment(int level)
         {
+            var hasEquipment = random.Next(100) <= level;
             // for now weapons only
             // eventually we'll bust out into armor
             var equipment = new List<Equipment>();
-            var weapon = equipmentService.GetWeaponInRange(Math.Max(1, level - 3), level).FirstOrDefault();
-            equipment.Add(weapon.ToEquipment());
+            if (hasEquipment)
+            {
+                var weapon = equipmentService.GetWeaponInRange(Math.Max(1, level - 3), level).FirstOrDefault();
+                equipment.Add(weapon.ToEquipment());
+            }
             return equipment;
         }
 

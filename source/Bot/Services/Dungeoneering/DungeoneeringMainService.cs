@@ -20,6 +20,7 @@ namespace Bot.Services.Dungeoneering
         private readonly UserService userService;
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly MonsterService monsterService;
+        private readonly EquipmentService equipmentService;
         private readonly Func<LogMessage, Task> logger;
         private readonly ConcurrentDictionary<ulong, Encounter> currentEncounters;
 
@@ -27,12 +28,14 @@ namespace Bot.Services.Dungeoneering
             UserService userService,
             RavenDatabaseService ravenDatabaseService,
             MonsterService monsterService,
+            EquipmentService equipmentService,
             Func<LogMessage, Task> logger,
             Random random)
         {
             this.userService = userService ?? throw new System.ArgumentNullException(nameof(userService));
             this.ravenDatabaseService = ravenDatabaseService ?? throw new ArgumentNullException(nameof(ravenDatabaseService));
             this.monsterService = monsterService ?? throw new ArgumentNullException(nameof(monsterService));
+            this.equipmentService = equipmentService ?? throw new ArgumentNullException(nameof(equipmentService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.random = random ?? throw new ArgumentNullException(nameof(random));
             this.currentEncounters = new ConcurrentDictionary<ulong, Encounter>();
@@ -138,7 +141,7 @@ namespace Bot.Services.Dungeoneering
             {
                 ActiveMonster = monster,
                 ChannelId = channelId,
-                Loot = await CreateAcceptableLoot(monster, playerCard),
+                Loot = (await CreateAcceptableLoot(monster, playerCard)).ToList(),
                 PlayerId = userId
             };
             currentEncounters.TryAdd(channelId, encounter);
@@ -209,15 +212,7 @@ namespace Bot.Services.Dungeoneering
         public async Task HandleVictoryAsync(PlayerCard player, Encounter encounter)
         {
             Write($"A victory is being recorded!");
-            var battleLog = new BattleLog
-            {
-                Assistants = Enumerable.Empty<PlayerCard>(),
-                ChannelId = encounter.ChannelId,
-                Instigators = Enumerable.Empty<PlayerCard>(),
-                MonsterFought = encounter.ActiveMonster,
-                Player = player,
-                Result = "Victory"
-            };
+            var battleLog = await CreateBattleLogAsync(player, encounter, "Victory");
             player.Victories += 1;
             player.AttackPower += 1;
             player.Battles.Add(battleLog);
@@ -228,15 +223,7 @@ namespace Bot.Services.Dungeoneering
         public async Task HandleDefeatAsync(PlayerCard player, Encounter encounter)
         {
             Write($"A defeat is being recorded!");
-            var battleLog = new BattleLog
-            {
-                Assistants = Enumerable.Empty<PlayerCard>(),
-                ChannelId = encounter.ChannelId,
-                Instigators = Enumerable.Empty<PlayerCard>(),
-                MonsterFought = encounter.ActiveMonster,
-                Player = player,
-                Result = "Defeat"
-            };
+            var battleLog = await CreateBattleLogAsync(player, encounter, "Defeat");
             player.Defeats += 1;
             player.AttackPower = (int)Math.Max(1, Math.Floor(player.AttackPower / (decimal)2));
             player.Battles.Add(battleLog);
@@ -247,21 +234,50 @@ namespace Bot.Services.Dungeoneering
         public async Task HandleFleeAsync(PlayerCard player, Encounter encounter)
         {
             Write($"A 'flee' is being recorded!");
-            var battleLog = new BattleLog
-            {
-                Assistants = Enumerable.Empty<PlayerCard>(),
-                ChannelId = encounter.ChannelId,
-                Instigators = Enumerable.Empty<PlayerCard>(),
-                MonsterFought = encounter.ActiveMonster,
-                Player = player,
-                Result = "Defeat (Fled)"
-            };
+            var battleLog = await CreateBattleLogAsync(player, encounter, "Defeat (Fled)");
             player.Defeats += 1;
             player.Battles.Add(battleLog);
             currentEncounters.TryRemove(encounter.ChannelId, out var e);
             await Task.Yield();
         }
 
+
+        public async Task<List<PlayerCard>> GetPlayerCardsAsync(List<ulong> uid)
+        {
+            var playerCards = new List<PlayerCard>();
+            foreach(var id in uid)
+            {
+                playerCards.Add(await GetPlayerCardAsync(id));
+            }
+            return await Task.FromResult(playerCards);
+        }
+
+        private async Task<BattleLog> CreateBattleLogAsync(PlayerCard player, Encounter encounter, string result)
+        {
+            var assistants = new List<PlayerCard>();
+            var instigators = new List<PlayerCard>();
+
+            foreach (var assistant in encounter.Assistants ?? new List<ulong>())
+            {
+                assistants.Add(await GetPlayerCardAsync(assistant));
+            }
+
+            foreach (var instigator in encounter.Instigators ?? new List<ulong>())
+            {
+                instigators.Add(await GetPlayerCardAsync(instigator));
+            }
+
+            var battleLog = new BattleLog
+            {
+                Assistants = assistants,
+                ChannelId = encounter.ChannelId,
+                Instigators = instigators,
+                MonsterFought = encounter.ActiveMonster,
+                Player = player,
+                Result = result
+            };
+            return battleLog;
+        }
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
@@ -274,13 +290,15 @@ namespace Bot.Services.Dungeoneering
             var level = player.GetActualPower();
             var monster =
                 await monsterService.CreateMonsterAsync(level) ??
-                await monsterService.CreateMonsterFromRange(Math.Max(1, level - 10), level + 10);
+                await monsterService.CreateMonsterFromRange(Math.Max(1, level - 1), level + 1);
             return monster;
         }
 
         private async Task<IEnumerable<Item>> CreateAcceptableLoot(Monster monster, PlayerCard player)
         {
-            return await Task.FromResult(Enumerable.Empty<Item>());
+            var level = player.GetActualPower();
+            var loot = equipmentService.GetEquipmentInRange(Math.Max(1, level - 1), level + 1).Take(random.Next(2));
+            return await Task.FromResult(loot.Select(c => c.ToEquipment()));
         }
 
         private Races GetRandomRace()

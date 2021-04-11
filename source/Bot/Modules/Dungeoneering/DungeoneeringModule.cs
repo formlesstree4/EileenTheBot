@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace Bot.Modules.Dungeoneering
 {
 
-    [Group("dungeoneer")]
+    [Group("dungeoneer"), Alias("d")]
     public sealed class DungeoneeringModule : ModuleBase<SocketCommandContext>
     {
 
@@ -83,7 +83,7 @@ namespace Bot.Modules.Dungeoneering
         [Command("assist")]
         public async Task AssistCommandAsync()
         {
-            await Context.Channel.SendMessageAsync("Assisting is not supported yet!");
+            await HandleAssistingAsync();
         }
 
         [UseErectorPermissions(false, true)]
@@ -91,7 +91,8 @@ namespace Bot.Modules.Dungeoneering
         [Command("deter")]
         public async Task DeterCommandAsync()
         {
-            await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
+            await HandleDeterringAsync();
+            // await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
         }
 
 
@@ -115,11 +116,13 @@ namespace Bot.Modules.Dungeoneering
                 return;
             }
             await DungeoneeringService.RegisterPlayerAsync(Context.User);
-            await ReplyAsync("Congratulations and welcome to Dungeoneering! Your guild card has been created and is now part of your Profile!");
-            await ReplyAsync("To know more about what you can do with Dungeoneering, just type in `dungeoneer help`");
-            await ReplyAsync("All the commands will be printed so you can see what all is now accessible.");
+            var responseBuilder = new StringBuilder();
+            responseBuilder.AppendLine("Congratulations and welcome to Dungeoneering! Your guild card has been created and is now part of your Profile!");
+            responseBuilder.AppendLine("To know more about what you can do with Dungeoneering, just type in `dungeoneer help`");
+            responseBuilder.AppendLine("All the commands will be printed so you can see what all is now accessible.");
             var profileCallback = new ProfileCallback(await UserService.GetOrCreateUserData(Context.User), Context.User, new Discord.EmbedBuilder());
             var builder = await DungeoneeringService.CreateDungeoneeringProfilePage(profileCallback);
+            await ReplyAsync(responseBuilder.ToString());
             await ReplyAsync(embed: builder.PageBuilder.Build());
         }
 
@@ -139,13 +142,14 @@ namespace Bot.Modules.Dungeoneering
             encounter = await DungeoneeringService.CreateEncounterAsync(Context.User, Context.Channel);
 
             var messageBuilder = new StringBuilder();
-            await ReplyAsync($"{Context.User.Mention} has started an encounter!");
-            await ReplyAsync($"In front of {Context.User.Mention} is a Level {encounter.ActiveMonster.GetActualPower()} '{encounter.ActiveMonster.Name}'.");
+            messageBuilder.AppendLine($"{Context.User.Mention} has started an encounter!");
+            messageBuilder.AppendLine($"In front of {Context.User.Mention} is a Level {encounter.ActiveMonster.GetActualPower()} '{encounter.ActiveMonster.Name}'.");
             if (encounter.ActiveMonster.Equipment.Any())
             {
-                await ReplyAsync($"The '{encounter.ActiveMonster.Name}' seems to be wearing some eqipment as well. Be careful!");
+                messageBuilder.AppendLine($"The '{encounter.ActiveMonster.Name}' seems to be wearing some equipment as well. Be careful and perhaps use the `status` command to check!!");
             }
-            await ReplyAsync($"The encounter will last until {Context.User.Mention} defeats the Monster or flees!");
+            messageBuilder.AppendLine($"The encounter will last until {Context.User.Mention} defeats the Monster or flees!");
+            await ReplyAsync(messageBuilder.ToString());
         }
 
         private async Task HandleAttackAsync()
@@ -154,7 +158,28 @@ namespace Bot.Modules.Dungeoneering
             var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
             if (encounter == null) return;
             if (encounter.PlayerId != Context.User.Id) return;
-            if (encounter.ActiveMonster.GetActualPower() < playerCard.AttackPower)
+
+            var playerPower = playerCard.GetActualPower();
+            var monsterPower = encounter.ActiveMonster.GetActualPower();
+
+            var playerBoost = 0;
+            var monsterBoost = 0;
+
+            if (encounter.Assistants.Any())
+            {
+                var assistants = await DungeoneeringService.GetPlayerCardsAsync(encounter.Assistants);
+                playerBoost += assistants.Sum(c => c.GetActualPower());
+                playerPower += playerBoost;
+            }
+
+            if (encounter.Instigators.Any())
+            {
+                var instigators = await DungeoneeringService.GetPlayerCardsAsync(encounter.Instigators);
+                monsterBoost += instigators.Sum(c => c.GetActualPower());
+                monsterPower += monsterBoost;
+            }
+
+            if (monsterPower < playerPower)
             {
                 await ReplyAsync($"{Context.User.Mention} has successfully defeated the {encounter.ActiveMonster.Name}!");
                 await DungeoneeringService.HandleVictoryAsync(playerCard, encounter);
@@ -196,8 +221,53 @@ namespace Bot.Modules.Dungeoneering
             }
             var playerCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
             var userDetails = await (Client as IDiscordClient).GetUserAsync(encounter.PlayerId);
-            await ReplyAsync($"{userDetails.Mention} is fighting '{encounter.ActiveMonster.Name}' with a power of {encounter.ActiveMonster.GetActualPower()}");
-            await ReplyAsync($"{userDetails.Mention} has a power of {playerCard.GetActualPower()}.");
+            var responseBuilder = new StringBuilder();
+            responseBuilder.AppendLine($"{userDetails.Mention} is fighting '{encounter.ActiveMonster.Name}'.");
+
+            var playerPower = playerCard.GetActualPower();
+            var monsterPower = encounter.ActiveMonster.GetActualPower();
+
+            var playerBoost = 0;
+            var monsterBoost = 0;
+
+            if (encounter.Assistants.Any())
+            {
+                var assistants = await DungeoneeringService.GetPlayerCardsAsync(encounter.Assistants);
+                playerBoost += assistants.Sum(c => c.GetActualPower());
+            }
+
+            if (encounter.Instigators.Any())
+            {
+                var instigators = await DungeoneeringService.GetPlayerCardsAsync(encounter.Instigators);
+                monsterBoost += instigators.Sum(c => c.GetActualPower());
+            }
+
+            responseBuilder.AppendLine($"{userDetails.Mention} has a Power of {playerCard.GetActualPower()} + {playerBoost} (from {encounter.Assistants.Count} helpers)");
+            responseBuilder.AppendLine($"{encounter.ActiveMonster.Name} has a Power of {encounter.ActiveMonster.GetActualPower()} + {monsterBoost} (from {encounter.Instigators.Count} helpers)");
+            await ReplyAsync(responseBuilder.ToString());
+        }
+
+        private async Task HandleAssistingAsync()
+        {
+            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
+            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            var hostCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
+            if (encounter == null) return;
+            if (encounter.PlayerId == Context.User.Id) return;
+            encounter.Assistants.Add(Context.User.Id);
+            encounter.Instigators.Remove(Context.User.Id);
+            await ReplyAsync($"{Context.User.Mention} has decided to assist <@{encounter.PlayerId}> by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+        }
+
+        private async Task HandleDeterringAsync()
+        {
+            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
+            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            if (encounter == null) return;
+            if (encounter.PlayerId == Context.User.Id) return;
+            encounter.Assistants.Remove(Context.User.Id);
+            encounter.Instigators.Add(Context.User.Id);
+            await ReplyAsync($"{Context.User.Mention} has decided to assist the '{encounter.ActiveMonster.Name}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
 

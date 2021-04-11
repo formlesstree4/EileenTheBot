@@ -22,12 +22,26 @@ namespace Bot.Models.Dungeoneering
         /// <summary>
         ///     Gets or sets the loot for this encounter.
         /// </summary>
-        public IEnumerable<Item> Loot { get; set; }
+        public List<Item> Loot { get; set; }
 
         /// <summary>
         ///     Gets or sets the Player ID that initiated this encounter.
         /// </summary>
         public ulong PlayerId { get; set; }
+
+        /// <summary>
+        /// Gets or sets a list of instigators
+        /// </summary>
+        /// <typeparam name="ulong">Discord assigned snowflake IDs</typeparam>
+        /// <returns></returns>
+        public List<ulong> Instigators { get; set; } = new List<ulong>();
+
+        /// <summary>
+        /// Gets or sets a list of assistants
+        /// </summary>
+        /// <typeparam name="ulong"></typeparam>
+        /// <returns></returns>
+        public List<ulong> Assistants { get; set; } = new List<ulong>();
 
     }
 
