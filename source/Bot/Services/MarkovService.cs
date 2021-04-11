@@ -182,7 +182,7 @@ namespace Bot.Services
 
             ulong botId = _discord.CurrentUser.Id;
             containsTriggerWord |= message.MentionedUsers.Any(s => s.Id == botId); // The bot was mentionned.
-            if (!containsTriggerWord && message.Reference.MessageId.IsSpecified)
+            if (!containsTriggerWord && (message?.Reference?.MessageId.IsSpecified ?? false))
             {
                 // AFAIK there is no reason that it's not a message channel
                 IMessageChannel messageChannel = (IMessageChannel)_discord.GetChannel(message.Reference.ChannelId);
