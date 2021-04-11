@@ -22,19 +22,22 @@ namespace Bot.Modules
         private readonly StupidTextService stupidTextService;
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly ServerConfigurationService serverConfigurationService;
+        private readonly DiceRollService rollService;
 
         public GlobalModule(
             CommandService commandService,
             BetterPaginationService betterPaginationService,
             StupidTextService stupidTextService,
             RavenDatabaseService ravenDatabaseService,
-            ServerConfigurationService serverConfigurationService)
+            ServerConfigurationService serverConfigurationService,
+            DiceRollService rollService)
         {
             this.commandService = commandService ?? throw new System.ArgumentNullException(nameof(commandService));
             this.betterPaginationService = betterPaginationService ?? throw new System.ArgumentNullException(nameof(betterPaginationService));
             this.stupidTextService = stupidTextService ?? throw new System.ArgumentNullException(nameof(stupidTextService));
             this.ravenDatabaseService = ravenDatabaseService ?? throw new System.ArgumentNullException(nameof(ravenDatabaseService));
             this.serverConfigurationService = serverConfigurationService ?? throw new System.ArgumentNullException(nameof(serverConfigurationService));
+            this.rollService = rollService ?? throw new System.ArgumentNullException(nameof(rollService));
         }
 
 #pragma warning disable CS1998
@@ -70,8 +73,17 @@ namespace Bot.Modules
 #pragma warning restore CS1998
 
 
-
-
+        [Command("roll")]
+        [Summary("Performs a dice roll")]
+        public async Task RollAsync(
+            [Name("Expression"),
+            Summary("The die expression to roll"),
+            Remainder]string expression)
+        {
+            var expr = rollService.GetDiceExpression(expression);
+            await ReplyAsync($"Rolling {expr}...");
+            await ReplyAsync($"Result: {expr.Evaluate():N0}");
+        }
 
     }
 
