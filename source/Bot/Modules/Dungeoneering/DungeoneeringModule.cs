@@ -141,9 +141,12 @@ namespace Bot.Modules.Dungeoneering
             }
             encounter = await DungeoneeringService.CreateEncounterAsync(Context.User, Context.Channel);
 
+            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            var playerPower = playerCard.GetActualPower();
+
             var messageBuilder = new StringBuilder();
             messageBuilder.AppendLine($"{Context.User.Username} has started an encounter!");
-            messageBuilder.AppendLine($"In front of {Context.User.Username} is a Level {encounter.ActiveMonster.GetActualPower()} '{encounter.ActiveMonster.Name}'.");
+            messageBuilder.AppendLine($"In front of {Context.User.Username} (Attack Power: {playerPower}) is a Level {encounter.ActiveMonster.MonsterLevel} '{encounter.ActiveMonster.Name}'.");
             if (encounter.ActiveMonster.Equipment.Any())
             {
                 messageBuilder.AppendLine($"The '{encounter.ActiveMonster.Name}' seems to be wearing some equipment as well. Be careful and perhaps use the `status` command to check!!");
