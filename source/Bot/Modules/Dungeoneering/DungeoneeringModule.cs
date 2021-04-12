@@ -142,13 +142,13 @@ namespace Bot.Modules.Dungeoneering
             encounter = await DungeoneeringService.CreateEncounterAsync(Context.User, Context.Channel);
 
             var messageBuilder = new StringBuilder();
-            messageBuilder.AppendLine($"{Context.User.Mention} has started an encounter!");
-            messageBuilder.AppendLine($"In front of {Context.User.Mention} is a Level {encounter.ActiveMonster.GetActualPower()} '{encounter.ActiveMonster.Name}'.");
+            messageBuilder.AppendLine($"{Context.User.Username} has started an encounter!");
+            messageBuilder.AppendLine($"In front of {Context.User.Username} is a Level {encounter.ActiveMonster.GetActualPower()} '{encounter.ActiveMonster.Name}'.");
             if (encounter.ActiveMonster.Equipment.Any())
             {
                 messageBuilder.AppendLine($"The '{encounter.ActiveMonster.Name}' seems to be wearing some equipment as well. Be careful and perhaps use the `status` command to check!!");
             }
-            messageBuilder.AppendLine($"The encounter will last until {Context.User.Mention} defeats the Monster or flees!");
+            messageBuilder.AppendLine($"The encounter will last until {Context.User.Username} defeats the Monster or flees!");
             await ReplyAsync(messageBuilder.ToString());
         }
 
@@ -181,12 +181,12 @@ namespace Bot.Modules.Dungeoneering
 
             if (monsterPower < playerPower)
             {
-                await ReplyAsync($"{Context.User.Mention} has successfully defeated the {encounter.ActiveMonster.Name}!");
+                await ReplyAsync($"{Context.User.Username} has successfully defeated the {encounter.ActiveMonster.Name}!");
                 await DungeoneeringService.HandleVictoryAsync(playerCard, encounter);
             }
             else
             {
-                await ReplyAsync($"{Context.User.Mention} was brutally killed by the {encounter.ActiveMonster.Name} and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
+                await ReplyAsync($"{Context.User.Username} was brutally killed by the {encounter.ActiveMonster.Name} and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
                 await DungeoneeringService.HandleDefeatAsync(playerCard, encounter);
             }
         }
@@ -200,12 +200,12 @@ namespace Bot.Modules.Dungeoneering
             var fleeChance = Rng.Next(100);
             if (fleeChance >= 80)
             {
-                await ReplyAsync($"{Context.User.Mention} was unable to flee, was killed by the {encounter.ActiveMonster.Name}, and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
+                await ReplyAsync($"{Context.User.Username} was unable to flee, was killed by the {encounter.ActiveMonster.Name}, and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
                 await DungeoneeringService.HandleDefeatAsync(playerCard, encounter);
             }
             else
             {
-                await ReplyAsync($"{Context.User.Mention} has fled successfully!");
+                await ReplyAsync($"{Context.User.Username} has fled successfully!");
                 await DungeoneeringService.HandleFleeAsync(playerCard, encounter);
             }
 
@@ -222,7 +222,7 @@ namespace Bot.Modules.Dungeoneering
             var playerCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
             var userDetails = await (Client as IDiscordClient).GetUserAsync(encounter.PlayerId);
             var responseBuilder = new StringBuilder();
-            responseBuilder.AppendLine($"{userDetails.Mention} is fighting '{encounter.ActiveMonster.Name}'.");
+            responseBuilder.AppendLine($"{userDetails.Username} is fighting '{encounter.ActiveMonster.Name}'.");
 
             var playerPower = playerCard.GetActualPower();
             var monsterPower = encounter.ActiveMonster.GetActualPower();
@@ -242,7 +242,7 @@ namespace Bot.Modules.Dungeoneering
                 monsterBoost += instigators.Sum(c => c.GetActualPower());
             }
 
-            responseBuilder.AppendLine($"{userDetails.Mention} has a Power of {playerCard.GetActualPower()} + {playerBoost} (from {encounter.Assistants.Count} helpers)");
+            responseBuilder.AppendLine($"{userDetails.Username} has a Power of {playerCard.GetActualPower()} + {playerBoost} (from {encounter.Assistants.Count} helpers)");
             responseBuilder.AppendLine($"{encounter.ActiveMonster.Name} has a Power of {encounter.ActiveMonster.GetActualPower()} + {monsterBoost} (from {encounter.Instigators.Count} helpers)");
             await ReplyAsync(responseBuilder.ToString());
         }
@@ -256,7 +256,7 @@ namespace Bot.Modules.Dungeoneering
             if (encounter.PlayerId == Context.User.Id) return;
             encounter.Assistants.Add(Context.User.Id);
             encounter.Instigators.Remove(Context.User.Id);
-            await ReplyAsync($"{Context.User.Mention} has decided to assist <@{encounter.PlayerId}> by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await ReplyAsync($"{Context.User.Username} has decided to assist <@{encounter.PlayerId}> by boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
         private async Task HandleDeterringAsync()
@@ -267,7 +267,7 @@ namespace Bot.Modules.Dungeoneering
             if (encounter.PlayerId == Context.User.Id) return;
             encounter.Assistants.Remove(Context.User.Id);
             encounter.Instigators.Add(Context.User.Id);
-            await ReplyAsync($"{Context.User.Mention} has decided to assist the '{encounter.ActiveMonster.Name}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await ReplyAsync($"{Context.User.Username} has decided to assist the '{encounter.ActiveMonster.Name}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
 
