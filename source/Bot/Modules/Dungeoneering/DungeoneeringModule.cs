@@ -252,11 +252,13 @@ namespace Bot.Modules.Dungeoneering
             var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
             var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
             var hostCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
+            var encounterPlayer = await ((IDiscordClient)Client).GetUserAsync(encounter.PlayerId);
+
             if (encounter == null) return;
             if (encounter.PlayerId == Context.User.Id) return;
             encounter.Assistants.Add(Context.User.Id);
             encounter.Instigators.Remove(Context.User.Id);
-            await ReplyAsync($"{Context.User.Username} has decided to assist <@{encounter.PlayerId}> by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await ReplyAsync($"{Context.User.Username} has decided to assist {encounterPlayer.Username} by boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
         private async Task HandleDeterringAsync()
