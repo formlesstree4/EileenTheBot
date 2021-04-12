@@ -15,6 +15,11 @@ namespace Bot.Models.Dungeoneering
         public string Type { get; set; }
 
         /// <summary>
+        ///     Gets or sets the level of the Equipment
+        /// </summary>
+        public int EquipmentLevel { get; set; }
+
+        /// <summary>
         ///     Gets or sets the attack power of the Equipment
         /// </summary>
         public int AttackPower { get; set; }

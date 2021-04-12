@@ -95,6 +95,15 @@ namespace Bot.Modules.Dungeoneering
             // await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
         }
 
+        [UseErectorPermissions(false, true)]
+        [RequireContext(ContextType.Guild)]
+        [Command("inventory")]
+        public async Task InventoryCommandAsync()
+        {
+            await HandleInventoryAsync();
+            // await Context.Channel.SendMessageAsync("Deterring is not supported yet!");
+        }
+
 
 
         private async Task HandleHelpAsync()
@@ -104,7 +113,10 @@ namespace Bot.Modules.Dungeoneering
             messageBuilder.AppendLine("REGISTER - Enrolls the User in the Dungeoneering System");
             messageBuilder.AppendLine("FIGHT - Initiates an encounter in the current Channel. One fight per-channel!");
             messageBuilder.AppendLine("ATTACK - When in an encounter, the Player will attack the Monster");
-            messageBuilder.AppendLine("RUN - When in an encounter, the Player will flee! This has a 1/5 chance of failing");
+            messageBuilder.AppendLine("RUN - When in an encounter, the Player will flee! This has a variable chance of failing, based on the combatants' relative power");
+            messageBuilder.AppendLine("ASSIST - When another Player is in an encounter, the assisting Player will aid them in combat!");
+            messageBuilder.AppendLine("DETER - When another Player is in an encounter, the deterring Player will aid the Monster in combat!");
+            messageBuilder.AppendLine("INVENTORY - Work in progress. Displays information about the Player's inventory");
             await ReplyAsync(messageBuilder.ToString());
         }
 
@@ -184,7 +196,7 @@ namespace Bot.Modules.Dungeoneering
 
             if (monsterPower < playerPower)
             {
-                await ReplyAsync($"{Context.User.Username} has successfully defeated the {encounter.ActiveMonster.Name}!");
+                await ReplyAsync($"{Context.User.Username} has successfully defeated the {encounter.ActiveMonster.Name}! Your attack power has increased by 1!");
                 await DungeoneeringService.HandleVictoryAsync(playerCard, encounter);
             }
             else
@@ -200,8 +212,18 @@ namespace Bot.Modules.Dungeoneering
             var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
             if (encounter == null) return;
             if (encounter.PlayerId != Context.User.Id) return;
-            var fleeChance = Rng.Next(100);
-            if (fleeChance >= 80)
+            var fleeChance = Rng.NextDouble() * 100;
+            if (fleeChance >= Math.Clamp(80 - (((double)encounter.ActiveMonster.GetActualPower()/playerCard.GetActualPower() - 1) * 40), 5, 95))
+            ///essentially if the player has X power, for every 25% monster power above or below that, the chance to flee changes by 10%
+            ///therefore if player is at 100 power and the monster is at ___, the chance to flee is ___
+            ///
+            ///50 (Half power or less)     = Clamped to 95%
+            ///75 (75% power)      = 90%
+            ///100 (equal power)   = 80%
+            ///150 (150%  power)   = 60%
+            ///200 (double power)  = 40%
+            ///250 (250% power)    = 20%
+            ///300 (triple power or more)  = Clamped to 5%
             {
                 await ReplyAsync($"{Context.User.Username} was unable to flee, was killed by the {encounter.ActiveMonster.Name}, and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
                 await DungeoneeringService.HandleDefeatAsync(playerCard, encounter);
@@ -247,6 +269,10 @@ namespace Bot.Modules.Dungeoneering
 
             responseBuilder.AppendLine($"{userDetails.Username} has a Power of {playerCard.GetActualPower()} + {playerBoost} (from {encounter.Assistants.Count} helpers)");
             responseBuilder.AppendLine($"{encounter.ActiveMonster.Name} has a Power of {encounter.ActiveMonster.GetActualPower()} + {monsterBoost} (from {encounter.Instigators.Count} helpers)");
+            ///would be cool to only show the player a range of monster power rather than the exact value, when the monster has equipment...
+            ///so it's not guaranteed whether or not they win the fight after checking status, and adds some more risk/suspense.
+            ///just an idea though :)
+            
             await ReplyAsync(responseBuilder.ToString());
         }
 
@@ -259,9 +285,14 @@ namespace Bot.Modules.Dungeoneering
 
             if (encounter == null) return;
             if (encounter.PlayerId == Context.User.Id) return;
+            if (encounter.Assistants.Contains(Context.User.Id))
+            {
+                await ReplyAsync($"{Context.User.Username} is already assisting {encounterPlayer.Username}, boosting their Attack Power by +{playerCard.GetActualPower()}!");
+                return;
+            }
             encounter.Assistants.Add(Context.User.Id);
             encounter.Instigators.Remove(Context.User.Id);
-            await ReplyAsync($"{Context.User.Username} has decided to assist {encounterPlayer.Username} by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await ReplyAsync($"{Context.User.Username} has decided to assist {encounterPlayer.Username}, boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
         private async Task HandleDeterringAsync()
@@ -270,10 +301,24 @@ namespace Bot.Modules.Dungeoneering
             var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
             if (encounter == null) return;
             if (encounter.PlayerId == Context.User.Id) return;
+            if (encounter.Instigators.Contains(Context.User.Id))
+            {
+                await ReplyAsync($"{Context.User.Username} is already assisting the '{encounter.ActiveMonster.Name}', boosting their Attack Power by +{playerCard.GetActualPower()}!");
+                return;
+            }
             encounter.Assistants.Remove(Context.User.Id);
             encounter.Instigators.Add(Context.User.Id);
-            await ReplyAsync($"{Context.User.Username} has decided to assist the '{encounter.ActiveMonster.Name}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await ReplyAsync($"{Context.User.Username} has decided to assist the '{encounter.ActiveMonster.Name}', boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
+
+        private async Task HandleInventoryAsync()
+        {
+            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+
+            await ReplyAsync($"{Context.User.Username} has {playerCard.Inventory.Count} items in their inventory!");
+            ///eventually need to replace this with actually displaying the users inventory.
+        }
+
 
 
         [Group("query")]

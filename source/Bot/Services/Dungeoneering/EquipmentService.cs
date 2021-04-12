@@ -70,13 +70,46 @@ namespace Bot.Services.Dungeoneering
 
         private IEnumerable<WrappedEquipment> GetEquipmentTypeInRange(int minLevel, int maxLevel, string type)
         {
-            return from e in Equipment
-                   let we = e
-                   where we.EquipmentLevel != null &&
-                        we.EquipmentLevel >= minLevel &&
-                        we.EquipmentLevel <= maxLevel &&
-                        we.EquipmentType.Equals(type, StringComparison.OrdinalIgnoreCase)
-                   select we;
+            List<WrappedEquipment> validEquipment = new List<WrappedEquipment>();
+            Random random = new Random();
+
+            Write("Creating list of valid equipment");
+            if (type.Equals("weapon"))
+            {
+                foreach (WrappedEquipment e in Weapons)
+                {
+                    if (e != null && minLevel <= e.EquipmentLevel && e.EquipmentLevel <= maxLevel)
+                    {
+                        validEquipment.Add(e);
+                    }
+                }
+                Write("Selecting a random Weapon from size of list: " + validEquipment.Count);
+                return validEquipment.Take(random.Next(validEquipment.Count));
+            }
+            if (type.Equals("armor"))
+            {
+                foreach (WrappedEquipment e in Armor)
+                {
+                    if (e != null && minLevel <= e.EquipmentLevel && e.EquipmentLevel <= maxLevel)
+                    {
+                        validEquipment.Add(e);
+                    }
+                }
+                Write("Selecting a random Armor from size of list: " + validEquipment.Count);
+                return validEquipment.Take(random.Next(validEquipment.Count));
+            }
+            else
+            {
+                foreach (WrappedEquipment e in Equipment)
+                {
+                    if (e != null && minLevel <= e.EquipmentLevel && e.EquipmentLevel <= maxLevel)
+                    {
+                        validEquipment.Add(e);
+                    }
+                }
+                Write("Selecting a random Equipment from size of list: " + validEquipment.Count);
+                return validEquipment.Take(random.Next(validEquipment.Count));
+            }
         }
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)

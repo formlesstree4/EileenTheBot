@@ -47,6 +47,13 @@ namespace Bot.Models.Dungeoneering
         public List<Equipment> Gear { get; set; } = new List<Equipment>();
 
         /// <summary>
+        ///     Gets or sets the current items the Player has in the inventory
+        ///     May also be done with Scriptable Items? Not sure how you wanna tackle this yet :P
+        /// </summary>
+        public List<Item> Inventory { get; set; } = new List<Item>();
+
+
+        /// <summary>
         ///     Gets or sets the collection of fights this Player has been part of
         /// </summary>
         public List<BattleLog> Battles { get; set; } = new List<BattleLog>();

@@ -122,7 +122,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
             EquipmentLevel = level?.Value<int?>() ?? 0;
             EquipmentType = type?.Value<string>() ?? "";
             EquipLocation = GetEquipmentLocation(backingData["Locations"]);
-            Power = (int)Math.Max(1, Math.Floor((power?.Value<int?>() ?? 0.0f) / 10));
+            Power = (int)Math.Max(1, Math.Floor((power?.Value<int?>() ?? 0.0f) / 10)); ///Looked over all the items and was thinking that this 10 could be reduced to 5. I think it's worth considering!
             Value = price?.Value<int?>() ?? (int)Math.Floor(Power * 1.5f);
         }
 
@@ -143,11 +143,12 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
         {
             return new Dungeoneering.Equipment
             {
-                AttackPower = this.EquipmentLevel ?? 1,
+                EquipmentLevel = this.EquipmentLevel ?? 1,
+                AttackPower = this.Power,
                 BaseValue = this.Value,
                 Name = this.Name,
                 Location = this.EquipLocation,
-                Price = this.Power,
+                Price = this.Value,
                 Type = this.EquipmentType
             };
         }

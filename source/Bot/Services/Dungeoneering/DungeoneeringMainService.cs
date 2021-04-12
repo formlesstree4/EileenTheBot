@@ -216,6 +216,12 @@ namespace Bot.Services.Dungeoneering
             player.Victories += 1;
             player.AttackPower += 1;
             player.Battles.Add(battleLog);
+
+            foreach (Item i in encounter.Loot)
+            {
+                player.Inventory.Add(i);
+            }
+
             currentEncounters.TryRemove(encounter.ChannelId, out var e);
             await Task.Yield();
         }
@@ -236,6 +242,13 @@ namespace Bot.Services.Dungeoneering
             Write($"A 'flee' is being recorded!");
             var battleLog = await CreateBattleLogAsync(player, encounter, "Defeat (Fled)");
             player.Defeats += 1;
+            ///so this function is called on a SUCCESSFUL flee, but still adds to the defeat counter...
+            ///I can see the thought process behind this, and I wouldn't neccessarily argue for counting it as a victory instead, BUT...
+            ///if my little level 10 human gets away from a level 9000 Goku I wouldn't be unhappy with that result or call it a defeat (particularly since the player doesn't die or lose anything)
+            ///I feel it kind've discourages you from fleeing at all, even if you know you'll probably lose the fight, since it gets counted as a defeat regardless of whether you get away or not.
+            ///It makes a bit more sense to me to just not mark it down as either a win nor loss, at least on the visible playercard, but this is ultimately down to you
+            ///just wanted to share my thoughts on that, since we had mentioned it earlier :)
+            
             player.Battles.Add(battleLog);
             currentEncounters.TryRemove(encounter.ChannelId, out var e);
             await Task.Yield();
@@ -288,6 +301,16 @@ namespace Bot.Services.Dungeoneering
         {
             Write($"Creating a Monster", LogSeverity.Verbose);
             var level = player.GetActualPower();
+            ///This sets the level of the monster to the players attack power, WITH GEAR INCLUDED.
+            ///Meaning equipping improved gear will spawn equally improved monsters...
+            ///...thus not *actually* increasing the player's power and resulting in gear being semi-useless?
+            ///This also makes it more beneficial to unequip some gear, spawn the monster, re-equip, and then fight,
+            ///...ensuring that the monster is always weaker than the player.
+            ///This is potentially abuse-able and kind've un-fun, and it would probably be better to base...
+            ///...the monster's level off of the player's level/base attack power.
+            ///
+            ///also noticed there isn't actually a "player level" variable. This would be useful I think :)
+
             var monster =
                 await monsterService.CreateMonsterAsync(level) ??
                 await monsterService.CreateMonsterFromRange(Math.Max(1, level - 1), level + 1);
@@ -297,8 +320,8 @@ namespace Bot.Services.Dungeoneering
         private async Task<IEnumerable<Item>> CreateAcceptableLoot(Monster monster, PlayerCard player)
         {
             var level = player.GetActualPower();
-            var loot = equipmentService.GetEquipmentInRange(Math.Max(1, level - 1), level + 1).Take(random.Next(2));
-            return await Task.FromResult(loot.Select(c => c.ToEquipment()));
+            var loot = equipmentService.GetEquipmentInRange(Math.Max(1, level - 1), level + 1);
+            return await Task.FromResult(loot.Select(c => c.ToEquipment())); ///Don't know what this line does really, double check that it's necessary with the new GetEquipmentTypeInRange function! 
         }
 
         private Races GetRandomRace()
