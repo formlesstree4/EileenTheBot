@@ -59,6 +59,7 @@ namespace Bot.Services.Dungeoneering
             {
                 Equipment = GetMonsterEquipment(level),
                 Name = selectedMonster.Monster,
+                MonsterLevel = monsterLevel,
                 TheoreticalPower = monsterLevel
             };
             return await Task.FromResult(monster);
@@ -76,6 +77,7 @@ namespace Bot.Services.Dungeoneering
             {
                 Equipment = GetMonsterEquipment(monsterLevel),
                 Name = selectedMonster.Monster,
+                MonsterLevel = monsterLevel,
                 TheoreticalPower = monsterLevel
             };
             return await Task.FromResult(monster);
