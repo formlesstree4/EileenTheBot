@@ -81,12 +81,12 @@ namespace Bot
                     ShutdownTimeout = TimeSpan.FromSeconds(10),
                     SchedulePollingInterval = TimeSpan.FromSeconds(10),
                     HeartbeatInterval = TimeSpan.FromSeconds(30),
-                    ServerTimeout = TimeSpan.FromSeconds(30),
-                    ServerCheckInterval = TimeSpan.FromSeconds(30),
+                    ServerTimeout = TimeSpan.FromMinutes(30),
+                    ServerCheckInterval = TimeSpan.FromMinutes(30),
                     CancellationCheckInterval = TimeSpan.FromSeconds(5),
                     FilterProvider = null,
                     TaskScheduler = TaskScheduler.Default,
-                    ServerName = "Eileen-Host",
+                    ServerName = "Eileen-Host"
                 }, JobStorage.Current);
 
             await LogAsync("Job Server has been setup and configured.");
@@ -301,8 +301,7 @@ namespace Bot
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHangfire(config =>
-                config.UsePostgreSqlStorage(Configuration.GetValue<string>("connection-string")));
+            services.AddHangfire(config => config.UseStorage(JobStorage.Current));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
