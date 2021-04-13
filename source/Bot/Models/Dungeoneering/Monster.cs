@@ -13,6 +13,12 @@ namespace Bot.Models.Dungeoneering
         /// </summary>
         public string Name { get; set; }
 
+        /// </summary>
+        ///     Gets or sets the monster level of the Monster
+        /// </summary>
+        /// <value></value>
+        public int MonsterLevel { get; set; }
+
         /// <summary>
         ///     Gets or sets the monster level of the Monster
         /// </summary>
