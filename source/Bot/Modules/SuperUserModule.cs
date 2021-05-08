@@ -118,6 +118,48 @@ namespace Bot.Modules
 
         }
 
+        /// <summary>
+        /// Sub-module for handling macros
+        /// </summary>
+        [Group("macros"), RequireContext(ContextType.Guild)]
+        public sealed class MacroModule : ModuleBase<SocketCommandContext>
+        {
+            private readonly MacroService macroService;
+            private readonly ReactionHelperService rhs;
+
+            public MacroModule(MacroService macroService, ReactionHelperService rhs)
+            {
+                this.rhs = rhs ?? throw new System.ArgumentNullException(nameof(rhs));
+                this.macroService = macroService ?? throw new System.ArgumentNullException(nameof(macroService));
+            }
+
+            [Command]
+            public async Task ListMacros()
+            {
+                var macros = await macroService.GetServerMacros(Context.Guild);
+                var responseString = string.Join("\r\n", macros.Select(c => c.Macro));
+                await ReplyAsync(responseString);
+            }
+
+            [Command("add")]
+            public async Task AddMacro(string macroName, [Remainder] string response)
+            {
+                await macroService.AddNewMacroAsync(Context.Guild, new Models.Macros.MacroEntry
+                {
+                    Macro = macroName,
+                    Response = response
+                });
+                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+            }
+
+            [Command("remove")]
+            public async Task RemoveMacro(string macroName)
+            {
+                await macroService.RemoveMacroAsync(Context.Guild, macroName);
+                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+            }
+
+        }
 
     }
 }

@@ -16,6 +16,7 @@ namespace Bot.Services
         private readonly IServiceProvider _services;
         private readonly ServerConfigurationService _serverConfiguration;
         private readonly Func<LogMessage, Task> _logger;
+        private readonly MacroService macroService;
         private readonly char _defaultPrefix;
 
         public CommandHandlingService(
@@ -24,6 +25,7 @@ namespace Bot.Services
             ServerConfigurationService serverConfiguration,
             RavenDatabaseService ravenDatabaseService,
             Func<LogMessage, Task> logger,
+            MacroService macroService,
             IServiceProvider provider)
         {
             _commands = commandService;
@@ -31,6 +33,7 @@ namespace Bot.Services
             _serverConfiguration = serverConfiguration;
             _defaultPrefix = ravenDatabaseService.Configuration.CommandPrefix;
             _logger = logger;
+            this.macroService = macroService;
             _services = provider;
 
             // Hook CommandExecuted to handle post-command-execution logic.
@@ -63,8 +66,8 @@ namespace Bot.Services
 
             if (message.Channel is SocketGuildChannel sgc)
             {
-                var serverConfig = await _serverConfiguration.GetOrCreateConfigurationAsync(sgc.Guild);
-                prefix = serverConfig.CommandPrefix;
+                // var serverConfig = await _serverConfiguration.GetOrCreateConfigurationAsync(sgc.Guild);
+                prefix = await GetGuildPrefix(sgc.Guild);
                 Write($"Overriding Command Prefix for {sgc.Guild.Id} (from {_defaultPrefix} to {prefix})", LogSeverity.Verbose);
             }
 
@@ -85,7 +88,25 @@ namespace Bot.Services
         public async Task CommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
             // command is unspecified when there was a search failure (command not found); we don't care about these errors
-            if (!command.IsSpecified) return;
+            if (!command.IsSpecified)
+            {
+                // could look to see if it's a new macro
+                if (context.Guild != null)
+                {
+                    var userMessage = context.Message.Resolve();
+                    var prefix = await GetGuildPrefix(context.Guild);
+                    if (userMessage.StartsWith(prefix))
+                    {
+                        userMessage = userMessage.Remove(0, 1);
+                    }
+                    var serverMacro = await macroService.TryGetMacroAsync(context.Guild, userMessage);
+                    if (serverMacro.Item1)
+                    {
+                        await context.Message.ReplyAsync(serverMacro.Item2.Response);
+                    }
+                }
+                return;
+            }
 
             // the command was successful, we don't care about this result, unless we want to log that a command succeeded.
             if (result.IsSuccess) return;
@@ -97,6 +118,12 @@ namespace Bot.Services
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
             _logger(new LogMessage(severity, nameof(CommandHandlingService), message));
+        }
+
+        private async Task<char> GetGuildPrefix(IGuild guild)
+        {
+            var serverConfig = await _serverConfiguration.GetOrCreateConfigurationAsync(guild);
+            return serverConfig.CommandPrefix;
         }
 
     }
