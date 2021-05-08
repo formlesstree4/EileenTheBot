@@ -151,7 +151,7 @@ namespace Bot.Services
             }
 
             // Find the appropriate instance to add to the source with it.
-            Write("Searching for instance...");
+            Write("Searching for instance...", LogSeverity.Verbose);
             var serverInstance = _chains.GetOrAdd(
                 serverId,
                 s =>
@@ -160,7 +160,7 @@ namespace Bot.Services
                     return new MarkovServerInstance(s, GetSeedContent());
                 });
             string messageToSend = null;
-            Write($"Using Instance: {serverInstance.ServerId}");
+            Write($"Using Instance: {serverInstance.ServerId}", LogSeverity.Verbose);
             Write($"Acquiring exclusive lock on {serverInstance.ServerId}", LogSeverity.Verbose);
 
 
@@ -168,7 +168,7 @@ namespace Bot.Services
             // Add it to the historical message for that instance.
             var messageFragments = message.Content.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
             var containsTriggerWord = false;
-            Write($"Looking for trigger word in the message...");
+            Write($"Looking for trigger word in the message...", LogSeverity.Verbose);
             for (var i = messageFragments.Count - 1; i >= 0; i--)
             {
                 var insensitive = messageFragments[i].ToLowerInvariant();
@@ -201,20 +201,20 @@ namespace Bot.Services
                 lock (serverInstance)
                 {
                     // We need to generate a message in response since we were directly referenced.
-                    Write($"Generating a response...");
+                    Write($"Generating a response...", LogSeverity.Verbose);
                     var attempts = 0;
                     while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
                     {
                         messageToSend = serverInstance.GetNextMessage();
                         Write($"Response: '{messageToSend}'", LogSeverity.Verbose);
                     }
-                    Write($"Response generated!");
+                    Write($"Response generated!", LogSeverity.Verbose);
 
                 }
 
                 if (!string.IsNullOrWhiteSpace(messageToSend))
                 {
-                    Write($"Submitting Response...");
+                    Write($"Submitting Response...", LogSeverity.Verbose);
 
                     await message.Channel.SendMessageAsync(messageToSend);
                 }

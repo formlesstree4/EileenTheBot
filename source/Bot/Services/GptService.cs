@@ -65,7 +65,7 @@ namespace Bot.Services
             var escapedMessage = message.Resolve(0, TagHandling.NameNoPrefix);
             var replacedMessage = escapedMessage.Replace("erector", _replacementName, true, System.Globalization.CultureInfo.InvariantCulture);
             var formattedMessage = $"{username}: {replacedMessage}";
-            Write(formattedMessage);
+            Write(formattedMessage, LogSeverity.Verbose);
             var payload = "";
 
             // Keep this lock on for the entire duration
@@ -93,9 +93,9 @@ namespace Bot.Services
                 using (message.Channel.EnterTypingState())
                 {
                     var finalPayload = payload + '\n' + $"{_replacementName}: ";
-                    Write("Requesting Response...");
+                    Write("Requesting Response...", LogSeverity.Verbose);
                     var response = await GetGptResponse(finalPayload);
-                    Write("... response received!");
+                    Write("... response received!", LogSeverity.Verbose);
                     var fullResponse = $"> {escapedMessage}" + "\n" + response;
                     await message.Channel.SendMessageAsync(fullResponse);
                 }
@@ -111,10 +111,10 @@ namespace Bot.Services
             var message = JsonConvert.SerializeObject(new { prefix = context, length = 50 });
             var anonType = new { text = "" };
             var stringContent = new StringContent(message);
-            Write($"Outgoing: {message}");
+            Write($"Outgoing: {message}", LogSeverity.Verbose);
             var clientResults = await _client.PostAsync(_endpointUrl, stringContent);
             var jsonResponse = await clientResults.Content.ReadAsStringAsync();
-            Write($"Incoming: {jsonResponse}");
+            Write($"Incoming: {jsonResponse}", LogSeverity.Verbose);
             var gptResponse = JsonConvert.DeserializeAnonymousType(jsonResponse, anonType);
             var text = gptResponse.text.Remove(0, context.Length).Split(new[] { '\n', '\r' })[0];
             if (string.IsNullOrWhiteSpace(text)) return await GetGptResponse(context, counter += 1);
