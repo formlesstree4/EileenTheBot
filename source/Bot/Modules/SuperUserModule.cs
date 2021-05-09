@@ -1,5 +1,6 @@
 using Bot.Preconditions;
 using Bot.Services;
+using Discord;
 using Discord.Commands;
 using System.Collections.Generic;
 using System.Linq;
@@ -156,6 +157,41 @@ namespace Bot.Modules
             public async Task RemoveMacro(string macroName)
             {
                 await macroService.RemoveMacroAsync(Context.Guild, macroName);
+                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+            }
+
+        }
+
+        [Group("markov")]
+        public sealed class MarkovAdminModule : ModuleBase<SocketCommandContext>
+        {
+            private readonly MarkovService markovService;
+            private readonly ServerConfigurationService serverConfiguration;
+            private readonly ReactionHelperService rhs;
+
+            public MarkovAdminModule(
+                MarkovService markovService,
+                ServerConfigurationService serverConfiguration,
+                ReactionHelperService rhs)
+            {
+                this.markovService = markovService ?? throw new System.ArgumentNullException(nameof(markovService));
+                this.serverConfiguration = serverConfiguration ?? throw new System.ArgumentNullException(nameof(serverConfiguration));
+                this.rhs = rhs ?? throw new System.ArgumentNullException(nameof(rhs));
+            }
+
+            [Command("train"), RequireContext(ContextType.Guild)]
+            public async Task TrainChain(int length = 100)
+            {
+                if (!markovService.TryGetServerInstance(Context.Guild.Id, out var chain)) return;
+                var prefix = (await serverConfiguration.GetOrCreateConfigurationAsync(Context.Guild)).CommandPrefix;
+                var channel = Context.Channel;
+                var messages = await channel.GetMessagesAsync(length).FlattenAsync();
+                foreach(var message in messages)
+                {
+                    if (message.Source != MessageSource.User) continue;
+                    if (message.Content.StartsWith(prefix)) continue;
+                    chain.AddHistoricalMessage(message.Content);
+                }
                 await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
             }
 

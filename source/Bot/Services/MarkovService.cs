@@ -124,6 +124,12 @@ namespace Bot.Services
 
         public IEnumerable<ulong> GetServerIds() => _chains.Keys;
 
+        public bool TryGetServerInstance(ulong chainId, out MarkovServerInstance msi)
+        {
+            msi = null;
+            return _chains.TryGetValue(chainId, out msi);
+        }
+
         private async Task HandleIncomingMessage(SocketMessage rawMessage)
         {
             var position = 0;
