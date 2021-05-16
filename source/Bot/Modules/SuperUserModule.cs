@@ -138,8 +138,13 @@ namespace Bot.Modules
             public async Task ListMacros()
             {
                 var macros = await macroService.GetServerMacros(Context.Guild);
-                var responseString = string.Join("\r\n", macros.Select(c => c.Macro));
-                await ReplyAsync(responseString);
+                var responseBuilder = new System.Text.StringBuilder();
+                responseBuilder.AppendLine("Available Macros:");
+                foreach(var macro in macros)
+                {
+                    responseBuilder.AppendLine($"\t{macro.Macro}");
+                }
+                await ReplyAsync(responseBuilder.ToString());
             }
 
             [Command("add")]
