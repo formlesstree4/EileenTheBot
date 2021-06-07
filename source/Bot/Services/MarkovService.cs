@@ -19,7 +19,7 @@ namespace Bot.Services
 {
 
     [Summary("Provides simplified management of the Markov Chains across all Guilds, Groups, and Private Channels")]
-    public sealed class MarkovService : IEileenService
+    public sealed class MarkovService // : IEileenService
     {
 
         private readonly string _triggerWord;

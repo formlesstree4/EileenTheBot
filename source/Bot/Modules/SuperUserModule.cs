@@ -1,5 +1,6 @@
 using Bot.Preconditions;
 using Bot.Services;
+using Bot.Services.Communication.Responders;
 using Discord;
 using Discord.Commands;
 using System.Collections.Generic;
@@ -170,12 +171,12 @@ namespace Bot.Modules
         [Group("markov")]
         public sealed class MarkovAdminModule : ModuleBase<SocketCommandContext>
         {
-            private readonly MarkovService markovService;
+            private readonly MarkovResponder markovService;
             private readonly ServerConfigurationService serverConfiguration;
             private readonly ReactionHelperService rhs;
 
             public MarkovAdminModule(
-                MarkovService markovService,
+                MarkovResponder markovService,
                 ServerConfigurationService serverConfiguration,
                 ReactionHelperService rhs)
             {
