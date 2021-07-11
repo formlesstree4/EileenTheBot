@@ -72,7 +72,9 @@ namespace Bot.Services.Communication
 
             if (rawMessage is not SocketUserMessage message) return;
             if (message.Source != MessageSource.User) return;
-            if (!(await CanRespondToMessage(message)))
+            var canRespondToMessage = await CanRespondToMessage(message);
+            
+            if (!canRespondToMessage)
             {
                 return;
             }
@@ -103,7 +105,7 @@ namespace Bot.Services.Communication
             Write($"Looking for trigger word in the message...", severity: LogSeverity.Verbose);
             var shouldRespond = await DoesContainTriggerWord(message.Content, instanceId);
 
-            if (shouldRespond.Item1)
+            if (shouldRespond.Item1 || canRespondToMessage)
             {
                 var response = await GenerateResponse(shouldRespond.Item2, message.Content, instanceId);
                 if (!string.IsNullOrWhiteSpace(response))
