@@ -115,17 +115,27 @@ namespace Bot.Services.Communication.Responders
         internal override async Task<bool> CanRespondToMessage(SocketUserMessage message)
         {
             // may not be necessary to send this, but, it seems appropriate
+            Write("Checking to see if the message contains the appropriate trigger word...", LogSeverity.Verbose);
             bool containsTriggerWord = DoesMessageContainProperWord(message.Content);
+            Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
 
             ulong botId = Client.CurrentUser.Id;
-            containsTriggerWord |= message.MentionedUsers.Any(s => s.Id == botId); // The bot was mentionned.
+            Write("Looking to see if the bot was mentioned...", LogSeverity.Verbose);
+            containsTriggerWord |= message.MentionedUsers.Any(s => s.Id == botId); // The bot was mentioned.
+            Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
+            Write("Looking to see if the message was responded to (via Discord's reponse system)", LogSeverity.Verbose);
             if (!containsTriggerWord && (message?.Reference?.MessageId.IsSpecified ?? false))
             {
                 // AFAIK there is no reason that it's not a message channel
+                Write("Fetching channel...");
                 IMessageChannel messageChannel = (IMessageChannel)Client.GetChannel(message.Reference.ChannelId);
+                Write("Fetching message...");
                 IMessage msg = await messageChannel.GetMessageAsync(message.Reference.MessageId.Value);
+                Write($"Got message, checking message author ({msg.Author.Id} == {botId})", LogSeverity.Verbose);
                 if (msg.Author.Id == botId) containsTriggerWord = true;
             }
+            containsTriggerWord |= message.Channel is IDMChannel;
+            Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
             return containsTriggerWord;
         }
 
@@ -151,11 +161,8 @@ namespace Bot.Services.Communication.Responders
             Write($"Acquiring exclusive lock on {serverInstance.ServerId}", LogSeverity.Verbose);
             lock (serverInstance)
             {
-                serverInstance.AddHistoricalMessage(message);
-            }
-            lock (serverInstance)
-            {
                 // We need to generate a message in response since we were directly referenced.
+                serverInstance.AddHistoricalMessage(message);
                 Write($"Generating a response...", LogSeverity.Verbose);
                 var attempts = 0;
                 while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
