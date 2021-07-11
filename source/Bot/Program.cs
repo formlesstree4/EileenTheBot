@@ -108,8 +108,15 @@ namespace Bot
                 .UseStartup<Startup>()
                 .Build();
 #pragma warning disable CS4014
-            ui.RunAsync();
+            ui.RunAsync(cts.Token);
 #pragma warning restore CS4014
+
+            // hook up cancellation
+            Console.CancelKeyPress += (o, c) =>
+            {
+                cts.Cancel();
+            };
+
             await LogAsync("The Hangfire Dashboard has been initialized on port 5000 listening to all addresses");
             try
             {
