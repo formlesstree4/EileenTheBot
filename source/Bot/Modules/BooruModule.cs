@@ -63,6 +63,8 @@ namespace Bot.Modules
 
         public StupidTextService StupidTextService { get; set; }
 
+        public Func<LogMessage, Task> Logger { get; set; }
+
 
 
         [Command("aliases")]
@@ -172,7 +174,7 @@ namespace Bot.Modules
                     }
                     catch (ArgumentException are)
                     {
-                        Console.WriteLine(are);
+                        Write($"Failed to create a Booru post: {are}", severity: LogSeverity.Error);
                         continue;
                     }
                 }
@@ -222,6 +224,14 @@ namespace Bot.Modules
             }
             c = updated.ToArray();
             return results;
+        }
+
+        private void Write(
+            string message,
+            string source = nameof(BooruModule),
+            LogSeverity severity = LogSeverity.Info)
+        {
+            Logger(new LogMessage(severity, source, message));
         }
 
     }
