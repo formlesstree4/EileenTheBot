@@ -7,7 +7,7 @@ namespace Bot.Models.Raven
 
         public string DiscordToken { get; set; }
 
-        public IList<Bot.Models.CredentialsEntry> Credentials { get; set; }
+        public IList<CredentialsEntry> Credentials { get; set; }
 
         public char CommandPrefix { get; set; }
 

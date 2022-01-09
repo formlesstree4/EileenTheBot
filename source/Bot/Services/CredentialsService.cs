@@ -8,7 +8,7 @@ namespace Bot.Services
     public sealed class CredentialsService : IEileenService
     {
 
-        public IReadOnlyList<Bot.Models.CredentialsEntry> Credentials { get; private set; }
+        public IReadOnlyList<Models.CredentialsEntry> Credentials { get; private set; }
 
 
         public CredentialsService(RavenDatabaseService rdbs)

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Bot.Models;
 using Bot.Services;
 using Bot.Services.RavenDB;
@@ -132,59 +132,25 @@ namespace Bot
             await LogAsync("Tasks all completed - Going offline");
         }
 
-        private LogSeverity ParseEnvironmentLogLevel()
+        private static LogSeverity ParseEnvironmentLogLevel() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant() switch
         {
-            switch (Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
-            {
-                case "CRITICAL":
-                case "0":
-                    return LogSeverity.Critical;
-                case "ERROR":
-                case "1":
-                    return LogSeverity.Error;
-                case "WARNING":
-                case "2":
-                    return LogSeverity.Warning;
-                case "INFO":
-                case "3":
-                case null:
-                    return LogSeverity.Info;
-                case "VERBOSE":
-                case "4":
-                    return LogSeverity.Verbose;
-                case "DEBUG":
-                case "5":
-                    return LogSeverity.Debug;
-            }
-            throw new InvalidOperationException("Somehow failed to parse the logging level");
-        }
+            "CRITICAL" or "0" => LogSeverity.Critical,
+            "ERROR" or "1" => LogSeverity.Error,
+            "WARNING" or "2" => LogSeverity.Warning,
+            "VERBOSE" or "4" => LogSeverity.Verbose,
+            "DEBUG" or "5" => LogSeverity.Debug,
+            "INFO" or "3" or null or _ => LogSeverity.Info
+        };
 
-        private Hangfire.Logging.LogLevel ParseEnvironmentLogLevelForHangfire()
+        private static Hangfire.Logging.LogLevel ParseEnvironmentLogLevelForHangfire() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant() switch
         {
-            switch (Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant())
-            {
-                case "CRITICAL":
-                case "0":
-                    return Hangfire.Logging.LogLevel.Fatal;
-                case "ERROR":
-                case "1":
-                    return Hangfire.Logging.LogLevel.Error;
-                case "WARNING":
-                case "2":
-                    return Hangfire.Logging.LogLevel.Warn;
-                case "INFO":
-                case "3":
-                case null:
-                    return Hangfire.Logging.LogLevel.Info;
-                case "VERBOSE":
-                case "4":
-                    return Hangfire.Logging.LogLevel.Trace;
-                case "DEBUG":
-                case "5":
-                    return Hangfire.Logging.LogLevel.Debug;
-            }
-            throw new InvalidOperationException("Somehow failed to parse the logging level");
-        }
+            "CRITICAL" or "0" => Hangfire.Logging.LogLevel.Fatal,
+            "ERROR" or "1" => Hangfire.Logging.LogLevel.Error,
+            "WARNING" or "2" => Hangfire.Logging.LogLevel.Warn,
+            "VERBOSE" or "4" => Hangfire.Logging.LogLevel.Trace,
+            "DEBUG" or "5" => Hangfire.Logging.LogLevel.Debug,
+            "INFO" or "3" or null or _ => Hangfire.Logging.LogLevel.Info
+        };
 
         private async Task InitializeServices(ServiceProvider services, IEnumerable<Type> serviceTypes)
         {
@@ -235,10 +201,10 @@ namespace Bot
             var svc = new ServiceCollection()
                 // Manually add services that do NOT implement IEileenService
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
-                .AddTransient<Random>(provider => MersenneTwister.MTRandom.Create())
+                .AddTransient(provider => MersenneTwister.MTRandom.Create())
                 .AddSingleton<CancellationTokenSource>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
-                .AddSingleton<DiscordSocketClient>((services) =>
+                .AddSingleton((services) =>
                 {
                     var config = new DiscordSocketConfig
                     {

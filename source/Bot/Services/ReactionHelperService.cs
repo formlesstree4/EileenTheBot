@@ -9,9 +9,9 @@ namespace Bot.Services
     public sealed class ReactionHelperService : IEileenService
     {
 
-        private readonly Emoji disapprovalEmoji = new Emoji("👎");
+        private readonly Emoji disapprovalEmoji = new("👎");
 
-        private readonly Emoji approvalEmoji = new Emoji("👍");
+        private readonly Emoji approvalEmoji = new("👍");
 
 
 

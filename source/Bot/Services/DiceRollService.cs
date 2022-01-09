@@ -33,7 +33,7 @@ namespace Bot.Services
         /// </summary>
         /// <param name="expression">The string expression to convert</param>
         /// <returns><see cref="DiceExpression"/></returns>
-        public DiceExpression GetDiceExpression(string expression) => new DiceExpression(expression, DiceExpressionOptions.SimplifyStringValue);
+        public DiceExpression GetDiceExpression(string expression) => new(expression, DiceExpressionOptions.SimplifyStringValue);
 
     }
 
@@ -56,9 +56,9 @@ namespace Bot.Services
         public static DiceExpression Zero { get; } = new DiceExpression("0");
 
 
-        private readonly Regex numberToken = new Regex("^[0-9]+$", RegexOptions.Compiled);
-        private readonly Regex diceRollToken = new Regex("^([0-9]*)d([0-9]+|%)$", RegexOptions.Compiled);
-        private List<KeyValuePair<long, IDiceExpressionNode>> nodes = new List<KeyValuePair<long, IDiceExpressionNode>>();
+        private readonly Regex numberToken = new("^[0-9]+$", RegexOptions.Compiled);
+        private readonly Regex diceRollToken = new("^([0-9]*)d([0-9]+|%)$", RegexOptions.Compiled);
+        private List<KeyValuePair<long, IDiceExpressionNode>> nodes = new();
 
 
 

@@ -69,12 +69,10 @@ namespace Bot.Services.RavenDB
 
         private async Task<BotConfiguration> GetBotConfigurationAsync(bool reload = false)
         {
-            if (ReferenceEquals(configuration, null) || reload)
+            if (configuration is null || reload)
             {
-                using (var session = GetOrAddDocumentStore("erector_core").OpenAsyncSession())
-                {
-                    configuration = await session.LoadAsync<BotConfiguration>("configuration");
-                }
+                using var session = GetOrAddDocumentStore("erector_core").OpenAsyncSession();
+                configuration = await session.LoadAsync<BotConfiguration>("configuration");
             }
             return configuration;
         }

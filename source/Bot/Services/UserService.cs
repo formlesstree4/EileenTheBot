@@ -60,30 +60,26 @@ namespace Bot.Services
 
         public async Task SaveServiceAsync()
         {
-            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
+            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
+            Write($"Saving User Data to RavenDB...");
+            foreach (var entry in userContent)
             {
-                Write($"Saving User Data to RavenDB...");
-                foreach (var entry in userContent)
-                {
-                    Write($"Saving {entry.Key}...", LogSeverity.Verbose);
-                    await session.StoreAsync(entry.Value, entry.Key.ToString());
-                }
-                await session.SaveChangesAsync();
-                Write("User Data has been saved");
+                Write($"Saving {entry.Key}...", LogSeverity.Verbose);
+                await session.StoreAsync(entry.Value, entry.Key.ToString());
             }
+            await session.SaveChangesAsync();
+            Write("User Data has been saved");
         }
 
         public async Task LoadServiceAsync()
         {
-            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
+            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
+            Write($"Loading User Data from RavenDB...");
+            var c = await session.Query<EileenUserData>().ToListAsync();
+            Write($"Discovered {c.Count} item(s) to load!");
+            foreach (var userData in c)
             {
-                Write($"Loading User Data from RavenDB...");
-                var c = await session.Query<EileenUserData>().ToListAsync();
-                Write($"Discovered {c.Count} item(s) to load!");
-                foreach (var userData in c)
-                {
-                    userContent.TryAdd(userData.UserId, userData);
-                }
+                userContent.TryAdd(userData.UserId, userData);
             }
         }
 
@@ -146,7 +142,7 @@ namespace Bot.Services
             {
                 Write($"Identifying Servers {ud.Key} is located on", LogSeverity.Verbose);
                 ud.Value.ServersOn = (from c in servers
-                                      where !ReferenceEquals(c.GetUser(ud.Key), null)
+                                      where c.GetUser(ud.Key) is not null
                                       select c.Id).ToList();
                 Write($"{ud.Key} is on {ud.Value.ServersOn.Count} server(s) out of {servers.Count}", LogSeverity.Verbose);
             }

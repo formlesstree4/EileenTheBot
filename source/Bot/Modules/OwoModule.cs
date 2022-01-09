@@ -1,4 +1,4 @@
-﻿using Discord.Commands;
+using Discord.Commands;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -7,9 +7,35 @@ namespace Bot.Modules
 {
     public sealed class OwoModule : ModuleBase<SocketCommandContext>
     {
-        private static readonly string[] s_faces = { "(\x30FB`\x03C9\x00B4\x30FB)", ";;w;;", "owo", "UwU", ">w<", "^w^", "◕w◕", "(⁄ʘ⁄⁄ω⁄⁄ʘ⁄)♡", "*𝓌𝒶𝓉𝓈 𝒹𝒾𝓈?*ღ(O꒳Oღ)", "( ͡o ꒳ ͡o )*𝔫𝔬𝔱𝔦𝔠𝔢𝔰 𝔟𝔲𝔩𝔤𝔢*" };
+        private static readonly string[] s_faces = {
+            "(\x30FB`\x03C9\x00B4\x30FB)",
+            ";;w;;",
+            "owo",
+            "UwU",
+            ">w<",
+            "^w^",
+            "◕w◕",
+            "(⁄ʘ⁄⁄ω⁄⁄ʘ⁄)♡",
+            "*𝓌𝒶𝓉𝓈 𝒹𝒾𝓈?*ღ(O꒳Oღ)",
+            "( ͡o ꒳ ͡o )*𝔫𝔬𝔱𝔦𝔠𝔢𝔰 𝔟𝔲𝔩𝔤𝔢*",
+            "◔w◔",
+            "︠ʘw ︠ʘ",
+            "（ ゜ω 。）",
+            "（ 。ω ゜）",
+            "( °꒳° )",
+            "‿︵*𝓇𝒶𝓌𝓇*‿︵ ʘwʘ",
+            "♥ ⑅  𝒘𝒉𝒆𝒓𝒆 (⦿   ᳕ ⦿) 𝒓 𝒖 ? ⑅ ♥"
+        };
 
-        public Random Rng { get; set; }
+        private readonly Random rng;
+
+
+        public OwoModule(Random random)
+        {
+            rng = random;
+        }
+
+        
 
         [Command("owo")]
         [Summary("Crafts an amalgamation of text like if a furry said it")]
@@ -57,6 +83,6 @@ namespace Bot.Modules
             return Regex.Replace(result, "!{1,3}", _ => RandomFace());
         }
 
-        private string RandomFace() => $" {s_faces[Rng.Next(s_faces.Length)]} ";
+        private string RandomFace() => $" {s_faces[rng.Next(s_faces.Length)]} ";
     }
 }

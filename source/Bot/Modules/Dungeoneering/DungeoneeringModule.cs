@@ -17,16 +17,23 @@ namespace Bot.Modules.Dungeoneering
     [Group("dungeoneer"), Alias("d")]
     public sealed class DungeoneeringModule : ModuleBase<SocketCommandContext>
     {
+        private readonly DungeoneeringMainService dungeoneeringMainService;
+        private readonly UserService userService;
+        private readonly DiscordSocketClient client;
+        private readonly Random rng;
 
-        public DungeoneeringMainService DungeoneeringService { get; set; }
 
-        public BetterPaginationService PaginationService { get; set; }
-
-        public UserService UserService { get; set; }
-
-        public DiscordSocketClient Client { get; set; }
-
-        public Random Rng { get; set; }
+        public DungeoneeringModule(
+            DungeoneeringMainService dungeoneeringMainService,
+            UserService userService,
+            DiscordSocketClient client,
+            Random rng)
+        {
+            this.dungeoneeringMainService = dungeoneeringMainService ?? throw new ArgumentNullException(nameof(dungeoneeringMainService));
+            this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
+            this.client = client ?? throw new ArgumentNullException(nameof(client));
+            this.rng = rng ?? throw new ArgumentNullException(nameof(rng));
+        }
 
 
 
@@ -110,38 +117,38 @@ namespace Bot.Modules.Dungeoneering
 
         private async Task HandleRegistrationAsync()
         {
-            if (await DungeoneeringService.IsUserRegisteredAsync(Context.User))
+            if (await dungeoneeringMainService.IsUserRegisteredAsync(Context.User))
             {
                 await ReplyAsync("You are already registered for Dungeoneering! You can view your Player Card in your profile!");
                 return;
             }
-            await DungeoneeringService.RegisterPlayerAsync(Context.User);
+            await dungeoneeringMainService.RegisterPlayerAsync(Context.User);
             var responseBuilder = new StringBuilder();
             responseBuilder.AppendLine("Congratulations and welcome to Dungeoneering! Your guild card has been created and is now part of your Profile!");
             responseBuilder.AppendLine("To know more about what you can do with Dungeoneering, just type in `dungeoneer help`");
             responseBuilder.AppendLine("All the commands will be printed so you can see what all is now accessible.");
-            var profileCallback = new ProfileCallback(await UserService.GetOrCreateUserData(Context.User), Context.User, new Discord.EmbedBuilder());
-            var builder = await DungeoneeringService.CreateDungeoneeringProfilePage(profileCallback);
+            var profileCallback = new ProfileCallback(await userService.GetOrCreateUserData(Context.User), Context.User, new EmbedBuilder());
+            var builder = await dungeoneeringMainService.CreateDungeoneeringProfilePage(profileCallback);
             await ReplyAsync(responseBuilder.ToString());
             await ReplyAsync(embed: builder.PageBuilder.Build());
         }
 
         private async Task HandleFightAsync()
         {
-            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
+            var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
             if (encounter != null)
             {
                 await ReplyAsync("This channel already has an encounter going! Finish that first, THEN you can start another one!");
                 return;
             }
-            if (await DungeoneeringService.IsUserInAnyEncounterAsync(Context.User))
+            if (await dungeoneeringMainService.IsUserInAnyEncounterAsync(Context.User))
             {
                 await ReplyAsync("Finish your previous encounter! One at a time!");
                 return;
             }
-            encounter = await DungeoneeringService.CreateEncounterAsync(Context.User, Context.Channel);
+            encounter = await dungeoneeringMainService.CreateEncounterAsync(Context.User, Context.Channel);
 
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(Context.User);
             var playerPower = playerCard.GetActualPower();
 
             var messageBuilder = new StringBuilder();
@@ -157,8 +164,8 @@ namespace Bot.Modules.Dungeoneering
 
         private async Task HandleAttackAsync()
         {
-            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
+            var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(Context.User);
             if (encounter == null) return;
             if (encounter.PlayerId != Context.User.Id) return;
 
@@ -170,14 +177,14 @@ namespace Bot.Modules.Dungeoneering
 
             if (encounter.Assistants.Any())
             {
-                var assistants = await DungeoneeringService.GetPlayerCardsAsync(encounter.Assistants);
+                var assistants = await dungeoneeringMainService.GetPlayerCardsAsync(encounter.Assistants);
                 playerBoost += assistants.Sum(c => c.GetActualPower());
                 playerPower += playerBoost;
             }
 
             if (encounter.Instigators.Any())
             {
-                var instigators = await DungeoneeringService.GetPlayerCardsAsync(encounter.Instigators);
+                var instigators = await dungeoneeringMainService.GetPlayerCardsAsync(encounter.Instigators);
                 monsterBoost += instigators.Sum(c => c.GetActualPower());
                 monsterPower += monsterBoost;
             }
@@ -185,45 +192,45 @@ namespace Bot.Modules.Dungeoneering
             if (monsterPower < playerPower)
             {
                 await ReplyAsync($"{Context.User.Username} has successfully defeated the {encounter.ActiveMonster.Name}!");
-                await DungeoneeringService.HandleVictoryAsync(playerCard, encounter);
+                await dungeoneeringMainService.HandleVictoryAsync(playerCard, encounter);
             }
             else
             {
                 await ReplyAsync($"{Context.User.Username} was brutally killed by the {encounter.ActiveMonster.Name} and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
-                await DungeoneeringService.HandleDefeatAsync(playerCard, encounter);
+                await dungeoneeringMainService.HandleDefeatAsync(playerCard, encounter);
             }
         }
 
         private async Task HandleFleeAsync()
         {
-            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
+            var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(Context.User);
             if (encounter == null) return;
             if (encounter.PlayerId != Context.User.Id) return;
-            var fleeChance = Rng.Next(100);
+            var fleeChance = rng.Next(100);
             if (fleeChance >= 80)
             {
                 await ReplyAsync($"{Context.User.Username} was unable to flee, was killed by the {encounter.ActiveMonster.Name}, and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
-                await DungeoneeringService.HandleDefeatAsync(playerCard, encounter);
+                await dungeoneeringMainService.HandleDefeatAsync(playerCard, encounter);
             }
             else
             {
                 await ReplyAsync($"{Context.User.Username} has fled successfully!");
-                await DungeoneeringService.HandleFleeAsync(playerCard, encounter);
+                await dungeoneeringMainService.HandleFleeAsync(playerCard, encounter);
             }
 
         }
 
         private async Task HandleStatusAsync()
         {
-            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
+            var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
             if (encounter == null)
             {
                 await ReplyAsync("There is no encounter at this time!");
                 return;
             }
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
-            var userDetails = await (Client as IDiscordClient).GetUserAsync(encounter.PlayerId);
+            var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(encounter.PlayerId);
+            var userDetails = await (client as IDiscordClient).GetUserAsync(encounter.PlayerId);
             var responseBuilder = new StringBuilder();
             responseBuilder.AppendLine($"{userDetails.Username} is fighting '{encounter.ActiveMonster.Name}'.");
 
@@ -235,13 +242,13 @@ namespace Bot.Modules.Dungeoneering
 
             if (encounter.Assistants.Any())
             {
-                var assistants = await DungeoneeringService.GetPlayerCardsAsync(encounter.Assistants);
+                var assistants = await dungeoneeringMainService.GetPlayerCardsAsync(encounter.Assistants);
                 playerBoost += assistants.Sum(c => c.GetActualPower());
             }
 
             if (encounter.Instigators.Any())
             {
-                var instigators = await DungeoneeringService.GetPlayerCardsAsync(encounter.Instigators);
+                var instigators = await dungeoneeringMainService.GetPlayerCardsAsync(encounter.Instigators);
                 monsterBoost += instigators.Sum(c => c.GetActualPower());
             }
 
@@ -252,10 +259,9 @@ namespace Bot.Modules.Dungeoneering
 
         private async Task HandleAssistingAsync()
         {
-            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
-            var hostCard = await DungeoneeringService.GetPlayerCardAsync(encounter.PlayerId);
-            var encounterPlayer = await ((IDiscordClient)Client).GetUserAsync(encounter.PlayerId);
+            var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
+            var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(Context.User);
+            var encounterPlayer = await ((IDiscordClient)client).GetUserAsync(encounter.PlayerId);
 
             if (encounter == null) return;
             if (encounter.PlayerId == Context.User.Id) return;
@@ -266,8 +272,8 @@ namespace Bot.Modules.Dungeoneering
 
         private async Task HandleDeterringAsync()
         {
-            var encounter = await DungeoneeringService.GetEncounterAsync(Context.Channel);
-            var playerCard = await DungeoneeringService.GetPlayerCardAsync(Context.User);
+            var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
+            var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(Context.User);
             if (encounter == null) return;
             if (encounter.PlayerId == Context.User.Id) return;
             encounter.Assistants.Remove(Context.User.Id);

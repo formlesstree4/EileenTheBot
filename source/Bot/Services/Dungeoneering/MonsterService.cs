@@ -25,7 +25,7 @@ namespace Bot.Services.Dungeoneering
             Func<LogMessage, Task> logger,
             Random rng)
         {
-            this.ravenDatabaseService = ravenDatabaseService ?? throw new System.ArgumentNullException(nameof(ravenDatabaseService));
+            this.ravenDatabaseService = ravenDatabaseService ?? throw new ArgumentNullException(nameof(ravenDatabaseService));
             this.equipmentService = equipmentService ?? throw new ArgumentNullException(nameof(equipmentService));
             this.random = rng ?? throw new ArgumentNullException(nameof(rng));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -139,7 +139,7 @@ namespace Bot.Models.Dungeoneering.Special.Equipment
             return "";
         }
 
-        public Models.Dungeoneering.Equipment ToEquipment()
+        public Dungeoneering.Equipment ToEquipment()
         {
             return new Dungeoneering.Equipment
             {

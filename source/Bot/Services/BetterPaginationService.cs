@@ -29,7 +29,7 @@ namespace Bot.Services
         private const string STOP = "⏹";
 
 
-        private readonly Color ErrorColor = new Color(237, 67, 55);
+        private readonly Color ErrorColor = new(237, 67, 55);
         private readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
 
 
@@ -107,7 +107,7 @@ namespace Bot.Services
         /// <param name="channel">The <see cref="ISocketMessageChannel"/> implementation that the reaction was added from</param>
         /// <param name="reaction">A reference to the <see cref="SocketReaction"/></param>
         /// <returns>A promise to react to the <see cref="SocketReaction"/></returns>
-        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> messageParam, ISocketMessageChannel channel, SocketReaction reaction)
+        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> messageParam, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
             var message = await (messageParam.GetOrDownloadAsync());
 
@@ -142,12 +142,12 @@ namespace Bot.Services
         /// <param name="messageParam">A possibly cached instance of a <see cref="IUserMessage"/></param>
         /// <param name="channel">The <see cref="ISocketMessageChannel"/> implementation that the message was deleted from</param>
         /// <returns>A promise to react to the deletion</returns>
-        private async Task OnMessageDeleted(Cacheable<IMessage, ulong> messageParam, ISocketMessageChannel channel)
+        private async Task OnMessageDeleted(Cacheable<IMessage, ulong> messageParam, Cacheable<IMessageChannel, ulong> channel)
         {
             try
             {
                 var message = await messageParam.GetOrDownloadAsync();
-                if (ReferenceEquals(message, null))
+                if (message is null)
                 {
                     await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was not found in cache and could not be downloaded. Disregard."));
                     return;
@@ -161,11 +161,11 @@ namespace Bot.Services
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was removed from the internal tracking system."));
                 return;
             }
-            catch (System.NullReferenceException nre)
+            catch (NullReferenceException nre)
             {
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"Null Reference Exception occurred inside the {nameof(OnMessageDeleted)} handler", nre));
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 await WriteLog(new LogMessage(LogSeverity.Warning, nameof(BetterPaginationService), $"Captured a generic error while executing {nameof(OnMessageDeleted)}", e));
             }
@@ -179,7 +179,7 @@ namespace Bot.Services
         /// <returns>A boolean value that indicates if <paramref name="message"/> can be processed</returns>
         private async Task<bool> HandleMessageValidation(IUserMessage message, SocketReaction reaction)
         {
-            if (ReferenceEquals(message, null))
+            if (message is null)
             {
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{nameof(message)} was not found in cache and could not be downloaded. Disregard."));
                 return false;
@@ -211,7 +211,7 @@ namespace Bot.Services
         /// </summary>
         /// <param name="message">The <see cref="IUserMessage"/> implementation to verify</param>
         /// <returns></returns>
-        private async Task EnsureMessageHasReactions(IUserMessage message)
+        private static async Task EnsureMessageHasReactions(IUserMessage message)
         {
             if (!message.Reactions.ContainsKey(new Emoji(FIRST))) await message.AddReactionAsync(new Emoji(FIRST));
             if (!message.Reactions.ContainsKey(new Emoji(BACK))) await message.AddReactionAsync(new Emoji(BACK));

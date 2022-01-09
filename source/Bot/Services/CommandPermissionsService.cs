@@ -21,11 +21,11 @@ namespace Bot.Services
             Func<LogMessage, Task> logger)
         {
             this.client = client ??
-                throw new System.ArgumentNullException(nameof(client));
+                throw new ArgumentNullException(nameof(client));
             this.serverConfigurationService = serverConfigurationService ??
                 throw new ArgumentNullException(nameof(serverConfigurationService));
             this.logger = logger ??
-                throw new System.ArgumentNullException(nameof(logger));
+                throw new ArgumentNullException(nameof(logger));
         }
 
 
@@ -36,7 +36,7 @@ namespace Bot.Services
         {
             Write($"Retreiving permissions for {serverId}...");
             var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(serverId);
-            return configuration.GetOrAddTagData<PermissionsEntry>("permissions", () => CreatePermissions(serverId));
+            return configuration.GetOrAddTagData("permissions", () => CreatePermissions(serverId));
         }
 
 

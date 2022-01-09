@@ -70,15 +70,13 @@ namespace Bot.Services
 
         private async Task LoadServerConfigurations()
         {
-            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
+            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession();
+            foreach (var guild in client.Guilds)
             {
-                foreach (var guild in client.Guilds)
-                {
-                    Write($"Initial load for {guild.Id}", LogSeverity.Verbose);
-                    var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
-                    configurations.AddOrUpdate(guild.Id, (guildId) => data, (guildId, original) => data);
-                    Write($"Loaded {guild.Id}!", LogSeverity.Verbose);
-                }
+                Write($"Initial load for {guild.Id}", LogSeverity.Verbose);
+                var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
+                configurations.AddOrUpdate(guild.Id, (guildId) => data, (guildId, original) => data);
+                Write($"Loaded {guild.Id}!", LogSeverity.Verbose);
             }
         }
 
@@ -110,11 +108,9 @@ namespace Bot.Services
 
         public async Task ReloadGuild(ulong guildId)
         {
-            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
-            {
-                var data = await session.LoadAsync<ServerConfigurationData>(id: guildId.ToString());
-                configurations.AddOrUpdate(guildId, (guildId) => data, (guildId, original) => data);
-            }
+            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession();
+            var data = await session.LoadAsync<ServerConfigurationData>(id: guildId.ToString());
+            configurations.AddOrUpdate(guildId, (guildId) => data, (guildId, original) => data);
         }
 
         public async Task ReloadGuild(IGuild guild) => await ReloadGuild(guild.Id);

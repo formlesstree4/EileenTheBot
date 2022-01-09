@@ -33,15 +33,13 @@ namespace Bot.Services.Booru
         {
             var tags = EncodeText(string.Join(" ", searchTags));
             var url = GetSearchString(limit, page, tags);
-            using (var getResponse = await _clientAsync.GetAsync(url))
-            {
-                var response = await getResponse.Content.ReadAsStringAsync();
-                if (response is null) return Enumerable.Empty<T>();
-                var responseObject = JsonConvert.DeserializeObject<TResponse>(response);
-                var x = ConvertResponseAsEnumerable(responseObject);
-                if (x is null) x = Enumerable.Empty<T>();
-                return x;
-            }
+            using var getResponse = await _clientAsync.GetAsync(url);
+            var response = await getResponse.Content.ReadAsStringAsync();
+            if (response is null) return Enumerable.Empty<T>();
+            var responseObject = JsonConvert.DeserializeObject<TResponse>(response);
+            var x = ConvertResponseAsEnumerable(responseObject);
+            if (x is null) x = Enumerable.Empty<T>();
+            return x;
         }
 
         private HttpClient InternalCreateClient()

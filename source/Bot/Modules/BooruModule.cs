@@ -28,8 +28,16 @@ namespace Bot.Modules
 
         private const string SkipParameter = "skip";
 
-
-        private static IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
+        private readonly BetterPaginationService paginationService;
+        private readonly Danbooru danbooru;
+        private readonly e621 e621;
+        private readonly Gelbooru gelbooru;
+        private readonly SafeBooru safeBooru;
+        private readonly Yandere yandere;
+        private readonly IMapper mapper;
+        private readonly StupidTextService stupidTextService;
+        private readonly Func<LogMessage, Task> logger;
+        private static readonly IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
         {
             ["-r"] = "order:random",
             ["-e"] = "rating:explicit",
@@ -37,7 +45,7 @@ namespace Bot.Modules
             ["-s"] = "rating:safe"
         };
 
-        private static IReadOnlyDictionary<string, string> tagAliasesDesc = new Dictionary<string, string>
+        private static readonly IReadOnlyDictionary<string, string> tagAliasesDesc = new Dictionary<string, string>
         {
             ["-r"] = "Adds a random order flag",
             ["-e"] = "Enforces explicit only",
@@ -47,23 +55,28 @@ namespace Bot.Modules
             ["--take"] = "Take 'n' number of posts on said page"
         };
 
-        public BetterPaginationService PaginationService { get; set; }
 
-        public Danbooru Danbooru { get; set; }
-
-        public e621 e621 { get; set; }
-
-        public Gelbooru Gelbooru { get; set; }
-
-        public SafeBooru Safebooru { get; set; }
-
-        public Yandere Yandere { get; set; }
-
-        public IMapper Mapper { get; set; }
-
-        public StupidTextService StupidTextService { get; set; }
-
-        public Func<LogMessage, Task> Logger { get; set; }
+        public BooruModule(
+            BetterPaginationService paginationService,
+            Danbooru danbooru,
+            e621 e621,
+            Gelbooru gelbooru,
+            SafeBooru safeBooru,
+            Yandere yandere,
+            IMapper mapper,
+            StupidTextService stupidTextService,
+            Func<LogMessage, Task> logger)
+        {
+            this.paginationService = paginationService ?? throw new ArgumentNullException(nameof(paginationService));
+            this.danbooru = danbooru ?? throw new ArgumentNullException(nameof(danbooru));
+            this.e621 = e621 ?? throw new ArgumentNullException(nameof(e621));
+            this.gelbooru = gelbooru ?? throw new ArgumentNullException(nameof(gelbooru));
+            this.safeBooru = safeBooru ?? throw new ArgumentNullException(nameof(safeBooru));
+            this.yandere = yandere ?? throw new ArgumentNullException(nameof(yandere));
+            this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            this.stupidTextService = stupidTextService ?? throw new ArgumentNullException(nameof(stupidTextService));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
 
 
@@ -87,7 +100,7 @@ namespace Bot.Modules
         public async Task DanbooruSearchAsync(
             [Summary(CriteriaSummary)] params string[] criteria)
         {
-            await InitialCommandHandler(Danbooru, criteria);
+            await InitialCommandHandler(danbooru, criteria);
         }
 
         [Command("fur")]
@@ -105,7 +118,7 @@ namespace Bot.Modules
         public async Task GelbooruSearchAsync(
             [Summary(CriteriaSummary)] params string[] criteria)
         {
-            await InitialCommandHandler(Gelbooru, criteria);
+            await InitialCommandHandler(gelbooru, criteria);
         }
 
         [Command("sb")]
@@ -114,7 +127,7 @@ namespace Bot.Modules
         public async Task SafebooruSearchAsync(
             [Summary(CriteriaSummary)] params string[] criteria)
         {
-            await InitialCommandHandler(Safebooru, criteria);
+            await InitialCommandHandler(safeBooru, criteria);
         }
 
         [Command("yan")]
@@ -123,7 +136,7 @@ namespace Bot.Modules
         public async Task YandereSearchAsync(
             [Summary(CriteriaSummary)] params string[] criteria)
         {
-            await InitialCommandHandler(Yandere, criteria);
+            await InitialCommandHandler(yandere, criteria);
         }
 
 
@@ -139,59 +152,57 @@ namespace Bot.Modules
             var pageSize = parameters[TakeParameter];
 
             var results = (await service.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
-            var posts = results.Select(c => Mapper.Map<T, Models.EmbedPost>(c));
-            await PostAsync(posts, newCriteria, pageNumber, pageSize);
+            var posts = results.Select(c => mapper.Map<T, EmbedPost>(c));
+            await PostAsync(posts, newCriteria, pageNumber);
         }
 
-        private async Task PostAsync(IEnumerable<EmbedPost> results, string[] criteria, int pageNumber, int pageSize)
+        private async Task PostAsync(IEnumerable<EmbedPost> results, string[] criteria, int pageNumber)
         {
             var messages = new List<Embed>();
-            using (var ts = Context.Channel.EnterTypingState())
+            using var ts = Context.Channel.EnterTypingState();
+            if (!results.Any())
             {
-                if (!results.Any())
-                {
-                    await ReplyAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", criteria)})");
-                    return;
-                }
-                foreach (var booruPost in results)
-                {
-                    try
-                    {
-                        var artistName = booruPost.ArtistName;
-                        var eBuilder = new EmbedBuilder()
-                            .AddField("Criteria", string.Join(", ", criteria), true)
-                            .AddField("Artist(s)", artistName, true)
-                            .WithAuthor(new EmbedAuthorBuilder()
-                                .WithName("Search Results")
-                                .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
-                            .WithColor(new Color(152, 201, 124))
-                            .WithCurrentTimestamp()
-                            .WithImageUrl(booruPost.ImageUrl)
-                            .WithTitle($"The Good Stuff")
-                            .WithFooter($"{StupidTextService.GetRandomStupidText()} | Page Offset: {pageNumber}")
-                            .WithUrl(booruPost.PageUrl);
-                        messages.Add(eBuilder.Build());
-                    }
-                    catch (ArgumentException are)
-                    {
-                        Write($"Failed to create a Booru post: {are}", severity: LogSeverity.Error);
-                        continue;
-                    }
-                }
-                await PaginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
+                await ReplyAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", criteria)})");
+                return;
             }
+            foreach (var booruPost in results)
+            {
+                try
+                {
+                    var artistName = booruPost.ArtistName;
+                    var eBuilder = new EmbedBuilder()
+                        .AddField("Criteria", string.Join(", ", criteria), true)
+                        .AddField("Artist(s)", artistName, true)
+                        .WithAuthor(new EmbedAuthorBuilder()
+                            .WithName("Search Results")
+                            .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
+                        .WithColor(new Color(152, 201, 124))
+                        .WithCurrentTimestamp()
+                        .WithImageUrl(booruPost.ImageUrl)
+                        .WithTitle($"The Good Stuff")
+                        .WithFooter($"{stupidTextService.GetRandomStupidText()} | Page Offset: {pageNumber}")
+                        .WithUrl(booruPost.PageUrl);
+                    messages.Add(eBuilder.Build());
+                }
+                catch (ArgumentException are)
+                {
+                    Write($"Failed to create a Booru post: {are}", severity: LogSeverity.Error);
+                    continue;
+                }
+            }
+            await paginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
         }
 
         private string[] ExpandCriteria(string[] c)
         {
             var tags = new List<string>(c);
             var results = new List<string>();
-            if (Context.Channel is Discord.ITextChannel t && !t.IsNsfw) tags.Add("-s");
+            if (Context.Channel is ITextChannel t && !t.IsNsfw) tags.Add("-s");
             foreach (var i in tags) results.Add(tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias) ? alias : i);
             return results.ToArray();
         }
 
-        private IReadOnlyDictionary<string, int> GetSkipAndTake(ref string[] c)
+        private static IReadOnlyDictionary<string, int> GetSkipAndTake(ref string[] c)
         {
             var updated = new List<string>();
             var results = new Dictionary<string, int>
@@ -231,7 +242,7 @@ namespace Bot.Modules
             string source = nameof(BooruModule),
             LogSeverity severity = LogSeverity.Info)
         {
-            Logger(new LogMessage(severity, source, message));
+            logger(new LogMessage(severity, source, message));
         }
 
     }

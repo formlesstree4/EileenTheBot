@@ -22,7 +22,7 @@ namespace Bot.Services
         private readonly LinkedList<string> _archiveOfMessages;
         private readonly int _backlogToKeep;
         private readonly string _endpointUrl;
-        private readonly HttpClient _client = new HttpClient();
+        private readonly HttpClient _client = new();
         private readonly string _replacementName = "Coolswift";
 
         public GptService(

@@ -14,13 +14,13 @@ namespace Bot.Services
     public sealed class StupidTextService : IEileenService
     {
 
-        private readonly List<string> _statements = new List<string>();
+        private readonly List<string> _statements = new();
         private readonly RavenDatabaseService rdbs;
         private readonly Random random;
         private readonly Func<LogMessage, Task> logger;
 
         public StupidTextService(
-            RavenDB.RavenDatabaseService rdbs,
+            RavenDatabaseService rdbs,
             Random random,
             Func<LogMessage, Task> logger)
         {
@@ -33,17 +33,15 @@ namespace Bot.Services
         public async Task InitializeService()
         {
             Write("Retrieving captions.txt from RavenDB");
-            using (var captionFile = await rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
+            using var captionFile = await rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
                 documentId: "configuration",
                 name: "captions.txt",
                 type: AttachmentType.Document,
-                changeVector: null)))
-            using (var reader = new StreamReader(captionFile.Stream))
+                changeVector: null));
+            using var reader = new StreamReader(captionFile.Stream);
+            while (!reader.EndOfStream)
             {
-                while (!reader.EndOfStream)
-                {
-                    _statements.Add(reader.ReadLine());
-                }
+                _statements.Add(reader.ReadLine());
             }
         }
 

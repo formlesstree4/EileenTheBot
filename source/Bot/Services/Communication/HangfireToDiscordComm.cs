@@ -13,7 +13,7 @@ namespace Bot.Services.Communication
 
         private readonly IServiceProvider services;
         private readonly Func<LogMessage, Task> WriteLog;
-        private DiscordSocketClient client;
+        private readonly DiscordSocketClient client;
 
 
         public HangfireToDiscordComm(IServiceProvider services, Func<LogMessage, Task> logger)
@@ -52,7 +52,7 @@ namespace Bot.Services.Communication
                 Write($"Unable to retrieve User (ID {userId})", LogSeverity.Error);
                 return;
             }
-            var channel = await user.GetOrCreateDMChannelAsync();
+            var channel = await user.CreateDMChannelAsync();
             if (channel is null)
             {
                 Write($"Failed to create a DM channel for {user.Username}", LogSeverity.Error);

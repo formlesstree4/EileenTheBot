@@ -98,7 +98,7 @@ namespace Bot.Models.Danbooru
 
         public string GetPostUrl() => $"https://danbooru.donmai.us/posts/{ID}";
         public string GetDownloadUrl() => $"{file_url ?? large_file_url}";
-        public string GetRenderName() => Path.GetFileNameWithoutExtension(preview_file_url.Substring(preview_file_url.LastIndexOf('/') + 1));
+        public string GetRenderName() => Path.GetFileNameWithoutExtension(preview_file_url[(preview_file_url.LastIndexOf('/') + 1)..]);
         public string GetArtistUrl()
         {
             switch (tag_count_artist)

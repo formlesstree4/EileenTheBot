@@ -9,13 +9,13 @@ namespace Bot.Models
     public abstract class TagEntry
     {
 
-        [JsonProperty]
-        internal Dictionary<string, object> _tags { get; set; } = new Dictionary<string, object>();
+        [JsonProperty("_tags")]
+        internal Dictionary<string, object> Tags { get; set; } = new Dictionary<string, object>();
 
 
         public T GetTagData<T>(string tagName)
         {
-            if (_tags.ContainsKey(tagName) && _tags[tagName] is T output)
+            if (Tags.ContainsKey(tagName) && Tags[tagName] is T output)
             {
                 return output;
             }
@@ -24,18 +24,18 @@ namespace Bot.Models
 
         public T GetOrAddTagData<T>(string tagName, Func<T> addFunc)
         {
-            if (!_tags.ContainsKey(tagName))
+            if (!Tags.ContainsKey(tagName))
             {
                 this.SetTagData(tagName, addFunc());
             }
             return this.GetTagData<T>(tagName);
         }
 
-        public bool HasTagData(string tagName) => _tags.ContainsKey(tagName);
+        public bool HasTagData(string tagName) => Tags.ContainsKey(tagName);
 
         public void SetTagData<T>(string tagName, T tagData)
         {
-            _tags[tagName] = tagData;
+            Tags[tagName] = tagData;
         }
 
     }

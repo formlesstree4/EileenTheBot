@@ -16,61 +16,45 @@ namespace Bot.Modules
     public class GlobalModule : ModuleBase<SocketCommandContext>
     {
 
-        private static HttpClient client = new HttpClient();
-        private readonly CommandService commandService;
-        private readonly BetterPaginationService betterPaginationService;
-        private readonly StupidTextService stupidTextService;
-        private readonly RavenDatabaseService ravenDatabaseService;
-        private readonly ServerConfigurationService serverConfigurationService;
         private readonly DiceRollService rollService;
 
         public GlobalModule(
-            CommandService commandService,
-            BetterPaginationService betterPaginationService,
-            StupidTextService stupidTextService,
-            RavenDatabaseService ravenDatabaseService,
-            ServerConfigurationService serverConfigurationService,
             DiceRollService rollService)
         {
-            this.commandService = commandService ?? throw new System.ArgumentNullException(nameof(commandService));
-            this.betterPaginationService = betterPaginationService ?? throw new System.ArgumentNullException(nameof(betterPaginationService));
-            this.stupidTextService = stupidTextService ?? throw new System.ArgumentNullException(nameof(stupidTextService));
-            this.ravenDatabaseService = ravenDatabaseService ?? throw new System.ArgumentNullException(nameof(ravenDatabaseService));
-            this.serverConfigurationService = serverConfigurationService ?? throw new System.ArgumentNullException(nameof(serverConfigurationService));
             this.rollService = rollService ?? throw new System.ArgumentNullException(nameof(rollService));
         }
 
-#pragma warning disable CS1998
-        [Command("poem")]
-        [Summary("Generates a poem with an optional title")]
-        public async Task PoetryAsync(
-            [Name("Title"),
-            Summary("The optional title of the poem"),
-            Remainder]string title = "")
-        {
-            var config = await serverConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
-            if (config.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.GPT) return;
-            var url = ravenDatabaseService.Configuration.GptUrl;
-            if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
-            url = url.Replace(t.Port.ToString(), "8081");
-#pragma warning disable CS4014
-            Task.Factory.StartNew(async () =>
-            {
-                using (Context.Channel.EnterTypingState())
-                {
-                    var payload = new { title = (title ?? "") };
-                    var responseType = new { text = "" };
-                    var message = JsonConvert.SerializeObject(payload);
-                    var content = new StringContent(message);
-                    var jsonResponse = await client.PostAsync(url, content);
-                    var poetry = JsonConvert.DeserializeAnonymousType(await jsonResponse.Content.ReadAsStringAsync(), responseType);
-                    var responseString = $"```\r\n{poetry.text}\r\n```";
-                    await Context.Channel.SendMessageAsync(responseString);
-                }
-            });
-#pragma warning restore CS4014
-        }
-#pragma warning restore CS1998
+//#pragma warning disable CS1998
+//        [Command("poem")]
+//        [Summary("Generates a poem with an optional title")]
+//        public async Task PoetryAsync(
+//            [Name("Title"),
+//            Summary("The optional title of the poem"),
+//            Remainder]string title = "")
+//        {
+//            var config = await serverConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
+//            if (config.ResponderType != Models.ServerConfigurationData.AutomatedResponseType.GPT) return;
+//            var url = ravenDatabaseService.Configuration.GptUrl;
+//            if (!System.Uri.TryCreate(url, System.UriKind.Absolute, out var t)) return;
+//            url = url.Replace(t.Port.ToString(), "8081");
+//#pragma warning disable CS4014
+//            Task.Factory.StartNew(async () =>
+//            {
+//                using (Context.Channel.EnterTypingState())
+//                {
+//                    var payload = new { title = (title ?? "") };
+//                    var responseType = new { text = "" };
+//                    var message = JsonConvert.SerializeObject(payload);
+//                    var content = new StringContent(message);
+//                    var jsonResponse = await client.PostAsync(url, content);
+//                    var poetry = JsonConvert.DeserializeAnonymousType(await jsonResponse.Content.ReadAsStringAsync(), responseType);
+//                    var responseString = $"```\r\n{poetry.text}\r\n```";
+//                    await Context.Channel.SendMessageAsync(responseString);
+//                }
+//            });
+//#pragma warning restore CS4014
+//        }
+//#pragma warning restore CS1998
 
 
         [Command("roll")]

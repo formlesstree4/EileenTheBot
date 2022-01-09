@@ -46,7 +46,7 @@ namespace Bot.Services.Markov
                 }
             }
         }
-        private static RNGCryptoServiceProvider RngProvider = new RNGCryptoServiceProvider();
+        private static RNGCryptoServiceProvider RngProvider = new();
         protected override double Sample()
         {
             var n1 = (double)SampleImpl();

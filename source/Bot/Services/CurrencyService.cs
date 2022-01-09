@@ -105,7 +105,7 @@ namespace Bot.Services
         }
 
         public EileenCurrencyData GetOrCreateCurrencyData(EileenUserData userData) =>
-            userData.GetOrAddTagData<EileenCurrencyData>("currencyData", CreateNewCurrencyData);
+            userData.GetOrAddTagData("currencyData", CreateNewCurrencyData);
 
         public void UpdateCurrencyDataLevels(EileenCurrencyData currencyData)
         {

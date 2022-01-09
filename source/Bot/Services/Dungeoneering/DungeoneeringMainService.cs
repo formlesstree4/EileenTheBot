@@ -32,7 +32,7 @@ namespace Bot.Services.Dungeoneering
             Func<LogMessage, Task> logger,
             Random random)
         {
-            this.userService = userService ?? throw new System.ArgumentNullException(nameof(userService));
+            this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
             this.ravenDatabaseService = ravenDatabaseService ?? throw new ArgumentNullException(nameof(ravenDatabaseService));
             this.monsterService = monsterService ?? throw new ArgumentNullException(nameof(monsterService));
             this.equipmentService = equipmentService ?? throw new ArgumentNullException(nameof(equipmentService));

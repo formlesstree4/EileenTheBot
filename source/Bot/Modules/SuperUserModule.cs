@@ -58,6 +58,7 @@ namespace Bot.Modules
             cancellationTokenSource.Cancel();
         }
 
+
         /// <summary>
         /// Sub-module for handling Service interactions
         /// </summary>

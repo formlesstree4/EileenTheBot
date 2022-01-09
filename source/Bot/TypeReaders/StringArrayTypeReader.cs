@@ -10,7 +10,7 @@ namespace Bot.TypeReaders
     public sealed class StringArrayTypeReader : TypeReader
     {
 
-        private readonly Regex CommandParseExpression = new Regex("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'", RegexOptions.Compiled);
+        private readonly Regex CommandParseExpression = new("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'", RegexOptions.Compiled);
 
         public override Task<TypeReaderResult> ReadAsync(
             ICommandContext context,
