@@ -13,7 +13,7 @@ namespace Bot.Modules
 {
 
     [Group("guild"), RequireUserPermission(GuildPermission.ManageGuild), RequireContext(ContextType.Guild),
-        Description("Guild Owner specific commands for managing and configuring the Guild")]
+        Summary("Guild Owner specific commands for managing and configuring the Guild")]
     public sealed class GuildOwnerModule : ModuleBase<SocketCommandContext>
     {
         private readonly ServerConfigurationService serverConfigurationService;
