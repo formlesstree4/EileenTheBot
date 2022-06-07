@@ -33,9 +33,7 @@ namespace Bot
             for (var i = 0; i < n; i++)
             {
                 var r = i + (int)(random.NextDouble() * (n - i));
-                var t = list[r];
-                list[r] = list[i];
-                list[i] = t;
+                (list[i], list[r]) = (list[r], list[i]);
             }
 
         }
