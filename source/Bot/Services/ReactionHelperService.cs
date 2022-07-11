@@ -13,6 +13,7 @@ namespace Bot.Services
 
         private readonly Emoji approvalEmoji = new("👍");
 
+        private readonly Emoji thinkEmoji = new("🤔");
 
 
         public async Task AddMessageReaction(IMessage message, ReactionType type)
@@ -25,6 +26,9 @@ namespace Bot.Services
                 case ReactionType.Denial:
                     await message.AddReactionAsync(disapprovalEmoji);
                     break;
+                case ReactionType.Think:
+                    await message.AddReactionAsync(thinkEmoji);
+                    break;
             }
         }
 
@@ -34,7 +38,8 @@ namespace Bot.Services
         public enum ReactionType
         {
             Approval,
-            Denial
+            Denial,
+            Think
         }
 
     }
