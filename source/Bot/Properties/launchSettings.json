@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Bot": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "RavenIP": "http://192.168.254.180:8080"
+      }
+    }
+  }
+}
