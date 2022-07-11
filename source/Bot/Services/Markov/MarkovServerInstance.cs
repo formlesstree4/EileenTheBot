@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Bot.Services.Markov
 {
@@ -7,7 +8,7 @@ namespace Bot.Services.Markov
     {
         private const int ChainRefreshCount = 100;
         private const int MaxHistoryCount = 1000;
-
+        private bool refreshAsap = false;
 
         public ulong ServerId { get; }
 
@@ -28,6 +29,10 @@ namespace Bot.Services.Markov
             _chain = new MarkovChain<string>(_random);
             _seed = seed;
             foreach (var i in _seed) _chain.Add(i.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+            if (!seed.Any())
+            {
+                refreshAsap = true;
+            }
         }
 
 
@@ -37,14 +42,22 @@ namespace Bot.Services.Markov
         public void AddHistoricalMessage(string message)
         {
             _historicalMessages.Enqueue(message);
-            if (ReadyToMakeChain) CreateChain();
+            if (refreshAsap || ReadyToMakeChain) CreateChain();
             if (ReadyToCleanHistory) CleanHistory();
+        }
+
+        public void RetrainFromScratch(IEnumerable<string> seed)
+        {
+            _historicalMessages = new Queue<string>(seed);
+            _seed = seed;
+            CreateChain();
         }
 
         public string GetNextMessage() => string.Join(" ", _chain.Walk(_random));
 
         private void CreateChain()
         {
+            refreshAsap = false;
             _chain = new MarkovChain<string>(_random);
             foreach (var i in _historicalMessages)
             {

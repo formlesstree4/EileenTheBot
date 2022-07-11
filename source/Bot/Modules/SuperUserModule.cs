@@ -172,33 +172,31 @@ namespace Bot.Modules
         [Group("markov")]
         public sealed class MarkovAdminModule : ModuleBase<SocketCommandContext>
         {
-            private readonly MarkovResponder markovService;
-            private readonly ServerConfigurationService serverConfiguration;
+            private readonly MarkovResponder markovResponder;
             private readonly ReactionHelperService rhs;
 
             public MarkovAdminModule(
-                MarkovResponder markovService,
-                ServerConfigurationService serverConfiguration,
+                MarkovResponder markovResponder,
                 ReactionHelperService rhs)
             {
-                this.markovService = markovService ?? throw new System.ArgumentNullException(nameof(markovService));
-                this.serverConfiguration = serverConfiguration ?? throw new System.ArgumentNullException(nameof(serverConfiguration));
+                this.markovResponder = markovResponder ?? throw new System.ArgumentNullException(nameof(markovResponder));
                 this.rhs = rhs ?? throw new System.ArgumentNullException(nameof(rhs));
             }
 
             [Command("train"), RequireContext(ContextType.Guild)]
             public async Task TrainChain(int length = 100)
             {
-                if (!markovService.TryGetServerInstance(Context.Guild.Id, out var chain)) return;
-                var prefix = (await serverConfiguration.GetOrCreateConfigurationAsync(Context.Guild)).CommandPrefix;
+                if (!markovResponder.TryGetServerInstance(Context.Guild.Id, out var chain))
+                {
+                    await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
+                    return;
+                }
+                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Think);
                 var channel = Context.Channel;
                 var messages = await channel.GetMessagesAsync(length).FlattenAsync();
-                foreach(var message in messages)
-                {
-                    if (message.Source != MessageSource.User) continue;
-                    if (message.Content.StartsWith(prefix)) continue;
-                    chain.AddHistoricalMessage(message.Content);
-                }
+                var messageStrings = messages.Select(m => m.CleanContent);
+                chain.RetrainFromScratch(messageStrings);
+                await Context.Message.RemoveAllReactionsAsync();
                 await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
             }
 

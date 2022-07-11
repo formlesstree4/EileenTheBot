@@ -19,8 +19,7 @@ namespace Bot.Services.Communication.Responders
     public sealed class MarkovResponder : MessageResponderBase
     {
 
-        private string triggerWord;
-        private ConcurrentDictionary<ulong, MarkovServerInstance> chains;
+        private readonly ConcurrentDictionary<ulong, MarkovServerInstance> chains;
         private readonly List<string> source;
         private readonly Random random;
 
@@ -75,14 +74,15 @@ namespace Bot.Services.Communication.Responders
                 foreach (var mc in content)
                 {
                     Write($"Loading {mc.ServerId}...", LogSeverity.Verbose);
-                    var msi = new MarkovServerInstance(mc.ServerId, GetSeedContent());
-                    Write($"Inserting Historical Context", LogSeverity.Verbose);
-                    foreach (var c in mc.Context)
-                    {
-                        msi.AddHistoricalMessage(c);
-                    }
+                    var context = mc.Context ?? Enumerable.Empty<string>();
+                    var msi = new MarkovServerInstance(mc.ServerId, context);
                     chains.AddOrUpdate(mc.ServerId, (f) => msi, (f, g) => g);
                 }
+            }
+            foreach(var server in Client.Guilds)
+            {
+                Write($"Testing Load for Guild {server.Id}");
+                TryGetServerInstance(server.Id, out _);
             }
             Write($"Finish Service Load...");
         }
@@ -108,7 +108,11 @@ namespace Bot.Services.Communication.Responders
 
         public bool TryGetServerInstance(ulong chainId, out MarkovServerInstance msi)
         {
-            msi = null;
+            if (!chains.ContainsKey(chainId))
+            {
+                Write($"Missing Chain for Guild {chainId}");
+                chains.AddOrUpdate(chainId, (f) => new MarkovServerInstance(f, Enumerable.Empty<string>()), (f, g) => g);
+            }
             return chains.TryGetValue(chainId, out msi);
         }
 
@@ -142,8 +146,7 @@ namespace Bot.Services.Communication.Responders
         internal override Task<(bool, string)> DoesContainTriggerWord(string message, ulong instanceId)
         {
             var canResponse = DoesMessageContainProperWord(message);
-            return Task.FromResult(canResponse ?
-                (canResponse, triggerWord) : (canResponse, ""));
+            return Task.FromResult(canResponse ? (canResponse, Raven.Configuration.MarkovTrigger) : (canResponse, ""));
         }
 
         internal override Task<string> GenerateResponse(string triggerWord, string message, ulong instanceId)
@@ -154,7 +157,7 @@ namespace Bot.Services.Communication.Responders
                 s =>
                 {
                     Write($"Creating new chain for {s}", LogSeverity.Verbose);
-                    return new MarkovServerInstance(s, GetSeedContent());
+                    return new MarkovServerInstance(s, Enumerable.Empty<string>());
                 });
             string messageToSend = null;
             Write($"Using Instance: {serverInstance.ServerId}", LogSeverity.Verbose);
@@ -200,20 +203,6 @@ namespace Bot.Services.Communication.Responders
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
             base.Write(message, nameof(MarkovResponder), severity);
-        }
-
-        private IEnumerable<string> GetSeedContent()
-        {
-            var content = new List<string>();
-            lock (source)
-            {
-                source.Shuffle(random);
-                for (var i = 0; i < random.Next(100); i++)
-                {
-                    content.Add(source[i]);
-                }
-            }
-            return content;
         }
 
     }

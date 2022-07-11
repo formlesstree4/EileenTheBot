@@ -94,6 +94,7 @@ namespace Bot.Services.Communication
                     {
                         return;
                     }
+                    instanceId = gc.GuildId;
 
                     break;
                 case IPrivateChannel pc:
@@ -110,7 +111,7 @@ namespace Bot.Services.Communication
                 var response = await GenerateResponse(shouldRespond.Item2, message.Content, instanceId);
                 if (!string.IsNullOrWhiteSpace(response))
                 {
-                    await message.Channel.SendMessageAsync(response);
+                    await message.ReplyAsync(response);
                 }
             }
 
