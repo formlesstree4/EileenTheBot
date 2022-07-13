@@ -120,7 +120,7 @@ namespace Bot.Services.Communication.Responders
         {
             // may not be necessary to send this, but, it seems appropriate
             Write("Checking to see if the message contains the appropriate trigger word...", LogSeverity.Verbose);
-            bool containsTriggerWord = DoesMessageContainProperWord(message.Content);
+            bool containsTriggerWord = DoesMessageContainProperWord(message, out _);
             Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
 
             ulong botId = Client.CurrentUser.Id;
@@ -143,13 +143,13 @@ namespace Bot.Services.Communication.Responders
             return containsTriggerWord;
         }
 
-        internal override Task<(bool, string)> DoesContainTriggerWord(string message, ulong instanceId)
+        internal override Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId)
         {
-            var canResponse = DoesMessageContainProperWord(message);
+            var canResponse = DoesMessageContainProperWord(message, out _);
             return Task.FromResult(canResponse ? (canResponse, Raven.Configuration.MarkovTrigger) : (canResponse, ""));
         }
 
-        internal override Task<string> GenerateResponse(string triggerWord, string message, ulong instanceId)
+        internal override Task<string> GenerateResponse(string triggerWord, SocketUserMessage message, ulong instanceId)
         {
             Write("Searching for instance...", LogSeverity.Verbose);
             var serverInstance = chains.GetOrAdd(
@@ -165,7 +165,7 @@ namespace Bot.Services.Communication.Responders
             lock (serverInstance)
             {
                 // We need to generate a message in response since we were directly referenced.
-                serverInstance.AddHistoricalMessage(message);
+                serverInstance.AddHistoricalMessage(GetProperHistoricalMessage(message));
                 Write($"Generating a response...", LogSeverity.Verbose);
                 var attempts = 0;
                 while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
@@ -180,11 +180,11 @@ namespace Bot.Services.Communication.Responders
         }
 
 
-        private bool DoesMessageContainProperWord(string message)
+        private bool DoesMessageContainProperWord(SocketUserMessage message, out string cleanedInput)
         {
             var triggerWord = Raven.Configuration.MarkovTrigger;
             var containsTriggerWord = false;
-            var messageFragments = message.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
+            var messageFragments = message.CleanContent.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
             for (var i = messageFragments.Count - 1; i >= 0; i--)
             {
                 var insensitive = messageFragments[i].ToLowerInvariant();
@@ -196,13 +196,24 @@ namespace Bot.Services.Communication.Responders
                     messageFragments.RemoveAt(i);
                 }
             }
-
+            cleanedInput = string.Join(" ", messageFragments);
             return containsTriggerWord;
         }
 
         private void Write(string message, LogSeverity severity = LogSeverity.Info)
         {
             base.Write(message, nameof(MarkovResponder), severity);
+        }
+
+
+        private string GetProperHistoricalMessage(SocketUserMessage message)
+        {
+            DoesMessageContainProperWord(message, out var clean);
+            if (string.IsNullOrWhiteSpace(clean))
+            {
+                clean = message.Attachments?.FirstOrDefault()?.Url ?? "";
+            }
+            return clean;
         }
 
     }

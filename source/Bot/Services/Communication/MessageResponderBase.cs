@@ -104,11 +104,11 @@ namespace Bot.Services.Communication
             }
 
             Write($"Looking for trigger word in the message...", severity: LogSeverity.Verbose);
-            var shouldRespond = await DoesContainTriggerWord(message.Content, instanceId);
+            var shouldRespond = await DoesContainTriggerWord(message, instanceId);
 
             if (shouldRespond.Item1 || canRespondToMessage)
             {
-                var response = await GenerateResponse(shouldRespond.Item2, message.Content, instanceId);
+                var response = await GenerateResponse(shouldRespond.Item2, message, instanceId);
                 if (!string.IsNullOrWhiteSpace(response))
                 {
                     await message.ReplyAsync(response);
@@ -118,8 +118,8 @@ namespace Bot.Services.Communication
         }
 
         internal abstract Task<bool> CanRespondToMessage(SocketUserMessage message);
-        internal abstract Task<(bool, string)> DoesContainTriggerWord(string message, ulong instanceId);
-        internal abstract Task<string> GenerateResponse(string triggerWord, string message, ulong instanceId);
+        internal abstract Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId);
+        internal abstract Task<string> GenerateResponse(string triggerWord, SocketUserMessage message, ulong instanceId);
 
 
         internal virtual void Write(
