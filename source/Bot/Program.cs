@@ -4,6 +4,7 @@ using Bot.Services;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Hangfire;
 using Hangfire.Annotations;
@@ -52,6 +53,8 @@ namespace Bot
             client.Log += LogAsync;
             await LogAsync($"Attaching the CommandService logger to {nameof(LogAsync)}", LogSeverity.Verbose);
             services.GetRequiredService<CommandService>().Log += LogAsync;
+            await LogAsync($"Attaching the InteractionService logger to {nameof(LogAsync)}", LogSeverity.Verbose);
+            services.GetRequiredService<InteractionService>().Log += LogAsync;
             await LogAsync("Most Discord related functionality has been setup - moving on...");
             await LogAsync($"Initializing RavenDB connectivity...");
             var ravenService = services.GetRequiredService<RavenDatabaseService>();
@@ -132,6 +135,7 @@ namespace Bot
             await LogAsync("Tasks all completed - Going offline");
         }
 
+        
         private static LogSeverity ParseEnvironmentLogLevel() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant() switch
         {
             "CRITICAL" or "0" => LogSeverity.Critical,
@@ -168,6 +172,7 @@ namespace Bot
                 await (service as IEileenService).InitializeService();
             }
             await services.GetRequiredService<CommandHandlingService>().InitializeService();
+            await services.GetRequiredService<InteractionHandlingService>().InitializeService();
         }
 
         private async Task SaveServices(ServiceProvider services, IEnumerable<Type> serviceTypes)
@@ -221,6 +226,19 @@ namespace Bot
                     return dsc;
                 })
                 .AddSingleton<CommandService>()
+                .AddSingleton(services =>
+                {
+                    var client = services.GetRequiredService<DiscordSocketClient>();
+                    return new InteractionService
+                        (client.Rest,
+                        new InteractionServiceConfig
+                        {
+                            UseCompiledLambda = true,
+                            AutoServiceScopes = true,
+                            EnableAutocompleteHandlers = true,
+                            LogLevel = LogSeverity.Verbose
+                        });
+                })
                 .AddSingleton<ServiceManager>();
             await LogAsync($"Discovered {eileenServices.Count} service(s)");
             foreach (var s in eileenServices)

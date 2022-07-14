@@ -1,5 +1,6 @@
 using Bot.Services.RavenDB;
-using Discord.Commands;
+using Discord;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
@@ -10,14 +11,14 @@ namespace Bot.Preconditions
 
     public sealed class TrustedUsersPrecondition : PreconditionAttribute
     {
-        public override async Task<PreconditionResult> CheckPermissionsAsync(
-            ICommandContext context,
-            CommandInfo command,
+        public override Task<PreconditionResult> CheckRequirementsAsync(
+            IInteractionContext context,
+            ICommandInfo commandInfo,
             IServiceProvider services)
         {
             var ravenDatabaseService = services.GetRequiredService<RavenDatabaseService>();
             var configuration = ravenDatabaseService.Configuration;
-            return await Task.FromResult(configuration.TrustedUsers.Contains(context.User.Id) ?
+            return Task.FromResult(configuration.TrustedUsers.Contains(context.User.Id) ?
                 PreconditionResult.FromSuccess() :
                 PreconditionResult.FromError("You are not allowed to perform this command!"));
         }

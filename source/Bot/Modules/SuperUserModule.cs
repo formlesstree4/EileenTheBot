@@ -2,8 +2,10 @@ using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Communication.Responders;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,8 +13,8 @@ using System.Threading.Tasks;
 namespace Bot.Modules
 {
 
-    [Group("admin"), TrustedUsersPrecondition]
-    public class SuperUserModule : ModuleBase<SocketCommandContext>
+    [Group("admin", "Administrative Commands for Erector"), TrustedUsersPrecondition]
+    public class SuperUserModule : InteractionModuleBase
     {
         private readonly ServerConfigurationService serverConfigurationService;
         private readonly CancellationTokenSource cancellationTokenSource;
@@ -21,16 +23,12 @@ namespace Bot.Modules
             ServerConfigurationService serverConfigurationService,
             CancellationTokenSource cancellationTokenSource)
         {
-            this.serverConfigurationService = serverConfigurationService ?? throw new System.ArgumentNullException(nameof(serverConfigurationService));
-            this.cancellationTokenSource = cancellationTokenSource ?? throw new System.ArgumentNullException(nameof(cancellationTokenSource));
+            this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
+            this.cancellationTokenSource = cancellationTokenSource ?? throw new ArgumentNullException(nameof(cancellationTokenSource));
         }
 
-        [Command("chat"),
-        Summary("Sets the responder type for the server"),
-        RequireContext(ContextType.Guild)]
-        public async Task SetResponderAsync(
-            [Name("Type"),
-            Summary("The type of chat responder to use. Supported ones are: gpt, markov")]string type = "")
+        [SlashCommand("chat", "Sets the Chat mode"), RequireContext(ContextType.Guild)]
+        public async Task SetResponderAsync([Summary("type", "The type of chat responder to use"), Autocomplete(typeof(ChatAutoCompleteHandler))] string type)
         {
             var scs = await serverConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
             switch (type.ToLowerInvariant())
@@ -38,32 +36,56 @@ namespace Bot.Modules
                 case "gpt":
                     scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.GPT;
                     await serverConfigurationService.SaveServiceAsync();
-                    await ReplyAsync($"This Guild is now using {scs.ResponderType}");
+                    await RespondAsync($"This Guild is now using {scs.ResponderType}");
                     break;
                 case "markov":
                     scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.Markov;
                     await serverConfigurationService.SaveServiceAsync();
-                    await ReplyAsync($"This Guild is now using {scs.ResponderType}");
+                    await RespondAsync($"This Guild is now using {scs.ResponderType}");
                     break;
                 default:
-                    await ReplyAsync($"This Guild is currently using {scs.ResponderType}");
+                    await RespondAsync($"This Guild is currently using {scs.ResponderType}");
                     break;
             }
         }
 
-        [Command("shutdown")]
+        [SlashCommand("shutdown", "Turns off the Bot")]
         public async Task KillAsync()
         {
-            await Context.Channel.SendMessageAsync("Initiating shutdown request...");
+            await RespondAsync("Initiating shutdown request...");
             cancellationTokenSource.Cancel();
+        }
+
+
+        [SlashCommand("history", "Builds a TXT file of the specified number of messages and responds to the User with them", runMode: RunMode.Async)]
+        public async Task DownloadChannelHistory([Summary("Messages", "The number of messages to include")]int limit = 1000)
+        {
+            await DeleteOriginalResponseAsync();
+            var channel = Context.Channel;
+            var messages = await channel.GetMessagesAsync(limit).FlattenAsync();
+            var messageStrings = messages
+                .Where(m => !string.IsNullOrWhiteSpace(m.Content))
+                .Select(m => $"{m.Author.Username}: {m.Content}");
+            var fileLocation = Path.GetTempFileName();
+            var fileLocationAsText = Path.ChangeExtension(fileLocation, "txt");
+            File.Move(fileLocation, fileLocationAsText);
+            using (var writer = new StreamWriter(fileLocationAsText))
+            {
+                foreach (var message in messageStrings)
+                {
+                    await writer.WriteLineAsync(message);
+                }
+            }
+            await RespondWithFileAsync(new FileAttachment(new FileStream(fileLocationAsText, FileMode.Open, FileAccess.Read), $"Messages For {Context.Channel.Name}.txt"), ephemeral: true);
+            File.Delete(fileLocationAsText);
         }
 
 
         /// <summary>
         /// Sub-module for handling Service interactions
         /// </summary>
-        [Group("services")]
-        public sealed class ServiceModule : ModuleBase<SocketCommandContext>
+        [Group("services", "Commands for interrogating Erector's services")]
+        public sealed class ServiceModule : InteractionModuleBase
         {
             private readonly ServiceManager serviceManager;
 
@@ -73,8 +95,8 @@ namespace Bot.Modules
             }
 
 
-            [Command("save"), Summary("Forcibly saves any given collection of services")]
-            public async Task SaveService([Summary("The collection of services, separated by spaces")] params string[] names)
+            [SlashCommand("save", "Forcibly saves any given collection of services")]
+            public async Task SaveService([Summary("names", "The collection of services, separated by spaces")] params string[] names)
             {
                 var services = new List<IEileenService>(GetQualifyingServices(names));
                 await ReplyAsync("Saving services, please wait...");
@@ -82,26 +104,26 @@ namespace Bot.Modules
                 {
                     await service.SaveServiceAsync();
                 }
-                await ReplyAsync("All services have been saved!");
+                await RespondAsync("All services have been saved!");
             }
 
-            [Command("load"), Summary("Forcibly loads any given collection of services")]
-            public async Task LoadService([Summary("The collection of services, separated by spaces")] params string[] names)
+            [SlashCommand("load", "Forcibly loads any given collection of services")]
+            public async Task LoadService([Summary("names", "The collection of services, separated by spaces")] params string[] names)
             {
                 var services = new List<IEileenService>(GetQualifyingServices(names));
-                await ReplyAsync("Reloading services, please wait...");
+                await RespondAsync("Reloading services, please wait...");
                 foreach (var service in services)
                 {
                     await service.LoadServiceAsync();
                 }
-                await ReplyAsync("All services have been reloaded!");
+                await RespondAsync("All services have been reloaded!");
             }
 
-            [Command("list"), Summary("Lists all the currently running services in Eileen")]
+            [SlashCommand("list", "Lists all the currently running services in Eileen")]
             public async Task ListAsync()
             {
                 var services = serviceManager.GetServiceNames();
-                await ReplyAsync($"The following services are currently running: {string.Join(", ", services)}");
+                await RespondAsync($"The following services are currently running: {string.Join(", ", services)}");
             }
 
             private IEnumerable<IEileenService> GetQualifyingServices(string[] names)
@@ -124,19 +146,17 @@ namespace Bot.Modules
         /// <summary>
         /// Sub-module for handling macros
         /// </summary>
-        [Group("macros"), RequireContext(ContextType.Guild)]
-        public sealed class MacroModule : ModuleBase<SocketCommandContext>
+        [Group("macros", "Interacting with Erector's macro system"), RequireContext(ContextType.Guild)]
+        public sealed class MacroModule : InteractionModuleBase
         {
             private readonly MacroService macroService;
-            private readonly ReactionHelperService rhs;
 
-            public MacroModule(MacroService macroService, ReactionHelperService rhs)
+            public MacroModule(MacroService macroService)
             {
-                this.rhs = rhs ?? throw new System.ArgumentNullException(nameof(rhs));
-                this.macroService = macroService ?? throw new System.ArgumentNullException(nameof(macroService));
+                this.macroService = macroService ?? throw new ArgumentNullException(nameof(macroService));
             }
 
-            [Command]
+            [SlashCommand("list", "Lists all available macros for the server")]
             public async Task ListMacros()
             {
                 var macros = await macroService.GetServerMacros(Context.Guild);
@@ -146,60 +166,97 @@ namespace Bot.Modules
                 {
                     responseBuilder.AppendLine($"\t{macro.Macro}");
                 }
-                await ReplyAsync(responseBuilder.ToString());
+                await RespondAsync(responseBuilder.ToString(), ephemeral: true);
             }
 
-            [Command("add")]
-            public async Task AddMacro(string macroName, [Remainder] string response)
+            [SlashCommand("add", "Adds a new macro")]
+            public async Task AddMacro([Summary("name", "The name of the new macro")] string macroName, [Summary("response", "The contents of the macro")]string response)
             {
                 await macroService.AddNewMacroAsync(Context.Guild, new Models.Macros.MacroEntry
                 {
                     Macro = macroName,
                     Response = response
                 });
-                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+                await RespondAsync($"Macro {macroName} has been created", ephemeral: true);
             }
 
-            [Command("remove")]
-            public async Task RemoveMacro(string macroName)
+            [SlashCommand("remove", "Removes a macro")]
+            public async Task RemoveMacro([Summary("name", "The name of the new macro"), Autocomplete(typeof(MacroAutocompleteHandler))] string macroName)
             {
                 await macroService.RemoveMacroAsync(Context.Guild, macroName);
-                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+                await RespondAsync($"Macro {macroName} has been removed", ephemeral: true);
             }
 
         }
 
-        [Group("markov")]
-        public sealed class MarkovAdminModule : ModuleBase<SocketCommandContext>
+        [Group("markov", "Simple management of the markov system")]
+        public sealed class MarkovAdminModule : InteractionModuleBase
         {
             private readonly MarkovResponder markovResponder;
-            private readonly ReactionHelperService rhs;
 
             public MarkovAdminModule(
-                MarkovResponder markovResponder,
-                ReactionHelperService rhs)
+                MarkovResponder markovResponder)
             {
-                this.markovResponder = markovResponder ?? throw new System.ArgumentNullException(nameof(markovResponder));
-                this.rhs = rhs ?? throw new System.ArgumentNullException(nameof(rhs));
+                this.markovResponder = markovResponder ?? throw new ArgumentNullException(nameof(markovResponder));
             }
 
-            [Command("train"), RequireContext(ContextType.Guild)]
+            [SlashCommand("train", "Trains a new Markov Chain", runMode: RunMode.Async), RequireContext(ContextType.Guild)]
             public async Task TrainChain(int length = 100)
             {
                 if (!markovResponder.TryGetServerInstance(Context.Guild.Id, out var chain))
                 {
-                    await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
+                    await RespondAsync("Unable to find the correct guild context; failed ot train", ephemeral: true);
                     return;
                 }
-                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Think);
+
+                await RespondAsync($"Training has begun; using {length} historical message(s), this could take time...", ephemeral: true);
                 var channel = Context.Channel;
                 var messages = await channel.GetMessagesAsync(length).FlattenAsync();
                 var messageStrings = messages.Select(m => m.CleanContent);
                 chain.RetrainFromScratch(messageStrings);
-                await Context.Message.RemoveAllReactionsAsync();
-                await rhs.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+                await DeleteOriginalResponseAsync();
+                await RespondAsync("Model has finished training", ephemeral: true);
             }
 
+        }
+
+
+
+        private sealed class ChatAutoCompleteHandler : AutocompleteHandler
+        {
+            public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+                IInteractionContext context,
+                IAutocompleteInteraction autocompleteInteraction,
+                IParameterInfo parameter,
+                IServiceProvider services)
+            {
+                var results = new List<AutocompleteResult>()
+                {
+                    new AutocompleteResult("Markov", "markov"),
+                };
+                return await Task.FromResult(AutocompletionResult.FromSuccess(results));
+            }
+        }
+
+        private sealed class MacroAutocompleteHandler : AutocompleteHandler
+        {
+
+            public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+                IInteractionContext context,
+                IAutocompleteInteraction autocompleteInteraction,
+                IParameterInfo parameter,
+                IServiceProvider services)
+            {
+                var macroService = (MacroService)services.GetService(typeof(MacroService));
+
+                var macros = await macroService.GetServerMacros(context.Guild);
+                var results = new List<AutocompleteResult>();
+                foreach (var macro in macros)
+                {
+                    results.Add(new AutocompleteResult(macro.Macro, macro.Macro));
+                }
+                return await Task.FromResult(AutocompletionResult.FromSuccess(results));
+            }
         }
 
     }
