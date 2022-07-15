@@ -10,6 +10,8 @@ namespace Bot.Services.Booru
     {
         public Gelbooru(CredentialsService credentials) : base(credentials) { }
 
+        public override string Name => "Gelbooru";
+
         protected override IEnumerable<Post> ConvertResponseAsEnumerable(Post[] response) => response;
 
         protected override string GetCredentialsKey() => "gelbooru";

@@ -131,7 +131,7 @@ namespace Bot.Services
                 EnsureDefaults(pcbResult.PageBuilder, discordInfo, userData);
                 profilePages.Add(pcbResult.PageBuilder.Build());
             }
-            await paginationService.Send(channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, discordInfo));
+            await paginationService.Send(null, channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, discordInfo));
         }
 
         public async Task UpdateUserDataServerAwareness()

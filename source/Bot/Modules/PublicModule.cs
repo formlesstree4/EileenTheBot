@@ -120,7 +120,7 @@ namespace Bot.Modules
                 }
                 embeds.Add(builder.Build());
             }
-            await betterPaginationService.Send(Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
+            await betterPaginationService.Send(null, Context.Channel, new BetterPaginationMessage(embeds, true, Context.User, "Command"));
         }
 
         [Command("service"), Summary("Provides some information about a particular service and what it does")]

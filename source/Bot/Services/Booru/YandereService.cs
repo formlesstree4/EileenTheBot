@@ -9,6 +9,8 @@ namespace Bot.Services.Booru
     {
         public Yandere(CredentialsService credentials) : base(credentials) { }
 
+        public override string Name => "Yande.re";
+
         protected override IEnumerable<Post> ConvertResponseAsEnumerable(Post[] response) => response;
 
         protected override string GetCredentialsKey() => "yandere";

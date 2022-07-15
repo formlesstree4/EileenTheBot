@@ -19,6 +19,7 @@ namespace Bot.Services.Booru
         private readonly CredentialsEntry _credentials;
         private readonly HttpClient _clientAsync;
 
+        public abstract string Name { get; }
 
 
         public BooruService(CredentialsService credentials)

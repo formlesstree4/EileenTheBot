@@ -3,7 +3,7 @@ using Bot.Models;
 using Bot.Services;
 using Bot.Services.Booru;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,14 +13,15 @@ using System.Threading.Tasks;
 namespace Bot.Modules
 {
 
-    public sealed class BooruModule : ModuleBase<SocketCommandContext>
+    [Group("booru", "Searches various image boorus")]
+    public sealed class BooruModule : InteractionModuleBase
     {
 
         private const string NsfwErrorMessage = "uwu oopsie-woopsie you made a lil fucksy-wucksy and twied to be lewdie in pubwic";
 
         private const string NoResultsMessage = "";
 
-        private const string CriteriaSummary = "The collection of booru-safe tags. Tags with multiple words use underscores instead of spaces (such as long_hair)";
+        private const string CriteriaSummary = "Criteria. Tags with multiple words use underscores instead of spaces";
 
         private const string ContextErrorMessage = "uwu pubwic channels ownly~";
 
@@ -80,61 +81,61 @@ namespace Bot.Modules
 
 
 
-        [Command("aliases")]
-        [Summary("Lists all the currently available tag aliases")]
+        [SlashCommand("aliases", "Lists all the currently available tag aliases")]
         public Task ListTagAliasesAsync()
         {
             var messageBuilder = new StringBuilder();
             messageBuilder.AppendLine("The following aliases are available");
             foreach (var c in tagAliasesDesc)
             {
-                messageBuilder.AppendLine($"\t{c}");
+                messageBuilder.AppendLine($"{c}");
             }
             messageBuilder.AppendLine($"Example: `.db long_hair --take 1` will return the first discovered `long_hair` image on Danbooru");
-            return ReplyAsync(messageBuilder.ToString());
+
+            var embedBuilder = new EmbedBuilder()
+                .WithAuthor(Context.User.Username)
+                .WithTitle("Aliases")
+                .WithDescription(messageBuilder.ToString())
+                .WithColor(Color.Green)
+                .WithCurrentTimestamp();
+            return RespondAsync(embed: embedBuilder.Build());
         }
 
-        [Command("db")]
-        [Summary("Invokes the Danbooru API. If performed in SFW channels, the '-s' tag is automatically appended")]
-        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
-        public async Task DanbooruSearchAsync(
-            [Summary(CriteriaSummary)] params string[] criteria)
+        [SlashCommand("danbooru", "Invokes the Danbooru API.", runMode: RunMode.Async)]
+        [RequireContext(ContextType.Guild)]
+        public async Task DanbooruSearchAsync([Summary("criteria", CriteriaSummary)] string criteria)
         {
             await InitialCommandHandler(danbooru, criteria);
         }
 
-        [Command("fur")]
-        [Summary("Invokes the e621 API. If performed in SFW channels, the '-s' tag is automatically appended")]
-        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        [SlashCommand("fur", "Invokes the e621 API.", runMode: RunMode.Async)]
+        [RequireContext(ContextType.Guild)]
         public async Task e621SearchAsync(
-            [Summary(CriteriaSummary)] params string[] criteria)
+            [Summary("criteria", CriteriaSummary)] string criteria)
         {
             await InitialCommandHandler(e621, criteria);
         }
 
-        [Command("gb")]
-        [Summary("Invokes the Gelbooru API. If performed in SFW channels, the '-s' tag is automatically appended")]
-        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        [SlashCommand("gb", "Invokes the Gelbooru API.", runMode: RunMode.Async)]
+        [RequireContext(ContextType.Guild)]
         public async Task GelbooruSearchAsync(
-            [Summary(CriteriaSummary)] params string[] criteria)
+            [Summary("criteria", CriteriaSummary)] string criteria)
         {
             await InitialCommandHandler(gelbooru, criteria);
         }
 
-        [Command("sb")]
-        [Summary("Invokes the Safebooru API. If performed in SFW channels, the '-s' tag is automatically appended")]
-        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        [SlashCommand("sb", "Invokes the Safebooru API.", runMode: RunMode.Async)]
+        [RequireContext(ContextType.Guild)]
         public async Task SafebooruSearchAsync(
-            [Summary(CriteriaSummary)] params string[] criteria)
+            [Summary("criteria", CriteriaSummary)] string criteria)
         {
             await InitialCommandHandler(safeBooru, criteria);
         }
 
-        [Command("yan")]
-        [Summary("Invokes the Yande.re API. If performed in SFW channels, the '-s' tag is automatically appended")]
-        [RequireContext(ContextType.Guild, ErrorMessage = ContextErrorMessage)]
+        [SlashCommand("yan", "Invokes the Yande.re API.", runMode: RunMode.Async)]
+        [RequireContext(ContextType.Guild)]
         public async Task YandereSearchAsync(
-            [Summary(CriteriaSummary)] params string[] criteria)
+            [Summary("criteria", CriteriaSummary)] string criteria)
         {
             await InitialCommandHandler(yandere, criteria);
         }
@@ -143,7 +144,7 @@ namespace Bot.Modules
 
         private async Task InitialCommandHandler<TResponse, T>(
             BooruService<TResponse, T> service,
-            params string[] criteria)
+            string criteria)
         {
             var newCriteria = ExpandCriteria(criteria);
             var parameters = GetSkipAndTake(ref newCriteria);
@@ -153,16 +154,16 @@ namespace Bot.Modules
 
             var results = (await service.SearchAsync(pageSize, pageNumber, newCriteria)).ToList();
             var posts = results.Select(c => mapper.Map<T, EmbedPost>(c));
-            await PostAsync(posts, newCriteria, pageNumber);
+            await PostAsync(service, posts, newCriteria, pageNumber);
         }
 
-        private async Task PostAsync(IEnumerable<EmbedPost> results, string[] criteria, int pageNumber)
+        private async Task PostAsync<TResponse, T>(BooruService<TResponse, T> service, IEnumerable<EmbedPost> results, string[] criteria, int pageNumber)
         {
             var messages = new List<Embed>();
             using var ts = Context.Channel.EnterTypingState();
             if (!results.Any())
             {
-                await ReplyAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", criteria)})");
+                await RespondAsync($"uwu oopsie-woopsie you made a lil fucksy-wucksy with your inqwery sooo I have nothing to showy-wowie! (Searched using: {string.Join(", ", criteria)})");
                 return;
             }
             foreach (var booruPost in results)
@@ -174,12 +175,12 @@ namespace Bot.Modules
                         .AddField("Criteria", string.Join(", ", criteria), true)
                         .AddField("Artist(s)", artistName, true)
                         .WithAuthor(new EmbedAuthorBuilder()
-                            .WithName("Search Results")
+                            .WithName($"Search Results for {Context.User.Username}#{Context.User.Discriminator}")
                             .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl()))
                         .WithColor(new Color(152, 201, 124))
                         .WithCurrentTimestamp()
                         .WithImageUrl(booruPost.ImageUrl)
-                        .WithTitle($"The Good Stuff")
+                        .WithTitle($"Booru: {service.Name}")
                         .WithFooter($"{stupidTextService.GetRandomStupidText()} | Page Offset: {pageNumber}")
                         .WithUrl(booruPost.PageUrl);
                     messages.Add(eBuilder.Build());
@@ -190,11 +191,12 @@ namespace Bot.Modules
                     continue;
                 }
             }
-            await paginationService.Send(Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
+            await paginationService.Send(Context, Context.Channel, new BetterPaginationMessage(messages, true, Context.User, "Image") { IsNsfw = true });
         }
 
-        private string[] ExpandCriteria(string[] c)
+        private string[] ExpandCriteria(string d)
         {
+            var c = d.Split(" ", StringSplitOptions.RemoveEmptyEntries);
             var tags = new List<string>(c);
             var results = new List<string>();
             if (Context.Channel is ITextChannel t && !t.IsNsfw) tags.Add("-s");

@@ -9,6 +9,8 @@ namespace Bot.Services.Booru
     {
         public SafeBooru(CredentialsService credentials) : base(credentials) { }
 
+        public override string Name => "Safebooru";
+
         protected override IEnumerable<Post> ConvertResponseAsEnumerable(Post[] response) => response;
 
         protected override string GetCredentialsKey() => "safebooru";

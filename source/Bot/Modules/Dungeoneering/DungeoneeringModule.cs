@@ -329,7 +329,7 @@ namespace Bot.Modules.Dungeoneering
                             .Build());
                 }
 
-                await paginationService.Send(
+                await paginationService.Send(null,
                     Context.Channel,
                     new BetterPaginationMessage(embeds, false, Context.User));
 
@@ -359,7 +359,7 @@ namespace Bot.Modules.Dungeoneering
                             .Build());
                 }
 
-                await paginationService.Send(
+                await paginationService.Send(null,
                     Context.Channel,
                     new BetterPaginationMessage(embeds, false, Context.User));
 

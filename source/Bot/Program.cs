@@ -168,8 +168,11 @@ namespace Bot
                     await LogAsync($"Unable to locate {type.Name}", LogSeverity.Warning);
                     continue;
                 }
-                await LogAsync($"Initializing {type.Name}...");
-                await (service as IEileenService).InitializeService();
+                if ((service as IEileenService).AutoInitialize())
+                {
+                    await LogAsync($"Initializing {type.Name}...");
+                    await (service as IEileenService).InitializeService();
+                }
             }
             await services.GetRequiredService<CommandHandlingService>().InitializeService();
             await services.GetRequiredService<InteractionHandlingService>().InitializeService();

@@ -52,7 +52,7 @@ namespace Bot.Modules
         [SlashCommand("shutdown", "Turns off the Bot")]
         public async Task KillAsync()
         {
-            await RespondAsync("Initiating shutdown request...");
+            await RespondAsync("Initiating shutdown request...", ephemeral: true);
             cancellationTokenSource.Cancel();
         }
 

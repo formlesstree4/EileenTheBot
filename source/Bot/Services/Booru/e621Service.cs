@@ -10,6 +10,8 @@ namespace Bot.Services.Booru
     {
         public e621(CredentialsService credentials) : base(credentials) { }
 
+        public override string Name => "e621";
+
         protected override IEnumerable<Post> ConvertResponseAsEnumerable(PostResponse response) => response.Posts;
 
         protected override string GetCredentialsKey() => "e621";

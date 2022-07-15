@@ -15,6 +15,8 @@ namespace Bot.Services.Booru
     {
         public Danbooru(CredentialsService credentials) : base(credentials) { }
 
+        public override string Name => "Danbooru";
+
         protected override IEnumerable<Post> ConvertResponseAsEnumerable(Post[] response) => response;
 
         protected override string GetCredentialsKey() => "danbooru";

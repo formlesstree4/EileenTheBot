@@ -73,14 +73,14 @@ namespace Bot.Services
         /// <param name="channel">An implementation of <see cref="IMessageChannel"/></param>
         /// <param name="message">An instance of <see cref="BetterPaginationMessage"/> to send</param>
         /// <returns>A promise of the <see cref="IUserMessage"/></returns>
-        public async Task<IUserMessage> Send(IMessageChannel channel, BetterPaginationMessage message)
+        public async Task<IUserMessage> Send(IInteractionContext context, IMessageChannel channel, BetterPaginationMessage message)
         {
             await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Sending paginated message to {channel.Name}"));
             try
             {
                 await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message}"));
-
-                var paginatedMessage = await channel.SendMessageAsync(embed: message.CurrentPage);
+                await context.Interaction.RespondAsync(embed: message.CurrentPage);
+                var paginatedMessage = await context.Interaction.GetOriginalResponseAsync();
 #pragma warning disable CS4014
                 Task.Run(async () =>
                 {
@@ -149,7 +149,8 @@ namespace Bot.Services
                 var message = await messageParam.GetOrDownloadAsync();
                 if (message is null)
                 {
-                    await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{message.Id} was not found in cache and could not be downloaded. Disregard."));
+                    await WriteLog(new LogMessage(LogSeverity.Verbose, nameof(BetterPaginationService), $"{messageParam.Id} was not found in cache and could not be downloaded. Disregard."));
+                    _messages.TryRemove(messageParam.Id, out var _);
                     return;
                 }
                 var removed = _messages.TryRemove(messageParam.Id, out BetterPaginationMessage betterMessage);
