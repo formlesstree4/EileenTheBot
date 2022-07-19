@@ -1,9 +1,9 @@
 using Bot.Services;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -12,117 +12,114 @@ using System.Threading.Tasks;
 namespace Bot.Modules
 {
 
-    [Group("guild"), RequireUserPermission(GuildPermission.ManageGuild), RequireContext(ContextType.Guild),
-        Summary("Guild Owner specific commands for managing and configuring the Guild")]
-    public sealed class GuildOwnerModule : ModuleBase<SocketCommandContext>
+    [Group("guild", "Guild Owner specific commands for managing and configuring the Guild"), RequireUserPermission(GuildPermission.ManageGuild), RequireContext(ContextType.Guild)]
+    public sealed class GuildOwnerModule : InteractionModuleBase
     {
         private readonly ServerConfigurationService serverConfigurationService;
-        private readonly ReactionHelperService reactionHelperService;
 
 
-        public GuildOwnerModule(
-            ServerConfigurationService serverConfigurationService,
-            ReactionHelperService reactionHelperService)
+        public GuildOwnerModule(ServerConfigurationService serverConfigurationService)
         {
             this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
-            this.reactionHelperService = reactionHelperService ?? throw new ArgumentNullException(nameof(reactionHelperService));
-
         }
 
-        [Command("prefix")]
-        [Summary("Alters the character prefix the bot will use in order to be triggered")]
-        public async Task SetPrefixAsync([Summary("The new prefix to use")] char prefix)
+        [SlashCommand("prefix", "Alters the character prefix the bot will use in order to be triggered")]
+        public async Task SetPrefixAsync([Summary("prefix", "The new prefix to use")] char prefix)
         {
             var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
             configuration.CommandPrefix = prefix;
-            await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+            await RespondAsync($"This server now uses the character prefix '{prefix}'");
         }
 
 
-        [Group("permissions"), RequireUserPermission(GuildPermission.ManageChannels)]
-        public sealed class PermissionsModule : ModuleBase<SocketCommandContext>
+        [Group("permissions", "Manages permissions for slash commands across channels"), RequireUserPermission(GuildPermission.ManageChannels)]
+        public sealed class PermissionsModule : InteractionModuleBase
         {
             private readonly CommandPermissionsService commandPermissionsService;
-            private readonly CommandService commandService;
+            private readonly InteractionService interactionService;
 
             public PermissionsModule(
                 CommandPermissionsService commandPermissionsService,
-                CommandService commandService)
+                InteractionService interactionService)
             {
                 this.commandPermissionsService = commandPermissionsService ?? throw new ArgumentNullException(nameof(commandPermissionsService));
-                this.commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
+                this.interactionService = interactionService ?? throw new ArgumentNullException(nameof(interactionService));
             }
 
 
 
-            [Command("allow")]
-            [Summary("Enables a command for a particular room. If a command does NOT hook into the command permissions system, this will do nothing.")]
-            public async Task HandleAllowCommand([Summary("The command to allow")] string command)
+            [SlashCommand("allow", "Enables a command for a particular room.")]
+            public async Task HandleAllowCommand(
+                [Summary("channel", "The channel to explicitly enable a command for")] ITextChannel channel,
+                [Summary("command", "The command to allow"), Autocomplete(typeof(IntegratedCommandsAutocompleteHandler))] string command)
             {
                 var permissions = await commandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
-                var discordCommand = commandService.Commands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
+                var discordCommand = interactionService.SlashCommands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
                 if (discordCommand is null)
                 {
-                    await ReplyAsync($"The command '{command}' does not exist in the Bot");
+                    await RespondAsync($"The command '{command}' does not exist in the Bot");
                     return;
                 }
                 var commandPermissions = permissions.GetOrAddCommand(discordCommand);
                 if (commandPermissions is null)
                 {
-                    await ReplyAsync($"The command '{command}' does not integrate into the Permissions System");
+                    await RespondAsync($"The command '{command}' does not integrate into the Permissions System");
                     return;
                 }
                 if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
                 {
-                    commandPermissions.Channels.Allowed.Add(Context.Channel.Id);
+                    commandPermissions.Channels.Allowed.Add(channel.Id);
                 }
-                if (commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                if (commandPermissions.Channels.IsChannelBlocked(channel))
                 {
-                    commandPermissions.Channels.Blocked.Remove(Context.Channel.Id);
+                    commandPermissions.Channels.Blocked.Remove(channel.Id);
                 }
-                await ReplyAsync($"The command '{command}' has been enabled for <#{Context.Channel.Id}>");
+                await RespondAsync($"The command '{command}' has been enabled for <#{channel.Id}>");
             }
 
-            [Command("deny")]
-            [Summary("Disables a command for a particular room. If a command does NOT hook into the command permissions system, this will do nothing.")]
-            public async Task HandleDenyCommand([Summary("The command to deny")] string command)
+            [SlashCommand("deny", "Disables a command for a particular room.")]
+            public async Task HandleDenyCommand(
+                [Summary("channel", "The channel to explicitly disable a command for")] ITextChannel channel,
+                [Summary("command", "The command to disable"), Autocomplete(typeof(IntegratedCommandsAutocompleteHandler))] string command)
             {
                 var permissions = await commandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
-                var discordCommand = commandService.Commands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
+                var discordCommand = interactionService.SlashCommands.FirstOrDefault(c => c.Name.Equals(command, StringComparison.OrdinalIgnoreCase));
                 if (discordCommand is null)
                 {
-                    await ReplyAsync($"The command '{command}' does not exist in the Bot");
+                    await RespondAsync($"The command '{command}' does not exist in the Bot");
                     return;
                 }
                 var commandPermissions = permissions.GetOrAddCommand(discordCommand);
                 if (commandPermissions is null)
                 {
-                    await ReplyAsync($"The command '{command}' does not integrate into the Permissions System");
+                    await RespondAsync($"The command '{command}' does not integrate into the Permissions System");
                     return;
                 }
-                if (commandPermissions.Channels.IsChannelAllowed(Context.Channel))
+                if (commandPermissions.Channels.IsChannelAllowed(channel))
                 {
-                    commandPermissions.Channels.Allowed.Remove(Context.Channel.Id);
+                    commandPermissions.Channels.Allowed.Remove(channel.Id);
                 }
-                if (!commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                if (!commandPermissions.Channels.IsChannelBlocked(channel))
                 {
-                    commandPermissions.Channels.Blocked.Add(Context.Channel.Id);
+                    commandPermissions.Channels.Blocked.Add(channel.Id);
                 }
-                await ReplyAsync($"The command '{command}' has been disabled for <#{Context.Channel.Id}>");
+                await RespondAsync($"The command '{command}' has been disabled for <#{channel.Id}>");
             }
 
-            [Command("allowgrp")]
-            public async Task HandleAllowGroup([Summary("The group to allow")] string group)
+            [SlashCommand("allowgrp", "Enables a group of commands for the given room")]
+            public async Task HandleAllowGroup(
+                [Summary("channel", "The channel to explicitly enable a group for")] ITextChannel channel,
+                [Summary("group", "The group to allow")] string group)
             {
                 var permissions = await commandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
-                var commands = commandService.Commands
-                    .Where(c => (!string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase)) || IsCommandParentInGroup(c.Module, group))
+                var commands = interactionService.SlashCommands
+                    .Where(c => (!string.IsNullOrEmpty(c.Module.SlashGroupName) && c.Module.SlashGroupName.Equals(group, StringComparison.OrdinalIgnoreCase)) || IsCommandParentInGroup(c.Module, group))
                     .Distinct(new CommandInfoComparer())
                     .ToList();
 
                 if (!commands.Any())
                 {
-                    await ReplyAsync($"The group '{group}' does not exist in the Bot");
+                    await RespondAsync($"The group '{group}' does not exist in the Bot");
                     return;
                 }
 
@@ -135,31 +132,33 @@ namespace Bot.Modules
                         responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' does not integrate into the Permissions System");
                         continue;
                     }
-                    if (!commandPermissions.Channels.IsChannelAllowed(Context.Channel))
+                    if (!commandPermissions.Channels.IsChannelAllowed(channel))
                     {
-                        commandPermissions.Channels.Allowed.Add(Context.Channel.Id);
+                        commandPermissions.Channels.Allowed.Add(channel.Id);
                     }
-                    if (commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                    if (commandPermissions.Channels.IsChannelBlocked(channel))
                     {
-                        commandPermissions.Channels.Blocked.Remove(Context.Channel.Id);
+                        commandPermissions.Channels.Blocked.Remove(channel.Id);
                     }
-                    responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' has been enabled for <#{Context.Channel.Id}>");
+                    responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' has been enabled for <#{channel.Id}>");
                 }
-                await ReplyAsync(responseBuilder.ToString());
+                await RespondAsync(responseBuilder.ToString());
             }
 
-            [Command("denygrp")]
-            public async Task HandleDenyGroup([Summary("The group to deny")] string group)
+            [SlashCommand("denygrp", "Disables a group of commands for a given room")]
+            public async Task HandleDenyGroup(
+                [Summary("channel", "The channel to explicitly deny a group for")] ITextChannel channel,
+                [Summary("group", "The group to deny")] string group)
             {
                 var permissions = await commandPermissionsService.GetOrCreatePermissionsAsync(Context.Guild.Id);
-                var commands = commandService.Commands
-                    .Where(c => (!string.IsNullOrEmpty(c.Module.Group) && c.Module.Group.Equals(group, StringComparison.OrdinalIgnoreCase)) || IsCommandParentInGroup(c.Module, group))
+                var commands = interactionService.SlashCommands
+                    .Where(c => (!string.IsNullOrEmpty(c.Module.SlashGroupName) && c.Module.SlashGroupName.Equals(group, StringComparison.OrdinalIgnoreCase)) || IsCommandParentInGroup(c.Module, group))
                     .Distinct(new CommandInfoComparer())
                     .ToList();
 
                 if (!commands.Any())
                 {
-                    await ReplyAsync($"The group '{group}' does not exist in the Bot");
+                    await RespondAsync($"The group '{group}' does not exist in the Bot");
                     return;
                 }
 
@@ -172,18 +171,18 @@ namespace Bot.Modules
                         responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' does not integrate into the Permissions System");
                         continue;
                     }
-                    if (commandPermissions.Channels.IsChannelAllowed(Context.Channel))
+                    if (commandPermissions.Channels.IsChannelAllowed(channel))
                     {
-                        commandPermissions.Channels.Allowed.Remove(Context.Channel.Id);
+                        commandPermissions.Channels.Allowed.Remove(channel.Id);
                     }
-                    if (!commandPermissions.Channels.IsChannelBlocked(Context.Channel))
+                    if (!commandPermissions.Channels.IsChannelBlocked(channel))
                     {
-                        commandPermissions.Channels.Blocked.Add(Context.Channel.Id);
+                        commandPermissions.Channels.Blocked.Add(channel.Id);
                     }
-                    responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' has been disabled for <#{Context.Channel.Id}>");
+                    responseBuilder.AppendLine($"The command '{discordCommand.GetFullCommandPath()}' has been disabled for <#{channel.Id}>");
                 }
 
-                await ReplyAsync(responseBuilder.ToString());
+                await RespondAsync(responseBuilder.ToString());
             }
 
 
@@ -193,20 +192,35 @@ namespace Bot.Modules
                 {
                     return IsCommandParentInGroup(command.Parent, group);
                 }
-                if (string.IsNullOrWhiteSpace(command.Group)) return false;
-                return command.Group.Equals(group, StringComparison.OrdinalIgnoreCase);
+                if (string.IsNullOrWhiteSpace(command.SlashGroupName)) return false;
+                return command.SlashGroupName.Equals(group, StringComparison.OrdinalIgnoreCase);
             }
 
-            private sealed class CommandInfoComparer : IEqualityComparer<CommandInfo>
+            private sealed class CommandInfoComparer : IEqualityComparer<ICommandInfo>
             {
-                public bool Equals(CommandInfo x, CommandInfo y)
+                public bool Equals(ICommandInfo x, ICommandInfo y)
                 {
                     return x.GetFullCommandPath().Equals(y.GetFullCommandPath());
                 }
 
-                public int GetHashCode([DisallowNull] CommandInfo obj)
+                public int GetHashCode([DisallowNull] ICommandInfo obj)
                 {
                     return obj.GetFullCommandPath().GetHashCode();
+                }
+            }
+
+            private sealed class IntegratedCommandsAutocompleteHandler : AutocompleteHandler
+            {
+                public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+                    IInteractionContext context,
+                    IAutocompleteInteraction autocompleteInteraction,
+                    IParameterInfo parameter,
+                    IServiceProvider services)
+                {
+                    var commandPermissionsService = services.GetRequiredService<CommandPermissionsService>();
+                    var permissions = await commandPermissionsService.GetOrCreatePermissionsAsync(context.Guild.Id);
+                    var commands = permissions.Permissions.Select(c => c.Command).ToList();
+                    return AutocompletionResult.FromSuccess(commands.Select(c => new AutocompleteResult(c, c)));
                 }
             }
 

@@ -1,11 +1,11 @@
-using Discord.Commands;
+using Discord.Interactions;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Bot.Modules
 {
-    public sealed class OwoModule : ModuleBase<SocketCommandContext>
+    public sealed class OwoModule : InteractionModuleBase
     {
         private static readonly string[] s_faces = {
             "(\x30FB`\x03C9\x00B4\x30FB)",
@@ -37,17 +37,11 @@ namespace Bot.Modules
 
         
 
-        [Command("owo")]
-        [Summary("Crafts an amalgamation of text like if a furry said it")]
-        public async Task Owoify(
-            [Remainder]
-            [Summary("The text to owoify")]string text)
+        [SlashCommand("owo", "Crafts an amalgamation of text like if a furry said it")]
+        public async Task Owoify([Summary("text", "The text to owoify")]string text)
         {
-            await Context.Message.DeleteAsync().ConfigureAwait(false);
-
             var output = OwoifyText(text);
-
-            await ReplyAsync(output).ConfigureAwait(false);
+            await RespondAsync(output);
         }
 
         private string OwoifyText(string text)

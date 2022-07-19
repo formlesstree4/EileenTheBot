@@ -98,10 +98,10 @@ namespace Bot.Services
             return GetUserData(userId);
         }
 
-        public async Task CreateUserProfileMessage(IUser user, IMessageChannel channel)
-            => await CreateUserProfileMessage(user.Id, channel);
+        public async Task CreateUserProfileMessage(IUser user, IInteractionContext context)
+            => await CreateUserProfileMessage(user.Id, context);
 
-        public async Task CreateUserProfileMessage(ulong userId, IMessageChannel channel)
+        public async Task CreateUserProfileMessage(ulong userId, IInteractionContext context)
         {
             Write($"Generating the User Profile message...");
             var userData = await GetOrCreateUserData(userId);
@@ -131,7 +131,7 @@ namespace Bot.Services
                 EnsureDefaults(pcbResult.PageBuilder, discordInfo, userData);
                 profilePages.Add(pcbResult.PageBuilder.Build());
             }
-            await paginationService.Send(null, channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, discordInfo));
+            await paginationService.Send(context, context.Channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, context.User));
         }
 
         public async Task UpdateUserDataServerAwareness()

@@ -1,5 +1,6 @@
 using Bot.Preconditions;
 using Discord.Commands;
+using Discord.Interactions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,56 @@ namespace Bot.Models.CommandPermissions
                 return null;
             }
             var permissions = cmdPermissions as UseErectorPermissions;
+            if (Permissions.FirstOrDefault(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase)) is null)
+            {
+                Permissions.Add(new CommandEntry
+                {
+                    Channels = new CommandChannelDetails
+                    {
+                        Allowed = new List<ulong>(),
+                        Blocked = new List<ulong>()
+                    },
+                    Command = cmd.GetFullCommandPath(),
+                    Default = permissions.Default,
+                    Private = permissions.Private
+                });
+            }
+            return Permissions.First(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        public CommandEntry GetOrAddCommand(SlashCommandInfo cmd)
+        {
+            var cmdPermissions = cmd.Preconditions.FirstOrDefault(a => a.GetType() == typeof(UseErectorPermissions));
+            if (cmdPermissions is null)
+            {
+                return null;
+            }
+            var permissions = cmdPermissions as UseErectorPermissionsViaInteractions;
+            if (Permissions.FirstOrDefault(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase)) is null)
+            {
+                Permissions.Add(new CommandEntry
+                {
+                    Channels = new CommandChannelDetails
+                    {
+                        Allowed = new List<ulong>(),
+                        Blocked = new List<ulong>()
+                    },
+                    Command = cmd.GetFullCommandPath(),
+                    Default = permissions.Default,
+                    Private = permissions.Private
+                });
+            }
+            return Permissions.First(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        public CommandEntry GetOrAddCommand(ICommandInfo cmd)
+        {
+            var cmdPermissions = cmd.Preconditions.FirstOrDefault(a => a.GetType() == typeof(UseErectorPermissions));
+            if (cmdPermissions is null)
+            {
+                return null;
+            }
+            var permissions = cmdPermissions as UseErectorPermissionsViaInteractions;
             if (Permissions.FirstOrDefault(c => c.Command.Equals(cmd.GetFullCommandPath(), StringComparison.OrdinalIgnoreCase)) is null)
             {
                 Permissions.Add(new CommandEntry

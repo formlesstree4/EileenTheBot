@@ -187,6 +187,18 @@ namespace Bot.Services
             return result;
         }
 
+
+        public Dictionary<string, List<long>> EvaluateWithDetails()
+        {
+            var result = new Dictionary<string, List<long>>();
+            foreach (var pair in nodes)
+            {
+                // result += pair.Key * pair.Value.Evaluate();
+                result.Add($"{pair.Value}", pair.Value.EvaluateWithDetails());
+            }
+            return result;
+        }
+
         /// <summary>
         ///     Returns a calculated average of the <see cref="DiceExpression"/>
         /// </summary>
@@ -221,6 +233,7 @@ namespace Bot.Services
         public interface IDiceExpressionNode
         {
             long Evaluate();
+            List<long> EvaluateWithDetails();
             decimal GetCalculatedAverage();
         }
 
@@ -234,6 +247,11 @@ namespace Bot.Services
             public long Evaluate()
             {
                 return _theNumber;
+            }
+
+            public List<long> EvaluateWithDetails()
+            {
+                return new List<long> { _theNumber };
             }
 
             public decimal GetCalculatedAverage()
@@ -265,6 +283,16 @@ namespace Bot.Services
                     total += roller.Next(1, (int)_diceType + 1);
                 }
                 return total;
+            }
+
+            public List<long> EvaluateWithDetails()
+            {
+                var result = new List<long>();
+                for (long i = 0; i < _numberOfDice; ++i)
+                {
+                    result.Add(roller.Next(1, (int)_diceType + 1));
+                }
+                return result;
             }
 
             public decimal GetCalculatedAverage()

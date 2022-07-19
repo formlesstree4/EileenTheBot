@@ -1,104 +1,98 @@
 using Bot.Services;
-using Discord.Commands;
+using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Modules
 {
 
-    public sealed class ProfileModule : ModuleBase<SocketCommandContext>
+    [Group("profile", "Interact with the Profile that Erector has about you!")]
+    public sealed class ProfileModule : InteractionModuleBase
     {
         private readonly UserService userService;
-        private readonly ReactionHelperService reactionHelperService;
+        private readonly ModalHandlingService modalHandlingService;
 
         public ProfileModule(
             UserService userService,
-            ReactionHelperService reactionHelperService)
+            ModalHandlingService modalHandlingService)
         {
             this.userService = userService ?? throw new System.ArgumentNullException(nameof(userService));
-            this.reactionHelperService = reactionHelperService ?? throw new System.ArgumentNullException(nameof(reactionHelperService));
+            this.modalHandlingService = modalHandlingService ?? throw new System.ArgumentNullException(nameof(modalHandlingService));
+            this.modalHandlingService.RegisterCallbackHandler("edit-profile", new ModalCallbackProvider(HandleEditProfileModal));
         }
 
 
-        [Command("profile")]
-        [Summary("Pulls up the User Profile information")]
-        public async Task ProfileAsync(
-            [Summary("The actual command you want to execute for the Profile")] string command = null,
-            [Remainder, Summary("A collection of parameters that are to be passed along for use with the given command")] string[] parameters = null
-        )
+
+
+
+        //[Group("clear", "Clear settable preferences on your Profile")]
+        //public sealed class ClearProfileCommands : InteractionModuleBase
+        //{
+        //    private readonly UserService userService;
+
+        //    public ClearProfileCommands(UserService userService)
+        //    {
+        //        this.userService = userService;
+        //    }
+
+        //    [SlashCommand("image", "Clear out the profile picture")]
+        //    public async Task ClearPicture()
+        //    {
+        //        await ClearProfileImageAsync();
+        //        await RespondAsync("Your profile image has been cleared!", ephemeral: true);
+        //    }
+
+        //    [SlashCommand("description", "Clear out the description")]
+        //    public async Task ClearDescription()
+        //    {
+        //        await UpdateProfileDescription("");
+        //        await RespondAsync("Your custom description has been cleared!", ephemeral: true);
+        //    }
+
+        //    private async Task ClearProfileImageAsync()
+        //    {
+        //        var userData = await userService.GetOrCreateUserData(Context.User);
+        //        userData.ProfileImage = "";
+        //    }
+
+        //    private async Task UpdateProfileDescription(string desc)
+        //    {
+        //        var userData = await userService.GetOrCreateUserData(Context.User);
+        //        userData.Description = desc;
+        //    }
+
+        //}
+
+
+        [SlashCommand("view", "View a User's profile")]
+        public async Task ViewProfileAsync(IUser user = null)
         {
-            switch (command?.ToLowerInvariant())
-            {
-                case null:
-                    await userService.CreateUserProfileMessage(Context.User, Context.Channel);
-                    break;
-                case "clear":
-                    if ((parameters?.Length ?? 0) == 0)
-                    {
-                        await ReplyAsync("For the 'clear' command, please specify what you're clearing!");
-                        await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
-                        return;
-                    }
-                    switch (parameters[0].ToLowerInvariant())
-                    {
-                        case "image":
-                            await ClearProfileImageAsync();
-                            break;
-                        case "description":
-                            await UpdateProfileDescription(null);
-                            break;
-                    }
-                    break;
-                case "set":
-                    if ((parameters?.Length ?? 0) == 0)
-                    {
-                        await ReplyAsync("For the 'set' command, please specify what you're setting!");
-                        await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
-                        return;
-                    }
-                    switch (parameters[0].ToLowerInvariant())
-                    {
-                        case "image":
-                            await SetProfileImageAsync(parameters?.Length >= 2 ? parameters[1] : null);
-                            break;
-                        case "description":
-                            var description = parameters.Skip(1).ToList();
-                            if (description.Count == 0)
-                            {
-                                await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
-                                return;
-                            }
-                            await UpdateProfileDescription(string.Join(' ', description));
-                            break;
-                    }
-                    break;
-            }
+            await userService.CreateUserProfileMessage(user ?? Context.User, Context);
         }
 
-        private async Task SetProfileImageAsync(string imageUrl = null)
+        [SlashCommand("edit", "Opens up a modal to edit your profile")]
+        public async Task EditProfileAsync()
         {
-            var userData = await userService.GetOrCreateUserData(Context.User);
-            if (string.IsNullOrWhiteSpace(imageUrl) && (Context.Message.Attachments.Count == 0 || Context.Message.Attachments.First().Height == null))
-            {
-                await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Denial);
-                return;
-            }
-            userData.ProfileImage = imageUrl ?? Context.Message.Attachments.First().Url;
-            await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+            var userProfile = await userService.GetOrCreateUserData(Context.User);
+            var builder = new ModalBuilder()
+                .WithTitle("Profile")
+                .WithCustomId("edit-profile")
+                .AddTextInput("Profile Picture", "profile-url",
+                    placeholder: "A link to your Erector specific pfp", value: userProfile.ProfileImage)
+                .AddTextInput("Description", "profile-description", TextInputStyle.Paragraph, "A short blurb about yourself", value: userProfile.Description);
+            await RespondWithModalAsync(builder.Build());
         }
 
-        private async Task ClearProfileImageAsync()
-        {
-            var userData = await userService.GetOrCreateUserData(Context.User);
-            userData.ProfileImage = "";
-            await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
-        }
 
-        private async Task UpdateProfileDescription(string desc)
+        private async Task HandleEditProfileModal(SocketModal modal)
         {
-            var userData = await userService.GetOrCreateUserData(Context.User);
-            userData.Description = desc;
-            await reactionHelperService.AddMessageReaction(Context.Message, ReactionHelperService.ReactionType.Approval);
+            // profile modal
+            var responses = modal.Data.Components.ToList();
+            var userProfile = await userService.GetOrCreateUserData(Context.User);
+            userProfile.ProfileImage = responses.First(c => c.CustomId == "profile-url").Value;
+            userProfile.Description = responses.First(c => c.CustomId == "profile-description").Value;
         }
 
     }

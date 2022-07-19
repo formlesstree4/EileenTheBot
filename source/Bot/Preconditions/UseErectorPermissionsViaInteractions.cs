@@ -1,7 +1,7 @@
 using Bot.Models.CommandPermissions;
 using Bot.Services;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -11,10 +11,7 @@ using System.Threading.Tasks;
 namespace Bot.Preconditions
 {
 
-    /// <summary>
-    ///     Use this attribute to integrate your command into the permissions system.
-    /// </summary>
-    public sealed class UseErectorPermissions : PreconditionAttribute
+    public sealed class UseErectorPermissionsViaInteractions : Discord.Interactions.PreconditionAttribute
     {
 
         /// <summary>
@@ -30,16 +27,13 @@ namespace Bot.Preconditions
         public bool Private { get; set; } = true;
 
 
-        public UseErectorPermissions(bool enabledByDefault = true, bool canBeUsedInDM = true)
+        public UseErectorPermissionsViaInteractions(bool enabledByDefault = true, bool canBeUsedInDM = true)
         {
             Default = enabledByDefault;
             Private = canBeUsedInDM;
         }
 
-        public override async Task<PreconditionResult> CheckPermissionsAsync(
-            ICommandContext context,
-            CommandInfo command,
-            IServiceProvider services)
+        public override async Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo command, IServiceProvider services)
         {
             var permissions = services.GetRequiredService<CommandPermissionsService>();
 
@@ -80,8 +74,5 @@ namespace Bot.Preconditions
             return PreconditionResult.FromSuccess();
         }
     }
-
-
-    
 
 }

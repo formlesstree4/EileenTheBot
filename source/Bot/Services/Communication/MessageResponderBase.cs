@@ -111,7 +111,8 @@ namespace Bot.Services.Communication
                 var response = await GenerateResponse(shouldRespond.Item2, message, instanceId);
                 if (!string.IsNullOrWhiteSpace(response))
                 {
-                    await message.ReplyAsync(response);
+                    response = $"> {message.Author.Username}#{message.Author.Discriminator}: {message.Content}\r\n{response}";
+                    await message.Channel.SendMessageAsync(response);
                 }
             }
 

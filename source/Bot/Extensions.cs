@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Discord.Commands;
+using Discord.Interactions;
 
 namespace Bot
 {
@@ -25,6 +26,46 @@ namespace Bot
 
             return string.Join(" ", path);
         }
+
+        public static string GetFullCommandPath(this SlashCommandInfo command)
+        {
+            var path = new Stack<string>();
+            path.Push(command.Name);
+
+            var moduleInfo = command.Module;
+
+            while (moduleInfo != null)
+            {
+                if (!string.IsNullOrWhiteSpace(moduleInfo.SlashGroupName))
+                {
+                    path.Push(moduleInfo.SlashGroupName);
+                }
+                moduleInfo = moduleInfo.Parent;
+            }
+
+            return string.Join(" ", path);
+        }
+
+        public static string GetFullCommandPath(this ICommandInfo command)
+        {
+            var path = new Stack<string>();
+            path.Push(command.Name);
+
+            var moduleInfo = command.Module;
+
+            while (moduleInfo != null)
+            {
+                if (!string.IsNullOrWhiteSpace(moduleInfo.SlashGroupName))
+                {
+                    path.Push(moduleInfo.SlashGroupName);
+                }
+                moduleInfo = moduleInfo.Parent;
+            }
+
+            return string.Join(" ", path);
+        }
+
+
 
         public static void Shuffle<T>(this IList<T> list, Random random)
         {

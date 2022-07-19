@@ -193,7 +193,7 @@ namespace Bot
             }
         }
 
-        private async Task<Tuple<ServiceProvider, IEnumerable<Type>>> ConfigureServices()
+        private async Task<(ServiceProvider, IEnumerable<Type>)> ConfigureServices()
         {
             // Let's discover all the types that implement
             // IEileenService and ensure we register them
@@ -263,7 +263,7 @@ namespace Bot
                 }
             }
 
-            return new Tuple<ServiceProvider, IEnumerable<Type>>(svc.BuildServiceProvider(), eileenServices);
+            return (svc.BuildServiceProvider(), eileenServices);
         }
 
 

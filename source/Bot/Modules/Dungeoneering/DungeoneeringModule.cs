@@ -1,10 +1,12 @@
 using Bot.Models;
+using Bot.Models.Dungeoneering.Special.Equipment;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Dungeoneering;
 using Discord;
-using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +16,8 @@ using System.Threading.Tasks;
 namespace Bot.Modules.Dungeoneering
 {
 
-    [Group("dungeoneer"), Alias("d")]
-    public sealed class DungeoneeringModule : ModuleBase<SocketCommandContext>
+    [Group("dungeoneer", "Interact with the Dungeoneer system")]
+    public sealed class DungeoneeringModule : InteractionModuleBase
     {
         private readonly DungeoneeringMainService dungeoneeringMainService;
         private readonly UserService userService;
@@ -39,7 +41,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("help")]
+        [SlashCommand("help", "Get help over Dungeoneer")]
         public async Task HelpCommandAsync()
         {
             await HandleHelpAsync();
@@ -47,7 +49,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("register")]
+        [SlashCommand("register", "Register yourself as part of Dungeoneer")]
         public async Task RegisterCommandAsync()
         {
             await HandleRegistrationAsync();
@@ -55,7 +57,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("fight")]
+        [SlashCommand("fight", "Initiate a fight!")]
         public async Task FightCommandAsync()
         {
             await HandleFightAsync();
@@ -63,7 +65,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("attack")]
+        [SlashCommand("attack", "Declares an attack!")]
         public async Task AttackCommandAsync()
         {
             await HandleAttackAsync();
@@ -71,7 +73,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("run")]
+        [SlashCommand("run", "Flee the current, active battle")]
         public async Task RunAwayCommandAsync()
         {
             await HandleFleeAsync();
@@ -79,7 +81,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("status")]
+        [SlashCommand("status", "Check your current details")]
         public async Task StatusCommandAsync()
         {
             await HandleStatusAsync();
@@ -87,7 +89,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("assist")]
+        [SlashCommand("assist", "Assist the current player's battle")]
         public async Task AssistCommandAsync()
         {
             await HandleAssistingAsync();
@@ -95,7 +97,7 @@ namespace Bot.Modules.Dungeoneering
 
         [UseErectorPermissions(false, true)]
         [RequireContext(ContextType.Guild)]
-        [Command("deter")]
+        [SlashCommand("deter", "Hinder the current player's battle")]
         public async Task DeterCommandAsync()
         {
             await HandleDeterringAsync();
@@ -112,25 +114,24 @@ namespace Bot.Modules.Dungeoneering
             messageBuilder.AppendLine("FIGHT - Initiates an encounter in the current Channel. One fight per-channel!");
             messageBuilder.AppendLine("ATTACK - When in an encounter, the Player will attack the Monster");
             messageBuilder.AppendLine("RUN - When in an encounter, the Player will flee! This has a 1/5 chance of failing");
-            await ReplyAsync(messageBuilder.ToString());
+            await RespondAsync(messageBuilder.ToString(), ephemeral: true);
         }
 
         private async Task HandleRegistrationAsync()
         {
             if (await dungeoneeringMainService.IsUserRegisteredAsync(Context.User))
             {
-                await ReplyAsync("You are already registered for Dungeoneering! You can view your Player Card in your profile!");
+                await RespondAsync("You are already registered for Dungeoneering! You can view your Player Card in your profile!");
                 return;
             }
             await dungeoneeringMainService.RegisterPlayerAsync(Context.User);
             var responseBuilder = new StringBuilder();
             responseBuilder.AppendLine("Congratulations and welcome to Dungeoneering! Your guild card has been created and is now part of your Profile!");
-            responseBuilder.AppendLine("To know more about what you can do with Dungeoneering, just type in `dungeoneer help`");
+            responseBuilder.AppendLine("To know more about what you can do with Dungeoneering, look at the help command");
             responseBuilder.AppendLine("All the commands will be printed so you can see what all is now accessible.");
             var profileCallback = new ProfileCallback(await userService.GetOrCreateUserData(Context.User), Context.User, new EmbedBuilder());
             var builder = await dungeoneeringMainService.CreateDungeoneeringProfilePage(profileCallback);
-            await ReplyAsync(responseBuilder.ToString());
-            await ReplyAsync(embed: builder.PageBuilder.Build());
+            await RespondAsync(responseBuilder.ToString(), embed: builder.PageBuilder.Build());
         }
 
         private async Task HandleFightAsync()
@@ -138,12 +139,12 @@ namespace Bot.Modules.Dungeoneering
             var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
             if (encounter != null)
             {
-                await ReplyAsync("This channel already has an encounter going! Finish that first, THEN you can start another one!");
+                await RespondAsync("This channel already has an encounter going! Finish that first, THEN you can start another one!", ephemeral: true);
                 return;
             }
             if (await dungeoneeringMainService.IsUserInAnyEncounterAsync(Context.User))
             {
-                await ReplyAsync("Finish your previous encounter! One at a time!");
+                await RespondAsync("Finish your previous encounter! One at a time!", ephemeral: true);
                 return;
             }
             encounter = await dungeoneeringMainService.CreateEncounterAsync(Context.User, Context.Channel);
@@ -159,7 +160,7 @@ namespace Bot.Modules.Dungeoneering
                 messageBuilder.AppendLine($"The '{encounter.ActiveMonster.Name}' seems to be wearing some equipment as well. Be careful and perhaps use the `status` command to check!!");
             }
             messageBuilder.AppendLine($"The encounter will last until {Context.User.Username} defeats the Monster or flees!");
-            await ReplyAsync(messageBuilder.ToString());
+            await RespondAsync(messageBuilder.ToString());
         }
 
         private async Task HandleAttackAsync()
@@ -191,12 +192,12 @@ namespace Bot.Modules.Dungeoneering
 
             if (monsterPower < playerPower)
             {
-                await ReplyAsync($"{Context.User.Username} has successfully defeated the {encounter.ActiveMonster.Name}!");
+                await RespondAsync($"{Context.User.Username} has successfully defeated the {encounter.ActiveMonster.Name}!");
                 await dungeoneeringMainService.HandleVictoryAsync(playerCard, encounter);
             }
             else
             {
-                await ReplyAsync($"{Context.User.Username} was brutally killed by the {encounter.ActiveMonster.Name} and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
+                await RespondAsync($"{Context.User.Username} was brutally killed by the {encounter.ActiveMonster.Name} and has respawned back at the 'Guild Hall'. {Context.User.Username}, your Attack Power has been decreased by one!");
                 await dungeoneeringMainService.HandleDefeatAsync(playerCard, encounter);
             }
         }
@@ -210,12 +211,12 @@ namespace Bot.Modules.Dungeoneering
             var fleeChance = rng.Next(100);
             if (fleeChance >= 80)
             {
-                await ReplyAsync($"{Context.User.Username} was unable to flee, was killed by the {encounter.ActiveMonster.Name}, and has respawned back at the 'Guild Hall'. Your Attack Power has been decreased!");
+                await RespondAsync($"{Context.User.Username} was unable to flee, was killed by the {encounter.ActiveMonster.Name}, and has respawned back at the 'Guild Hall'. {Context.User.Username}, Attack Power has been decreased!");
                 await dungeoneeringMainService.HandleDefeatAsync(playerCard, encounter);
             }
             else
             {
-                await ReplyAsync($"{Context.User.Username} has fled successfully!");
+                await RespondAsync($"{Context.User.Username} has fled successfully!");
                 await dungeoneeringMainService.HandleFleeAsync(playerCard, encounter);
             }
 
@@ -226,7 +227,7 @@ namespace Bot.Modules.Dungeoneering
             var encounter = await dungeoneeringMainService.GetEncounterAsync(Context.Channel);
             if (encounter == null)
             {
-                await ReplyAsync("There is no encounter at this time!");
+                await RespondAsync("There is no encounter at this time in this channel!", ephemeral: true);
                 return;
             }
             var playerCard = await dungeoneeringMainService.GetPlayerCardAsync(encounter.PlayerId);
@@ -254,7 +255,7 @@ namespace Bot.Modules.Dungeoneering
 
             responseBuilder.AppendLine($"{userDetails.Username} has a Power of {playerCard.GetActualPower()} + {playerBoost} (from {encounter.Assistants.Count} helpers)");
             responseBuilder.AppendLine($"{encounter.ActiveMonster.Name} has a Power of {encounter.ActiveMonster.GetActualPower()} + {monsterBoost} (from {encounter.Instigators.Count} helpers)");
-            await ReplyAsync(responseBuilder.ToString());
+            await RespondAsync(responseBuilder.ToString(), ephemeral: true);
         }
 
         private async Task HandleAssistingAsync()
@@ -267,7 +268,7 @@ namespace Bot.Modules.Dungeoneering
             if (encounter.PlayerId == Context.User.Id) return;
             encounter.Assistants.Add(Context.User.Id);
             encounter.Instigators.Remove(Context.User.Id);
-            await ReplyAsync($"{Context.User.Username} has decided to assist {encounterPlayer.Username} by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await RespondAsync($"{Context.User.Username} has decided to assist '{encounterPlayer.Username}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
         private async Task HandleDeterringAsync()
@@ -278,12 +279,12 @@ namespace Bot.Modules.Dungeoneering
             if (encounter.PlayerId == Context.User.Id) return;
             encounter.Assistants.Remove(Context.User.Id);
             encounter.Instigators.Add(Context.User.Id);
-            await ReplyAsync($"{Context.User.Username} has decided to assist the '{encounter.ActiveMonster.Name}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
+            await RespondAsync($"{Context.User.Username} has decided to assist the '{encounter.ActiveMonster.Name}' by boosting their Attack Power by +{playerCard.GetActualPower()}!");
         }
 
 
-        [Group("query")]
-        public sealed class DungeoneeringResearchModule : ModuleBase<SocketCommandContext>
+        [Group("query", "look up information about Dungeoneering!")]
+        public sealed class DungeoneeringResearchModule : InteractionModuleBase
         {
             private readonly EquipmentService equipmentService;
             private readonly BetterPaginationService paginationService;
@@ -299,20 +300,18 @@ namespace Bot.Modules.Dungeoneering
 
             [UseErectorPermissions(false, true)]
             [RequireContext(ContextType.Guild)]
-            [Command]
+            [SlashCommand("help", "Get help about the query system")]
             public async Task QueryInfoAsync()
             {
-                await ReplyAsync("You can query using the `weapon` and `armor` as sub-text searches. For example: `dungeoneer query weapon Sword` will return all weapons of the name 'Sword'");
+                await RespondAsync("You can query using the `weapon` and `armor` as sub-text searches. For example: `/dungeoneer query weapon Sword` will return all weapons of the name 'Sword'");
             }
 
             [UseErectorPermissions(false, true)]
             [RequireContext(ContextType.Guild)]
-            [Command("weapon")]
-            public async Task LookupWeaponAsync([Remainder] string name)
+            [SlashCommand("weapon", "Lookup a weapon")]
+            public async Task LookupWeaponAsync([Summary("name", "The name of a weapon"), Autocomplete(typeof(WeaponAutocompleteHandler))] int id)
             {
-                var weapons = equipmentService.Weapons
-                    .Where(c => c.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(c => c.EquipmentLevel);
+                var weapons = equipmentService.Weapons.Where(c => c.EquipmentLevel == id);
 
                 var embeds = new List<Embed>();
 
@@ -329,20 +328,17 @@ namespace Bot.Modules.Dungeoneering
                             .Build());
                 }
 
-                await paginationService.Send(null,
-                    Context.Channel,
+                await paginationService.Send(Context, Context.Channel,
                     new BetterPaginationMessage(embeds, false, Context.User));
 
             }
 
             [UseErectorPermissions(false, true)]
             [RequireContext(ContextType.Guild)]
-            [Command("armor")]
-            public async Task LookupArmorAsync([Remainder] string name)
+            [SlashCommand("armor", "Lookup an armor piece")]
+            public async Task LookupArmorAsync([Summary("name", "The name of the armor"), Autocomplete(typeof(ArmorAutocompleteHandler))] int id)
             {
-                var armor = equipmentService.Armor
-                    .Where(c => c.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(c => c.EquipmentLevel);
+                var armor = equipmentService.Armor.Where(c => c.EquipmentId == id);
 
                 var embeds = new List<Embed>();
 
@@ -359,14 +355,51 @@ namespace Bot.Modules.Dungeoneering
                             .Build());
                 }
 
-                await paginationService.Send(null,
-                    Context.Channel,
+                await paginationService.Send(Context, Context.Channel,
                     new BetterPaginationMessage(embeds, false, Context.User));
 
             }
 
 
         }
+
+
+        private sealed class WeaponAutocompleteHandler : AutocompleteHandler
+        {
+            public override Task<AutocompletionResult> GenerateSuggestionsAsync(
+                IInteractionContext context,
+                IAutocompleteInteraction autocompleteInteraction,
+                IParameterInfo parameter,
+                IServiceProvider services)
+            {
+                var weaponService = services.GetRequiredService<EquipmentService>();
+                var text = autocompleteInteraction.Data.Current.Value.ToString();
+                var itemsToReturn = weaponService.Weapons
+                    .Where(c => c.Name.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+                    .Take(10)
+                    .Select(e => new AutocompleteResult($"Lv {e.EquipmentLevel}: {e.Name}", e.EquipmentId));
+                return Task.FromResult(AutocompletionResult.FromSuccess(itemsToReturn));
+            }
+        }
+
+        private sealed class ArmorAutocompleteHandler : AutocompleteHandler
+        {
+            public override Task<AutocompletionResult> GenerateSuggestionsAsync(
+                IInteractionContext context,
+                IAutocompleteInteraction autocompleteInteraction,
+                IParameterInfo parameter,
+                IServiceProvider services)
+            {
+                var weaponService = services.GetRequiredService<EquipmentService>();
+                var text = autocompleteInteraction.Data.Current.Value.ToString();
+                var itemsToReturn = weaponService.Armor
+                    .Where(c => c.Name.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+                    .Take(10)
+                    .Select(e => new AutocompleteResult($"Lv {e.EquipmentLevel}: {e.Name}", e.EquipmentId));
+                return Task.FromResult(AutocompletionResult.FromSuccess(itemsToReturn));
+            }
+        }
+
 
     }
 
