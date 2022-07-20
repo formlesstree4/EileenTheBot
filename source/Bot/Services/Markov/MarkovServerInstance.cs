@@ -6,7 +6,7 @@ namespace Bot.Services.Markov
 {
     public sealed class MarkovServerInstance
     {
-        private const int ChainRefreshCount = 100;
+        private const int ChainRefreshCount = 10;
         private const int MaxHistoryCount = 1000;
         private bool refreshAsap = false;
 

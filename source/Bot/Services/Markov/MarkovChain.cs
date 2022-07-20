@@ -9,10 +9,10 @@ namespace Bot.Services.Markov
 
     public sealed class MarkovChain<T> where T : IEquatable<T>
     {
-        private Dictionary<ChainState<T>, Dictionary<T, int>> items;
-        private Dictionary<ChainState<T>, int> terminals;
-        private int order;
-        private Random random;
+        private readonly Dictionary<ChainState<T>, Dictionary<T, int>> items;
+        private readonly Dictionary<ChainState<T>, int> terminals;
+        private readonly int order;
+        private readonly Random random;
 
         public int Order => order;
         public ulong Size => (ulong)items.Count + (ulong)terminals.Count;

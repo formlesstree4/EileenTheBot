@@ -24,7 +24,7 @@ namespace Bot.Services.Communication.Responders
         private readonly Random random;
 
         internal override bool CanRespondViaPM => true;
-        internal override bool CanRespondInNsfw => true;
+        internal override bool CanRespondInNsfw => false;
 
 
         public MarkovResponder(
@@ -69,7 +69,6 @@ namespace Bot.Services.Communication.Responders
             Write($"Start Service Load...");
             using (var session = Raven.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
             {
-                chains.Clear();
                 var content = await session.Query<MarkovContent>().ToListAsync();
                 foreach (var mc in content)
                 {
@@ -116,7 +115,7 @@ namespace Bot.Services.Communication.Responders
             return chains.TryGetValue(chainId, out msi);
         }
 
-        internal override async Task<bool> CanRespondToMessage(SocketUserMessage message)
+        internal override async Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId)
         {
             // may not be necessary to send this, but, it seems appropriate
             Write("Checking to see if the message contains the appropriate trigger word...", LogSeverity.Verbose);
@@ -140,6 +139,14 @@ namespace Bot.Services.Communication.Responders
             }
             containsTriggerWord |= message.Channel is IDMChannel;
             Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
+            var serverInstance = chains.GetOrAdd(
+                instanceId,
+                s =>
+                {
+                    Write($"Creating new chain for {s}", LogSeverity.Verbose);
+                    return new MarkovServerInstance(s, Enumerable.Empty<string>());
+                });
+            serverInstance.AddHistoricalMessage(GetProperHistoricalMessage(message));
             return containsTriggerWord;
         }
 
@@ -165,7 +172,6 @@ namespace Bot.Services.Communication.Responders
             lock (serverInstance)
             {
                 // We need to generate a message in response since we were directly referenced.
-                serverInstance.AddHistoricalMessage(GetProperHistoricalMessage(message));
                 Write($"Generating a response...", LogSeverity.Verbose);
                 var attempts = 0;
                 while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)

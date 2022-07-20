@@ -72,12 +72,7 @@ namespace Bot.Services.Communication
 
             if (rawMessage is not SocketUserMessage message) return;
             if (message.Source != MessageSource.User) return;
-            var canRespondToMessage = await CanRespondToMessage(message);
-            
-            if (!canRespondToMessage)
-            {
-                return;
-            }
+
 
             // filter out commands and
             // handle private messages
@@ -103,6 +98,13 @@ namespace Bot.Services.Communication
                     break;
             }
 
+            var canRespondToMessage = await CanRespondToMessage(message, instanceId);
+
+            if (!canRespondToMessage)
+            {
+                return;
+            }
+
             Write($"Looking for trigger word in the message...", severity: LogSeverity.Verbose);
             var shouldRespond = await DoesContainTriggerWord(message, instanceId);
 
@@ -111,14 +113,14 @@ namespace Bot.Services.Communication
                 var response = await GenerateResponse(shouldRespond.Item2, message, instanceId);
                 if (!string.IsNullOrWhiteSpace(response))
                 {
-                    response = $"> {message.Author.Username}#{message.Author.Discriminator}: {message.Content}\r\n{response}";
-                    await message.Channel.SendMessageAsync(response);
+                    //response = $"> {message.Author.Username}#{message.Author.Discriminator}: {message.Content}\r\n{response}";
+                    await message.ReplyAsync(response, allowedMentions: AllowedMentions.None);
                 }
             }
 
         }
 
-        internal abstract Task<bool> CanRespondToMessage(SocketUserMessage message);
+        internal abstract Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId);
         internal abstract Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId);
         internal abstract Task<string> GenerateResponse(string triggerWord, SocketUserMessage message, ulong instanceId);
 
