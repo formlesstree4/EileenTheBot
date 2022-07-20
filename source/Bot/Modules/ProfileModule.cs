@@ -88,11 +88,11 @@ namespace Bot.Modules
 
         private async Task HandleEditProfileModal(SocketModal modal)
         {
-            // profile modal
             var responses = modal.Data.Components.ToList();
-            var userProfile = await userService.GetOrCreateUserData(Context.User);
+            var userProfile = await userService.GetOrCreateUserData(modal.User);
             userProfile.ProfileImage = responses.First(c => c.CustomId == "profile-url").Value;
             userProfile.Description = responses.First(c => c.CustomId == "profile-description").Value;
+            await modal.RespondAsync("Your profile has been updated!", ephemeral: true);
         }
 
     }
