@@ -3,7 +3,7 @@ on: push
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: 'eileenthebot'
 
 jobs:
   build-and-publish-eileen:
@@ -26,4 +26,4 @@ jobs:
           context: .
           file: ./dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest , ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
