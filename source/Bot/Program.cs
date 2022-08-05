@@ -209,6 +209,7 @@ namespace Bot
             var svc = new ServiceCollection()
                 // Manually add services that do NOT implement IEileenService
                 .AddAutoMapper(Assembly.GetExecutingAssembly())
+                .AddLogging()
                 .AddTransient(provider => MersenneTwister.MTRandom.Create())
                 .AddSingleton<CancellationTokenSource>()
                 .AddSingleton<Func<LogMessage, Task>>(LogAsync)
