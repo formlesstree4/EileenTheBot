@@ -214,7 +214,7 @@ namespace Bot
                 .AddLogging()
                 .AddTransient(provider => MersenneTwister.MTRandom.Create())
                 .AddSingleton<CancellationTokenSource>()
-                .AddSingleton<Func<LogMessage, Task>>(LogAsync)
+                //.AddSingleton<Func<LogMessage, Task>>(LogAsync)
                 .AddSingleton((services) =>
                 {
                     var config = new DiscordSocketConfig
@@ -246,12 +246,10 @@ namespace Bot
                         });
                 })
                 .AddSingleton<ServiceManager>();
-            logger.LogInformation("Discovered {serviceCount} service(s)", eileenServices.Count);
             foreach (var s in eileenServices)
             {
                 var attr = s.GetCustomAttribute<ServiceTypeAttribute>();
                 var serviceType = attr?.ServiceType ?? ServiceType.Singleton;
-                logger.LogInformation("Registering {Name} as {serviceType}", s.Name, serviceType);
                 switch (serviceType)
                 {
                     case ServiceType.Scoped:
@@ -265,7 +263,6 @@ namespace Bot
                         break;
                 }
             }
-
             return (svc.BuildServiceProvider(), eileenServices);
         }
 
