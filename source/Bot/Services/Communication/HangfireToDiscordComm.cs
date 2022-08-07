@@ -2,6 +2,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
@@ -11,33 +12,32 @@ namespace Bot.Services.Communication
     public sealed class HangfireToDiscordComm : IEileenService
     {
 
-        private readonly IServiceProvider services;
-        private readonly Func<LogMessage, Task> WriteLog;
         private readonly DiscordSocketClient client;
+        private readonly ILogger<HangfireToDiscordComm> logger;
 
-
-        public HangfireToDiscordComm(IServiceProvider services, Func<LogMessage, Task> logger)
+        public HangfireToDiscordComm(
+            DiscordSocketClient client,
+            ILogger<HangfireToDiscordComm> logger)
         {
-            this.services = services;
-            this.WriteLog = logger;
-            this.client = services.GetRequiredService<DiscordSocketClient>();
+            this.client = client;
+            this.logger = logger;
         }
 
 
         public async Task InitializeService()
         {
-            Write("Creating initial jobs...");
+            logger.LogTrace("Creating initial jobs...");
             this.ScheduleJobs();
             await Task.Yield();
         }
 
         public async Task SendMessageToChannel(ulong channelId, string message)
         {
-            Write($"Fetching Channel (ID {channelId})", LogSeverity.Verbose);
+            logger.LogTrace("Fetching Channel (ID {channelId})", channelId);
             var c = client.GetChannel(channelId);
             if (c is IMessageChannel mc)
             {
-                Write($"A message is being sent to {mc.Name}");
+                logger.LogTrace("A message is being sent to {name}", mc.Name);
                 await mc.SendMessageAsync(message);
             }
         }
@@ -45,26 +45,20 @@ namespace Bot.Services.Communication
         public async Task SendMessageToUser(ulong userId, string message)
         {
             var dc = client as IDiscordClient;
-            Write($"Fetching User (ID {userId})", LogSeverity.Verbose);
             var user = await dc.GetUserAsync(userId);
             if (user is null)
             {
-                Write($"Unable to retrieve User (ID {userId})", LogSeverity.Error);
+                logger.LogWarning("Unable to retrieve User (ID {userId})", userId);
                 return;
             }
             var channel = await user.CreateDMChannelAsync();
             if (channel is null)
             {
-                Write($"Failed to create a DM channel for {user.Username}", LogSeverity.Error);
+                logger.LogWarning("Failed to create a DM channel for {username}", user.Username);
                 return;
             }
-            Write($"Sending private message to {user.Username}!");
+            logger.LogTrace("Sending private message to {username}!", user.Username);
             await channel.SendMessageAsync(message);
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            WriteLog(new LogMessage(severity, nameof(HangfireToDiscordComm), message));
         }
 
         private void ScheduleJobs()

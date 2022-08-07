@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Bot.Models.Macros;
 using Discord;
+using Microsoft.Extensions.Logging;
 
 namespace Bot.Services
 {
@@ -13,11 +14,11 @@ namespace Bot.Services
         private const string MacroTag = "serverMacros";
 
         private readonly ServerConfigurationService serverConfigurationService;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<MacroService> logger;
 
         public MacroService(
             ServerConfigurationService serverConfigurationService,
-            Func<LogMessage, Task> logger)
+            ILogger<MacroService> logger)
         {
             this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -71,11 +72,6 @@ namespace Bot.Services
         {
             var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             return configuration.GetOrAddTagData(MacroTag, () => new MacroServerEntries()).Entries;
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(MacroService), message));
         }
 
     }

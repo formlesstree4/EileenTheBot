@@ -4,6 +4,7 @@ using Bot.Services;
 using Bot.Services.Booru;
 using Discord;
 using Discord.Interactions;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace Bot.Modules
         private readonly Yandere yandere;
         private readonly IMapper mapper;
         private readonly StupidTextService stupidTextService;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<BooruModule> logger;
         private static readonly IReadOnlyDictionary<string, string> tagAliases = new Dictionary<string, string>
         {
             ["-r"] = "order:random",
@@ -66,7 +67,7 @@ namespace Bot.Modules
             Yandere yandere,
             IMapper mapper,
             StupidTextService stupidTextService,
-            Func<LogMessage, Task> logger)
+            ILogger<BooruModule> logger)
         {
             this.paginationService = paginationService ?? throw new ArgumentNullException(nameof(paginationService));
             this.danbooru = danbooru ?? throw new ArgumentNullException(nameof(danbooru));
@@ -76,7 +77,7 @@ namespace Bot.Modules
             this.yandere = yandere ?? throw new ArgumentNullException(nameof(yandere));
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             this.stupidTextService = stupidTextService ?? throw new ArgumentNullException(nameof(stupidTextService));
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.logger = logger;
         }
 
 
@@ -187,7 +188,7 @@ namespace Bot.Modules
                 }
                 catch (ArgumentException are)
                 {
-                    Write($"Failed to create a Booru post: {are}", severity: LogSeverity.Error);
+                    logger.LogError(are, "Failed to create a Borru Post");
                     continue;
                 }
             }
@@ -237,14 +238,6 @@ namespace Bot.Modules
             }
             c = updated.ToArray();
             return results;
-        }
-
-        private void Write(
-            string message,
-            string source = nameof(BooruModule),
-            LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, source, message));
         }
 
     }

@@ -6,6 +6,7 @@ using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 
 namespace Bot.Services.Communication
 {
@@ -14,7 +15,7 @@ namespace Bot.Services.Communication
         private readonly DiscordSocketClient discordSocketClient;
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly ServerConfigurationService serverConfigurationService;
-        private readonly Func<LogMessage, Task> logger;
+        internal readonly ILogger<MessageResponderBase> logger;
 
 
 
@@ -51,7 +52,7 @@ namespace Bot.Services.Communication
             DiscordSocketClient discordSocketClient,
             RavenDatabaseService ravenDatabaseService,
             ServerConfigurationService serverConfigurationService,
-            Func<LogMessage, Task> logger
+            ILogger<MessageResponderBase> logger
         )
         {
             this.discordSocketClient = discordSocketClient;
@@ -105,7 +106,7 @@ namespace Bot.Services.Communication
                 return;
             }
 
-            Write($"Looking for trigger word in the message...", severity: LogSeverity.Verbose);
+            logger.LogTrace($"Looking for trigger word in the message...");
             var shouldRespond = await DoesContainTriggerWord(message, instanceId);
 
             if (shouldRespond.Item1 || canRespondToMessage)
@@ -123,15 +124,6 @@ namespace Bot.Services.Communication
         internal abstract Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId);
         internal abstract Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId);
         internal abstract Task<string> GenerateResponse(string triggerWord, SocketUserMessage message, ulong instanceId);
-
-
-        internal virtual void Write(
-            string message,
-            string source = nameof(MessageResponderBase),
-            LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, source, message));
-        }
 
     }
 

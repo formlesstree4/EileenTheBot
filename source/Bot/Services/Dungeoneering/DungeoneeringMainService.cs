@@ -3,6 +3,7 @@ using Bot.Models.Dungeoneering;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Bot.Services.Dungeoneering
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly MonsterService monsterService;
         private readonly EquipmentService equipmentService;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<DungeoneeringMainService> logger;
         private readonly ConcurrentDictionary<ulong, Encounter> currentEncounters;
 
         public DungeoneeringMainService(
@@ -29,7 +30,7 @@ namespace Bot.Services.Dungeoneering
             RavenDatabaseService ravenDatabaseService,
             MonsterService monsterService,
             EquipmentService equipmentService,
-            Func<LogMessage, Task> logger,
+            ILogger<DungeoneeringMainService> logger,
             Random random)
         {
             this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
@@ -44,39 +45,39 @@ namespace Bot.Services.Dungeoneering
 
         public async Task InitializeService()
         {
-            Write("Initializing...");
+            logger.LogInformation("Initializing...");
             userService.RegisterProfileCallback(CreateDungeoneeringProfilePage);
-            Write("Loading Prior Encounters...");
+            logger.LogInformation("Loading Prior Encounters...");
             await LoadServiceAsync();
             await Task.Yield();
         }
 
         public async Task LoadServiceAsync()
         {
-            Write("Loading Dungeoneering Data...");
+            logger.LogInformation("Loading Dungeoneering Data...");
             var documentStore = ravenDatabaseService.GetOrAddDocumentStore("erector_dungeoneering");
             using (var session = documentStore.OpenAsyncSession())
             {
-                Write("Retreiving previously active encounters");
+                logger.LogInformation("Retreiving previously active encounters");
                 var activeEncounters = await session.LoadAsync<EncounterStorage>("encounters");
                 if (activeEncounters is null)
                 {
-                    Write("No active encounters recorded, or the entry hasn't existed yet");
+                    logger.LogInformation("No active encounters recorded, or the entry hasn't existed yet");
                     return;
                 }
                 foreach (var encounter in activeEncounters.ExistingEncounters)
                 {
-                    Write($"Attempting to reload encounter for Channel {encounter.Key}");
+                    logger.LogInformation("Attempting to reload encounter for Channel {channel}", encounter.Key);
                     currentEncounters.TryAdd(encounter.Key, encounter.Value);
                 }
-                Write($"Completed. Loaded {currentEncounters.Count} encounter(s)");
+                logger.LogInformation("Completed. Loaded {encounters} encounter(s)", currentEncounters.Count);
             }
-            Write("Dungeoneering Data Loaded.");
+            logger.LogInformation("Dungeoneering Data Loaded.");
         }
 
         public async Task SaveServiceAsync()
         {
-            Write("Saving Dungeoneering Data...");
+            logger.LogInformation("Saving Dungeoneering Data...");
             var documentStore = ravenDatabaseService.GetOrAddDocumentStore("erector_dungeoneering");
             using (var session = documentStore.OpenAsyncSession())
             {
@@ -87,7 +88,7 @@ namespace Bot.Services.Dungeoneering
                     }, "encounters");
                 await session.SaveChangesAsync();
             }
-            Write("Dungeoneering Data Saved.");
+            logger.LogInformation("Dungeoneering Data Saved.");
         }
 
 
@@ -96,7 +97,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task<bool> IsUserRegisteredAsync(ulong userId)
         {
-            Write($"Validating if {userId} is registered...");
+            logger.LogInformation("Validating if {userId} is registered...", userId);
             var userData = await userService.GetOrCreateUserData(userId);
             return userData.HasTagData(TagName);
         }
@@ -112,7 +113,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task<PlayerCard> RegisterPlayerAsync(ulong userId)
         {
-            Write($"Registering {userId} with dungoneer");
+            logger.LogInformation("Registering {userId} with dungoneer", userId);
             var userData = (await userService.GetOrCreateUserData(userId));
             var playerCard = new PlayerCard
             {
@@ -134,7 +135,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task<Encounter> CreateEncounterAsync(ulong userId, ulong channelId)
         {
-            Write($"Creating an encounter in room {channelId} for {userId}");
+            logger.LogInformation("Creating an encounter in room {channelId} for {userId}", channelId, userId);
             var playerCard = await GetPlayerCardAsync(userId);
             var monster = await CreateMonster(playerCard);
             var encounter = new Encounter
@@ -211,7 +212,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task HandleVictoryAsync(PlayerCard player, Encounter encounter)
         {
-            Write($"A victory is being recorded!");
+            logger.LogInformation($"A victory is being recorded!");
             var battleLog = await CreateBattleLogAsync(player, encounter, "Victory");
             player.Victories += 1;
             player.AttackPower += 1;
@@ -222,7 +223,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task HandleDefeatAsync(PlayerCard player, Encounter encounter)
         {
-            Write($"A defeat is being recorded!");
+            logger.LogInformation($"A defeat is being recorded!");
             var battleLog = await CreateBattleLogAsync(player, encounter, "Defeat");
             player.Defeats += 1;
             player.AttackPower = (int)Math.Max(1, Math.Floor(player.AttackPower / (decimal)2));
@@ -233,7 +234,7 @@ namespace Bot.Services.Dungeoneering
 
         public async Task HandleFleeAsync(PlayerCard player, Encounter encounter)
         {
-            Write($"A 'flee' is being recorded!");
+            logger.LogInformation($"A 'flee' is being recorded!");
             var battleLog = await CreateBattleLogAsync(player, encounter, "Defeat (Fled)");
             player.Defeats += 1;
             player.Battles.Add(battleLog);
@@ -279,14 +280,9 @@ namespace Bot.Services.Dungeoneering
             return battleLog;
         }
 
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(DungeoneeringMainService), message));
-        }
-
         private async Task<Monster> CreateMonster(PlayerCard player)
         {
-            Write($"Creating a Monster", LogSeverity.Verbose);
+            logger.LogTrace($"Creating a Monster");
             var level = player.GetActualPower();
             var monster =
                 await monsterService.CreateMonsterAsync(level) ??

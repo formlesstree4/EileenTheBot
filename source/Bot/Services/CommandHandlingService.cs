@@ -3,6 +3,7 @@ using Bot.TypeReaders;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -14,8 +15,8 @@ namespace Bot.Services
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
+        private readonly ILogger<CommandHandlingService> logger;
         private readonly ServerConfigurationService _serverConfiguration;
-        private readonly Func<LogMessage, Task> _logger;
         private readonly MacroService macroService;
         private readonly char _defaultPrefix;
 
@@ -24,21 +25,47 @@ namespace Bot.Services
             DiscordSocketClient client,
             ServerConfigurationService serverConfiguration,
             RavenDatabaseService ravenDatabaseService,
-            Func<LogMessage, Task> logger,
             MacroService macroService,
-            IServiceProvider provider)
+            IServiceProvider provider,
+            ILogger<CommandHandlingService> logger)
         {
             _commands = commandService;
             _discord = client;
             _serverConfiguration = serverConfiguration;
             _defaultPrefix = ravenDatabaseService.Configuration.CommandPrefix;
-            _logger = logger;
             this.macroService = macroService;
             _services = provider;
+            this.logger = logger;
 
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;
-            _commands.Log += _logger;
+            _commands.Log += (log) =>
+            {
+                switch (log.Severity)
+                {
+#pragma warning disable CA2254
+                    case LogSeverity.Critical:
+                        logger.LogCritical(log.Exception, log.Message);
+                        break;
+                    case LogSeverity.Debug:
+                        logger.LogDebug(log.Exception, log.Message);
+                        break;
+                    case LogSeverity.Error:
+                        logger.LogError(log.Exception, log.Message);
+                        break;
+                    case LogSeverity.Info:
+                        logger.LogInformation(log.Exception, log.Message);
+                        break;
+                    case LogSeverity.Verbose:
+                        logger.LogTrace(log.Exception, log.Message);
+                        break;
+                    case LogSeverity.Warning:
+                        logger.LogWarning(log.Exception, log.Message);
+                        break;
+#pragma warning restore CA2254
+                }
+                return Task.CompletedTask;
+            };
 
             // Hook MessageReceived so we can process each message to see
             // if it qualifies as a command.
@@ -66,9 +93,8 @@ namespace Bot.Services
 
             if (message.Channel is SocketGuildChannel sgc)
             {
-                // var serverConfig = await _serverConfiguration.GetOrCreateConfigurationAsync(sgc.Guild);
                 prefix = await GetGuildPrefix(sgc.Guild);
-                Write($"Overriding Command Prefix for {sgc.Guild.Id} (from {_defaultPrefix} to {prefix})", LogSeverity.Verbose);
+                logger.LogTrace("Overriding Command Prefix for {guildId} (from {default} to {new})", sgc.Guild.Id, _defaultPrefix, prefix);
             }
 
             // Perform prefix check. You may want to replace this with
@@ -113,11 +139,6 @@ namespace Bot.Services
 
             // the command failed, let's notify the user that something happened.
             await context.Channel.SendMessageAsync($"error: {result.ErrorReason}");
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            _logger(new LogMessage(severity, nameof(CommandHandlingService), message));
         }
 
         private async Task<char> GetGuildPrefix(IGuild guild)

@@ -16,13 +16,16 @@ namespace Bot.Modules
     [Group("admin", "Administrative Commands for Erector"), TrustedUsersPrecondition]
     public class SuperUserModule : InteractionModuleBase
     {
+        private readonly ChannelCommunicationService channelCommunicationService;
         private readonly ServerConfigurationService serverConfigurationService;
         private readonly CancellationTokenSource cancellationTokenSource;
 
         public SuperUserModule(
+            ChannelCommunicationService channelCommunicationService,
             ServerConfigurationService serverConfigurationService,
             CancellationTokenSource cancellationTokenSource)
         {
+            this.channelCommunicationService = channelCommunicationService;
             this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
             this.cancellationTokenSource = cancellationTokenSource ?? throw new ArgumentNullException(nameof(cancellationTokenSource));
         }
@@ -189,6 +192,9 @@ namespace Bot.Modules
 
         }
 
+        /// <summary>
+        /// Sub-module for markov stuff
+        /// </summary>
         [Group("markov", "Simple management of the markov system")]
         public sealed class MarkovAdminModule : InteractionModuleBase
         {
@@ -220,6 +226,14 @@ namespace Bot.Modules
 
         }
 
+        /// <summary>
+        /// Sub-module for the auto-communication shit
+        /// </summary>
+        [Group("communications", "Auto-communication messages")]
+        public sealed class CommunicationModule
+        {
+
+        }
 
 
         private sealed class ChatAutoCompleteHandler : AutocompleteHandler

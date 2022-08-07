@@ -1,6 +1,7 @@
 using Bot.Models.Raven;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using System;
 using System.Collections.Concurrent;
@@ -16,12 +17,12 @@ namespace Bot.Services.RavenDB
         private BotConfiguration configuration;
         private readonly string RavenDBLocation;
         private readonly ConcurrentDictionary<string, Lazy<IDocumentStore>> stores;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<RavenDatabaseService> logger;
 
 
         public BotConfiguration Configuration => configuration;
 
-        public RavenDatabaseService(Func<LogMessage, Task> logger)
+        public RavenDatabaseService(ILogger<RavenDatabaseService> logger)
         {
             RavenDBLocation = System.Environment.GetEnvironmentVariable("RavenIP");
             if (string.IsNullOrWhiteSpace(RavenDBLocation))
@@ -75,11 +76,6 @@ namespace Bot.Services.RavenDB
                 configuration = await session.LoadAsync<BotConfiguration>("configuration");
             }
             return configuration;
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(RavenDatabaseService), message));
         }
 
     }

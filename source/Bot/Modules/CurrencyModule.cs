@@ -33,7 +33,7 @@ namespace Bot.Modules
             {
                 currencyData.Currency -= currencyData.MaxCurrency;
                 currencyData.Level += 1;
-                currencyService.UpdateCurrencyDataLevels(currencyData);
+                CurrencyService.UpdateCurrencyDataLevels(currencyData);
                 await RespondAsync($"Congratuations! You've reached Level {currencyData.Level}!");
             }
 
@@ -52,7 +52,7 @@ namespace Bot.Modules
             currencyData.Prestige += 1;
             currencyData.Level = 1;
             currencyData.Currency = 0;
-            currencyService.UpdateCurrencyDataLevels(currencyData);
+            CurrencyService.UpdateCurrencyDataLevels(currencyData);
             await RespondAsync($"You have successfully incremented your Prestige! You are now");
         }
 
@@ -68,7 +68,7 @@ namespace Bot.Modules
                 await RespondAsync("You have already done your daily claim!", ephemeral: true);
                 return;
             }
-            currencyService.ProcessDailyClaimOfCurrency(currencyData);
+            CurrencyService.ProcessDailyClaimOfCurrency(currencyData);
             await RespondAsync("You have claiemd your daily currency amount; check back tomorrow to do so again", ephemeral: true);
         }
 

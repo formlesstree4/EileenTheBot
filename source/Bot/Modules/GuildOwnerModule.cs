@@ -1,3 +1,4 @@
+using Bot.Models.ChannelCommunication;
 using Bot.Services;
 using Discord;
 using Discord.Interactions;
@@ -16,11 +17,14 @@ namespace Bot.Modules
     public sealed class GuildOwnerModule : InteractionModuleBase
     {
         private readonly ServerConfigurationService serverConfigurationService;
+        private readonly ChannelCommunicationService channelCommunicationService;
 
-
-        public GuildOwnerModule(ServerConfigurationService serverConfigurationService)
+        public GuildOwnerModule(
+            ServerConfigurationService serverConfigurationService,
+            ChannelCommunicationService channelCommunicationService)
         {
             this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
+            this.channelCommunicationService = channelCommunicationService;
         }
 
         [SlashCommand("prefix", "Alters the character prefix the bot will use in order to be triggered")]
@@ -28,7 +32,7 @@ namespace Bot.Modules
         {
             var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
             configuration.CommandPrefix = prefix;
-            await RespondAsync($"This server now uses the character prefix '{prefix}'");
+            await RespondAsync($"This server now uses the character prefix '{prefix}'", ephemeral: true);
         }
 
 
@@ -224,6 +228,44 @@ namespace Bot.Modules
                 }
             }
 
+        }
+
+
+        [SlashCommand("schedule", "Schedules a message to be sent to this channel", runMode: RunMode.Async)]
+        public async Task ScheduleAsync(
+            [Summary("name", "The name of the job")] string jobName,
+            [Summary("message", "The message to send")] string message,
+            [Summary("expression", "CRON or offset in minutes")] string expression,
+            [Summary("repeats", "If true, expression is a CRON thing")] bool repeats)
+        {
+            var job = new ChannelCommuncationJobEntry
+            {
+                ChannelId = Context.Channel.Id,
+                Created = System.DateTime.Now,
+                GuildId = Context.Guild.Id,
+                HasRun = false,
+                JobName = jobName,
+                Message = message,
+                Repeats = repeats,
+                WhenToRun = expression
+            };
+            if (!repeats && !double.TryParse(expression, out _))
+            {
+                await RespondAsync($"A non-repeating message 'expression' needs to be numeric value. {expression} is not a valid number", ephemeral: true);
+                return;
+            }
+            if (repeats)
+            {
+                try
+                {
+                    Cronos.CronExpression.Parse(expression);
+                }
+                catch (System.Exception error)
+                {
+                    await RespondAsync($"The cron expression '{expression}' could not be parsed: {error.Message}");
+                }
+            }
+            await channelCommunicationService.ScheduleNewTask(Context.Guild, job);
         }
 
     }

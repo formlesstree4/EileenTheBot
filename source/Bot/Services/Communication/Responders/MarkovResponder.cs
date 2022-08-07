@@ -10,6 +10,7 @@ using Bot.Services.RavenDB;
 using Discord;
 using Discord.WebSocket;
 using Hangfire;
+using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Attachments;
 using Raven.Client.Documents.Operations.Attachments;
@@ -31,7 +32,7 @@ namespace Bot.Services.Communication.Responders
             DiscordSocketClient discordSocketClient,
             RavenDatabaseService ravenDatabaseService,
             ServerConfigurationService serverConfigurationService,
-            Func<LogMessage, Task> logger,
+            ILogger<MarkovResponder> logger,
             Random random) : base(discordSocketClient, ravenDatabaseService, serverConfigurationService, logger)
         {
             chains = new ConcurrentDictionary<ulong, MarkovServerInstance>();
@@ -42,23 +43,23 @@ namespace Bot.Services.Communication.Responders
 
         public override async Task InitializeService()
         {
-            Write("Querying the database for the markov source file...");
+            logger.LogTrace("Querying the database for the markov source file...");
             using (var markovFile = await Raven.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
                 documentId: "configuration",
                 name: "markov.txt",
                 type: AttachmentType.Document,
                 changeVector: null)))
             {
-                Write("Opening the StreamReader...", severity: LogSeverity.Verbose);
+                logger.LogTrace("Opening the StreamReader...");
                 using (var reader = new StreamReader(markovFile.Stream))
                 {
                     source.AddRange(reader.ReadAllLines());
                 }
-                Write("Done! Source finished...", LogSeverity.Verbose);
+                logger.LogTrace("Done! Source finished...");
             }
-            Write($"Shuffling {source.Count:N0} item(s)", LogSeverity.Verbose);
+            logger.LogTrace("Shuffling {items} item(s)", source.Count.ToString("N0"));
             source.Shuffle(random);
-            Write("Shuffling complete", LogSeverity.Verbose);
+            logger.LogTrace("Shuffling complete");
             await LoadServiceAsync();
             RecurringJob.AddOrUpdate("markovSaveContent", () => SaveServiceAsync(), Cron.Hourly);
             await base.InitializeService();
@@ -66,13 +67,13 @@ namespace Bot.Services.Communication.Responders
 
         public async Task LoadServiceAsync()
         {
-            Write($"Start Service Load...");
+            logger.LogInformation($"Start Service Load...");
             using (var session = Raven.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
             {
                 var content = await session.Query<MarkovContent>().ToListAsync();
                 foreach (var mc in content)
                 {
-                    Write($"Loading {mc.ServerId}...", LogSeverity.Verbose);
+                    logger.LogTrace("Loading {serverId}...", mc.ServerId);
                     var context = mc.Context ?? Enumerable.Empty<string>();
                     var msi = new MarkovServerInstance(mc.ServerId, context);
                     chains.AddOrUpdate(mc.ServerId, (f) => msi, (f, g) => g);
@@ -80,20 +81,20 @@ namespace Bot.Services.Communication.Responders
             }
             foreach(var server in Client.Guilds)
             {
-                Write($"Testing Load for Guild {server.Id}");
+                logger.LogInformation("Testing Load for Guild {serverId}", server.Id);
                 TryGetServerInstance(server.Id, out _);
             }
-            Write($"Finish Service Load...");
+            logger.LogInformation($"Finish Service Load...");
         }
 
         public async Task SaveServiceAsync()
         {
-            Write($"Start Service Save...");
+            logger.LogInformation($"Start Service Save...");
             using (var session = Raven.GetOrAddDocumentStore("erector_markov").OpenAsyncSession())
             {
                 foreach (var kvp in chains)
                 {
-                    Write($"Saving {kvp.Key}...", LogSeverity.Verbose);
+                    logger.LogTrace("Saving {serverId}...", kvp.Key);
                     await session.StoreAsync(new MarkovContent
                     {
                         ServerId = kvp.Key,
@@ -102,14 +103,14 @@ namespace Bot.Services.Communication.Responders
                 }
                 await session.SaveChangesAsync();
             }
-            Write($"Finish Service Save...");
+            logger.LogInformation($"Finish Service Save...");
         }
 
         public bool TryGetServerInstance(ulong chainId, out MarkovServerInstance msi)
         {
             if (!chains.ContainsKey(chainId))
             {
-                Write($"Missing Chain for Guild {chainId}");
+                logger.LogWarning("Missing Chain for Guild {chainId}; creating...", chainId);
                 chains.AddOrUpdate(chainId, (f) => new MarkovServerInstance(f, Enumerable.Empty<string>()), (f, g) => g);
             }
             return chains.TryGetValue(chainId, out msi);
@@ -118,32 +119,30 @@ namespace Bot.Services.Communication.Responders
         internal override async Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId)
         {
             // may not be necessary to send this, but, it seems appropriate
-            Write("Checking to see if the message contains the appropriate trigger word...", LogSeverity.Verbose);
+            logger.LogTrace("Checking to see if the message contains the appropriate trigger word...");
             bool containsTriggerWord = DoesMessageContainProperWord(message, out _);
-            Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
+            logger.LogTrace("{containsTriggerWord}: {containsTriggerWord}", nameof(containsTriggerWord), containsTriggerWord);
 
             ulong botId = Client.CurrentUser.Id;
-            Write("Looking to see if the bot was mentioned...", LogSeverity.Verbose);
+            logger.LogTrace("Looking to see if the bot was mentioned...");
             containsTriggerWord |= message.MentionedUsers.Any(s => s.Id == botId); // The bot was mentioned.
-            Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
-            Write("Looking to see if the message was responded to (via Discord's reponse system)", LogSeverity.Verbose);
+            logger.LogTrace("Looking to see if the message was responded to (via Discord's resposne/reply system)");
             if (!containsTriggerWord && (message?.Reference?.MessageId.IsSpecified ?? false))
             {
                 // AFAIK there is no reason that it's not a message channel
-                Write("Fetching channel...");
+                logger.LogTrace("Fetching channel...");
                 IMessageChannel messageChannel = (IMessageChannel)Client.GetChannel(message.Reference.ChannelId);
-                Write("Fetching message...");
+                logger.LogTrace("Fetching message...");
                 IMessage msg = await messageChannel.GetMessageAsync(message.Reference.MessageId.Value);
-                Write($"Got message, checking message author ({msg.Author.Id} == {botId})", LogSeverity.Verbose);
+                logger.LogTrace("Got message, checking message author ({authorId} == {botId})", msg.Author.Id, botId);
                 if (msg.Author.Id == botId) containsTriggerWord = true;
             }
             containsTriggerWord |= message.Channel is IDMChannel;
-            Write($"{nameof(containsTriggerWord)}: {containsTriggerWord}", LogSeverity.Verbose);
             var serverInstance = chains.GetOrAdd(
                 instanceId,
                 s =>
                 {
-                    Write($"Creating new chain for {s}", LogSeverity.Verbose);
+                    logger.LogTrace("Creating new chain for {server}", s);
                     return new MarkovServerInstance(s, Enumerable.Empty<string>());
                 });
             serverInstance.AddHistoricalMessage(GetProperHistoricalMessage(message));
@@ -158,30 +157,30 @@ namespace Bot.Services.Communication.Responders
 
         internal override Task<string> GenerateResponse(string triggerWord, SocketUserMessage message, ulong instanceId)
         {
-            Write("Searching for instance...", LogSeverity.Verbose);
+            logger.LogTrace("Searching for instance...");
             var serverInstance = chains.GetOrAdd(
                 instanceId,
                 s =>
                 {
-                    Write($"Creating new chain for {s}", LogSeverity.Verbose);
+                    logger.LogTrace("Creating new chain for {server}", s);
                     return new MarkovServerInstance(s, Enumerable.Empty<string>());
                 });
             string messageToSend = null;
-            Write($"Using Instance: {serverInstance.ServerId}", LogSeverity.Verbose);
-            Write($"Acquiring exclusive lock on {serverInstance.ServerId}", LogSeverity.Verbose);
+            logger.LogTrace("Using Instance: {serverId}", serverInstance.ServerId);
+            logger.LogTrace("Acquiring exclusive lock on {serverId}", serverInstance.ServerId);
             lock (serverInstance)
             {
                 // We need to generate a message in response since we were directly referenced.
-                Write($"Generating a response...", LogSeverity.Verbose);
+                logger.LogTrace($"Generating a response...");
                 var attempts = 0;
                 while (string.IsNullOrWhiteSpace(messageToSend) && attempts++ <= 5)
                 {
                     messageToSend = serverInstance.GetNextMessage();
-                    Write($"Response: '{messageToSend}'", LogSeverity.Verbose);
+                    logger.LogTrace("Response: '{messageToSend}'", messageToSend);
                 }
-                Write($"Response generated!", LogSeverity.Verbose);
+                logger.LogTrace($"Response generated!");
             }
-            Write($"Submitting Response...", LogSeverity.Verbose);
+            logger.LogTrace($"Submitting Response...");
             return Task.FromResult(messageToSend);
         }
 
@@ -197,7 +196,7 @@ namespace Bot.Services.Communication.Responders
                 if (insensitive.Equals(triggerWord, StringComparison.OrdinalIgnoreCase) ||
                     insensitive.IndexOf(triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
                 {
-                    Write($"Trigger word found in the message... remove it and get ready to send a new message", nameof(MarkovResponder), LogSeverity.Verbose);
+                    logger.LogTrace($"Trigger word found in the message... remove it and get ready to send a new message");
                     containsTriggerWord = true;
                     messageFragments.RemoveAt(i);
                 }
@@ -205,12 +204,6 @@ namespace Bot.Services.Communication.Responders
             cleanedInput = string.Join(" ", messageFragments);
             return containsTriggerWord;
         }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            base.Write(message, nameof(MarkovResponder), severity);
-        }
-
 
         private string GetProperHistoricalMessage(SocketUserMessage message)
         {

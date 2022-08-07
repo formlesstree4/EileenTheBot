@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
+using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
 using System;
 using System.Collections.Concurrent;
@@ -19,7 +20,7 @@ namespace Bot.Services
     public sealed class UserService : IEileenService
     {
 
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<UserService> logger;
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly BetterPaginationService paginationService;
         private readonly DiscordSocketClient client;
@@ -34,7 +35,7 @@ namespace Bot.Services
             DiscordSocketClient client,
             StupidTextService stupidTextService,
             HangfireToDiscordComm hangfireToDiscordComm,
-            Func<LogMessage, Task> logger)
+            ILogger<UserService> logger)
         {
             this.userContent = new ConcurrentDictionary<ulong, EileenUserData>();
             this.profilePageCallbacks = new List<Func<ProfileCallback, Task<ProfileCallback>>>();
@@ -48,35 +49,35 @@ namespace Bot.Services
 
         public async Task InitializeService()
         {
-            Write("Initializing the UserService");
+            logger.LogInformation("Initializing the UserService");
             await LoadServiceAsync();
-            Write("Setting up recurring jobs...");
+            logger.LogInformation("Setting up recurring jobs...");
             RecurringJob.AddOrUpdate("usersAutoSave", () => SaveServiceAsync(), Cron.Hourly());
             RecurringJob.AddOrUpdate("usersUpdateServerPresence", () => UpdateUserDataServerAwareness(), Cron.Hourly());
             RecurringJob.AddOrUpdate("tellCoolswiftHello", () => hangfireToDiscordComm.SendMessageToUser(143551309776289792, "Hey mom!"), Cron.Hourly);
-            Write("UserService has been initialized");
+            logger.LogInformation("UserService has been initialized");
             await Task.Yield();
         }
 
         public async Task SaveServiceAsync()
         {
             using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
-            Write($"Saving User Data to RavenDB...");
+            logger.LogInformation("Saving User Data to RavenDB...");
             foreach (var entry in userContent)
             {
-                Write($"Saving {entry.Key}...", LogSeverity.Verbose);
+                logger.LogTrace("Saving {entry}...", entry.Key);
                 await session.StoreAsync(entry.Value, entry.Key.ToString());
             }
             await session.SaveChangesAsync();
-            Write("User Data has been saved");
+            logger.LogInformation("User Data has been saved");
         }
 
         public async Task LoadServiceAsync()
         {
             using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
-            Write($"Loading User Data from RavenDB...");
+            logger.LogInformation("Loading User Data from RavenDB...");
             var c = await session.Query<EileenUserData>().ToListAsync();
-            Write($"Discovered {c.Count} item(s) to load!");
+            logger.LogInformation("Discovered {count} item(s) to load!", c.Count);
             foreach (var userData in c)
             {
                 userContent.TryAdd(userData.UserId, userData);
@@ -90,7 +91,7 @@ namespace Bot.Services
 
         public async Task<EileenUserData> GetOrCreateUserData(ulong userId)
         {
-            Write($"Retrieving UserData for {userId}");
+            logger.LogInformation("Retrieving UserData for {userId}", userId);
             if (!userContent.ContainsKey(userId))
             {
                 userContent.TryAdd(userId, await (CreateUserContent(userId)));
@@ -103,7 +104,7 @@ namespace Bot.Services
 
         public async Task CreateUserProfileMessage(ulong userId, IInteractionContext context)
         {
-            Write($"Generating the User Profile message...");
+            logger.LogInformation($"Generating the User Profile message...");
             var userData = await GetOrCreateUserData(userId);
             var discordInfo = await (client as IDiscordClient).GetUserAsync(userId);
             var mainProfilePageBuilder =
@@ -136,24 +137,23 @@ namespace Bot.Services
 
         public async Task UpdateUserDataServerAwareness()
         {
-            Write("Synchronizing Users Server List with available Guilds");
+            logger.LogInformation("Synchronizing Users Server List with available Guilds");
             var servers = client.Guilds.ToList();
             foreach (var ud in userContent)
             {
-                Write($"Identifying Servers {ud.Key} is located on", LogSeverity.Verbose);
+                logger.LogTrace("Identifying Servers {userId} is located on", ud.Key);
                 ud.Value.ServersOn = (from c in servers
                                       where c.GetUser(ud.Key) is not null
                                       select c.Id).ToList();
-                Write($"{ud.Key} is on {ud.Value.ServersOn.Count} server(s) out of {servers.Count}", LogSeverity.Verbose);
             }
-            Write($"Synchronization Complete");
+            logger.LogTrace($"Synchronization Complete");
             BackgroundJob.Schedule(() => hangfireToDiscordComm.SendMessageToUser(105497358833336320, "Awareness Updated!"), TimeSpan.FromSeconds(1));
             await Task.Yield();
         }
 
         public void RegisterProfileCallback(Func<ProfileCallback, Task<ProfileCallback>> callback)
         {
-            Write("A profile callback is being registered with the UserService", LogSeverity.Verbose);
+            logger.LogTrace("A profile callback is being registered with the UserService");
             profilePageCallbacks.Add(callback);
         }
 
@@ -175,17 +175,17 @@ namespace Bot.Services
 
         private EileenUserData GetUserData(ulong userId)
         {
-            Write($"Retrieving UserData for {userId} from cache (aka NOT going to RavenDB)");
+            logger.LogInformation("Retrieving UserData for {userId} from cache (aka NOT going to RavenDB)", userId);
             if (!userContent.TryGetValue(userId, out var d))
             {
-                throw new ArgumentException(nameof(userId));
+                throw new ArgumentException(null, nameof(userId));
             }
             return d;
         }
 
         private async Task<EileenUserData> CreateUserContent(ulong userId)
         {
-            Write($"Creating new UserData for {userId}");
+            logger.LogInformation("Creating new UserData for {userId}", userId);
             var userData = new EileenUserData { UserId = userId };
             using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
@@ -195,12 +195,6 @@ namespace Bot.Services
             return userData;
         }
 
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(UserService), message));
-        }
-
     }
-
 
 }

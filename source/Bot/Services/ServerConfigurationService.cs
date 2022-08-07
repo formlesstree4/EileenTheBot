@@ -4,6 +4,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Hangfire;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -17,13 +18,13 @@ namespace Bot.Services
         private readonly DiscordSocketClient client;
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly ConcurrentDictionary<ulong, ServerConfigurationData> configurations;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<ServerConfigurationService> logger;
 
 
         public ServerConfigurationService(
             DiscordSocketClient client,
             RavenDatabaseService ravenDatabaseService,
-            Func<LogMessage, Task> logger)
+            ILogger<ServerConfigurationService> logger)
         {
             this.client = client ?? throw new ArgumentNullException(nameof(client));
             this.ravenDatabaseService = ravenDatabaseService ?? throw new ArgumentNullException(nameof(ravenDatabaseService));
@@ -37,35 +38,35 @@ namespace Bot.Services
 
         public async Task SaveServiceAsync()
         {
-            Write($"Saving...");
+            logger.LogInformation($"Saving...");
             using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
             {
                 foreach (var configuration in configurations)
                 {
-                    Write($"Saving {configuration.Key}...", LogSeverity.Verbose);
+                    logger.LogTrace("Saving {configuration}...", configuration.Key);
                     await session.StoreAsync(
                         entity: configuration.Value,
                         id: configuration.Key.ToString());
-                    Write($"Saved {configuration.Key}!", LogSeverity.Verbose);
+                    logger.LogTrace("Saved {configuration}!", configuration.Key);
                 }
-                Write($"Flushing changes to RavenDB...", LogSeverity.Verbose);
+                logger.LogTrace($"Flushing changes to RavenDB...");
                 await session.SaveChangesAsync();
             }
-            Write($"Saved!");
+            logger.LogInformation($"Saved!");
         }
 
         private async Task OnGuildJoined(SocketGuild arg)
         {
-            Write($"A new guild has been detected. Creating defaults...");
+            logger.LogInformation($"A new guild has been detected. Creating defaults...");
             await GetOrCreateConfigurationAsync(arg);
-            Write($"Guild configuration created.");
+            logger.LogInformation($"Guild configuration created.");
         }
 
         private async Task OnClientConnected()
         {
-            Write($"{nameof(OnClientConnected)} has been invoked. Loading configuration for {client.Guilds.Count} guild(s)");
+            logger.LogInformation("{eventName} has been invoked. Loading configuration for {guilds} guild(s)", nameof(OnClientConnected), client.Guilds.Count);
             await LoadServerConfigurations();
-            Write($"Configurations have been loaded!");
+            logger.LogInformation($"Configurations have been loaded!");
         }
 
         private async Task LoadServerConfigurations()
@@ -73,10 +74,10 @@ namespace Bot.Services
             using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession();
             foreach (var guild in client.Guilds)
             {
-                Write($"Initial load for {guild.Id}", LogSeverity.Verbose);
+                logger.LogTrace("Initial load for {guildId}", guild.Id);
                 var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
                 configurations.AddOrUpdate(guild.Id, (guildId) => data, (guildId, original) => data);
-                Write($"Loaded {guild.Id}!", LogSeverity.Verbose);
+                logger.LogTrace("Loaded {guildId}!", guild.Id);
             }
         }
 
@@ -91,7 +92,7 @@ namespace Bot.Services
 
         public async Task<ServerConfigurationData> GetOrCreateConfigurationAsync(ulong id)
         {
-            Write("Fetching Guild Configuration Data...", LogSeverity.Verbose);
+            logger.LogTrace("Fetching Guild Configuration Data...");
             return await Task.FromResult(configurations.GetOrAdd(id, guildId => new ServerConfigurationData
             {
                 ServerId = guildId,
@@ -101,9 +102,9 @@ namespace Bot.Services
 
         public async Task ReloadAll()
         {
-            Write($"Reloading ALL server configurations");
+            logger.LogInformation($"Reloading ALL server configurations");
             await LoadServerConfigurations();
-            Write($"All configurations loaded successfully");
+            logger.LogInformation($"All configurations loaded successfully");
         }
 
         public async Task ReloadGuild(ulong guildId)
@@ -115,10 +116,6 @@ namespace Bot.Services
 
         public async Task ReloadGuild(IGuild guild) => await ReloadGuild(guild.Id);
 
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(ServerConfigurationService), message));
-        }
 
     }
 

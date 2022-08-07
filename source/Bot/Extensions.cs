@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using Discord.Commands;
 using Discord.Interactions;
 
@@ -146,6 +147,8 @@ namespace Bot
             }
             return location;
         }
+
+        public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj);
 
     }
 }

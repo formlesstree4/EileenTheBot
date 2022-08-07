@@ -7,6 +7,7 @@ using Bot.Models.Dungeoneering.Special.Equipment;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Logging;
 
 namespace Bot.Services.Dungeoneering
 {
@@ -26,12 +27,12 @@ namespace Bot.Services.Dungeoneering
 
 
         private readonly RavenDatabaseService ravenDatabaseService;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<EquipmentService> logger;
         private readonly Random rng;
 
         public EquipmentService(
             RavenDatabaseService ravenDatabaseService,
-            Func<LogMessage, Task> logger,
+            ILogger<EquipmentService> logger,
             Random rng
         )
         {
@@ -43,15 +44,15 @@ namespace Bot.Services.Dungeoneering
 
         public async Task InitializeService()
         {
-            Write("Initializing...");
+            logger.LogInformation("Initializing...");
             using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_dungeoneering").OpenAsyncSession())
             {
-                Write("Loading Equipment Information...");
+                logger.LogInformation("Loading Equipment Information...");
                 var sourceData = await session.LoadAsync<EquipmentCollection>("equipment");
                 this.Equipment = sourceData.GetEquipment().ToList().AsReadOnly();
-                Write($"Successfully loaded {this.Equipment.Count:N0} monsters");
+                logger.LogInformation("Successfully loaded {equipment} equipment", Equipment.Count.ToString("N0"));
             }
-            Write("Initialized...");
+            logger.LogInformation("Initialized...");
             await Task.Yield();
         }
 
@@ -77,11 +78,6 @@ namespace Bot.Services.Dungeoneering
                         we.EquipmentLevel <= maxLevel &&
                         we.EquipmentType.Equals(type, StringComparison.OrdinalIgnoreCase)
                    select we;
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(EquipmentService), message));
         }
 
     }

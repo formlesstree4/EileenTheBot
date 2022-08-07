@@ -1,5 +1,7 @@
+using Bot.Models.ChannelCommunication;
 using Bot.Services;
 using Discord.Interactions;
+using Hangfire;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,11 +13,14 @@ namespace Bot.Modules
     {
 
         private readonly DiceRollService rollService;
+        private readonly ChannelCommunicationService channelCommunicationService;
 
         public GlobalModule(
-            DiceRollService rollService)
+            DiceRollService rollService,
+            ChannelCommunicationService channelCommunicationService)
         {
             this.rollService = rollService ?? throw new System.ArgumentNullException(nameof(rollService));
+            this.channelCommunicationService = channelCommunicationService;
         }
 
 //#pragma warning disable CS1998

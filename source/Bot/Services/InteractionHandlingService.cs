@@ -1,6 +1,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Reflection;
 using System.Threading;
@@ -12,7 +13,7 @@ namespace Bot.Services
     {
         private readonly InteractionService interactionService;
         private readonly DiscordSocketClient client;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<InteractionHandlingService> logger;
         private readonly CancellationTokenSource cts;
         private readonly IServiceProvider provider;
 
@@ -22,7 +23,7 @@ namespace Bot.Services
         public InteractionHandlingService(
             InteractionService interactionService,
             DiscordSocketClient client,
-            Func<LogMessage, Task> logger,
+            ILogger<InteractionHandlingService> logger,
             CancellationTokenSource cts,
             IServiceProvider provider)
         {
@@ -39,11 +40,11 @@ namespace Bot.Services
             {
                 try
                 {
-                    Write("Client is READY for interactions... registering...");
+                    logger.LogInformation("Client is READY for interactions... registering...");
                     interactionService.AddTypeConverter<string[]>(new TypeConverters.StringArrayTypeConverter());
                     await interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
                     await interactionService.RegisterCommandsGloballyAsync();
-                    Write("Registered GLOBAL commands, setting up event hooks...");
+                    logger.LogInformation("Registered GLOBAL commands, setting up event hooks...");
 
                     client.InteractionCreated += async interaction =>
                     {
@@ -56,22 +57,15 @@ namespace Bot.Services
                         if (result.IsSuccess) return;
                         await context.Interaction.RespondAsync($"Error: {result.ErrorReason}");
                     };
-                    Write("Hooked successfully...!");
+                    logger.LogInformation("Hooked successfully...!");
                 }
                 catch (Exception exception)
                 {
-                    Write("Failed to register commands, aborting...");
-                    Write(exception.ToString());
+                    logger.LogError(exception, "Failed to register interaction commands");
                     cts.Cancel();
                 }
             };
             await Task.CompletedTask;
-        }
-
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(InteractionHandlingService), message));
         }
 
     }

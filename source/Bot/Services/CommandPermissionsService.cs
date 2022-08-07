@@ -1,6 +1,7 @@
 using Bot.Models.CommandPermissions;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,12 +14,12 @@ namespace Bot.Services
     {
         private readonly DiscordSocketClient client;
         private readonly ServerConfigurationService serverConfigurationService;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<CommandPermissionsService> logger;
 
         public CommandPermissionsService(
             DiscordSocketClient client,
             ServerConfigurationService serverConfigurationService,
-            Func<LogMessage, Task> logger)
+            ILogger<CommandPermissionsService> logger)
         {
             this.client = client ??
                 throw new ArgumentNullException(nameof(client));
@@ -34,7 +35,7 @@ namespace Bot.Services
 
         public async Task<PermissionsEntry> GetOrCreatePermissionsAsync(ulong serverId)
         {
-            Write($"Retreiving permissions for {serverId}...");
+            logger.LogTrace("Retrieving permissions for {serverId}", serverId);
             var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(serverId);
             return configuration.GetOrAddTagData("permissions", () => CreatePermissions(serverId));
         }
@@ -46,11 +47,6 @@ namespace Bot.Services
             {
                 Permissions = new List<CommandEntry>()
             };
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(CommandPermissionsService), message));
         }
 
     }

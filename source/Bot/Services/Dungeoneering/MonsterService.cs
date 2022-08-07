@@ -2,6 +2,7 @@ using Bot.Models.Dungeoneering;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,13 +17,13 @@ namespace Bot.Services.Dungeoneering
         private readonly RavenDatabaseService ravenDatabaseService;
         private readonly EquipmentService equipmentService;
         private readonly Random random;
-        private readonly Func<LogMessage, Task> logger;
+        private readonly ILogger<MonsterService> logger;
         private readonly List<MonsterData> monsters;
 
         public MonsterService(
             RavenDatabaseService ravenDatabaseService,
             EquipmentService equipmentService,
-            Func<LogMessage, Task> logger,
+            ILogger<MonsterService> logger,
             Random rng)
         {
             this.ravenDatabaseService = ravenDatabaseService ?? throw new ArgumentNullException(nameof(ravenDatabaseService));
@@ -36,15 +37,15 @@ namespace Bot.Services.Dungeoneering
 
         public async Task InitializeService()
         {
-            Write("Initializing...");
+            logger.LogInformation("Initializing...");
             using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_dungeoneering").OpenAsyncSession())
             {
-                Write("Loading Monster Information...");
+                logger.LogInformation("Loading Monster Information...");
                 var sourceData = await session.LoadAsync<MonsterDocument>("monsterData");
                 this.monsters.AddRange(sourceData.Monsters);
-                Write($"Successfully loaded {this.monsters.Count} monsters");
+                logger.LogInformation("Successfully loaded {monsters} monsters", monsters.Count.ToString("N0"));
             }
-            Write("Initialized");
+            logger.LogInformation("Initialized");
             await Task.Yield();
         }
 
@@ -81,11 +82,6 @@ namespace Bot.Services.Dungeoneering
                 TheoreticalPower = monsterLevel
             };
             return await Task.FromResult(monster);
-        }
-
-        private void Write(string message, LogSeverity severity = LogSeverity.Info)
-        {
-            logger(new LogMessage(severity, nameof(MonsterService), message));
         }
 
         private List<Equipment> GetMonsterEquipment(int level)
