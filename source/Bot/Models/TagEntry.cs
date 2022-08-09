@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -13,16 +14,21 @@ namespace Bot.Models
         internal Dictionary<string, object> Tags { get; set; } = new Dictionary<string, object>();
 
 
-        public T GetTagData<T>(string tagName)
+        public T GetTagData<T>(string tagName) where T : new()
         {
-            if (Tags.ContainsKey(tagName) && Tags[tagName] is T output)
+            if (Tags.ContainsKey(tagName))
             {
-                return output;
+                if (Tags[tagName] is T output) return output;
+                if (Tags[tagName] is JArray)
+                {
+                    Tags[tagName] = new T();
+                    return (T)Tags[tagName];
+                }
             }
             throw new ArgumentException(tagName);
         }
 
-        public T GetOrAddTagData<T>(string tagName, Func<T> addFunc)
+        public T GetOrAddTagData<T>(string tagName, Func<T> addFunc) where T : new()
         {
             if (!Tags.ContainsKey(tagName))
             {
