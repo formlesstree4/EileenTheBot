@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <StartupObject>Bot.Program</StartupObject>
+	<InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
     <TrimmerRootAssembly Include="mscorlib" />
