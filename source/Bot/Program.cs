@@ -27,11 +27,10 @@ using System.Threading.Tasks;
 
 namespace Bot
 {
-    class Program
+    sealed class Program
     {
-        static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
-
-
+        
+        static async Task Main() => await new Program().MainAsync();
 
 
         private LogSeverity currentLogLevel = LogSeverity.Info;
@@ -41,7 +40,7 @@ namespace Bot
         public async Task MainAsync()
         {
             currentLogLevel = ParseEnvironmentLogLevel();
-            var serviceConfiguration = await ConfigureServices();
+            var serviceConfiguration = ConfigureServices();
             var services = serviceConfiguration.Item1;
             logger = services.GetRequiredService<ILogger<Program>>();
 
@@ -51,14 +50,14 @@ namespace Bot
 
             var client = services.GetRequiredService<DiscordSocketClient>();
             var cts = services.GetRequiredService<CancellationTokenSource>();
-            logger.LogTrace($"Attaching DiscordSocketClient logger to {nameof(LogAsync)}");
+            logger.LogTrace("Attaching DiscordSocketClient logger to {method}", nameof(LogAsync));
             client.Log += LogAsync;
-            logger.LogTrace($"Attaching the CommandService logger to {nameof(LogAsync)}");
+            logger.LogTrace("Attaching the CommandService logger to {method}", nameof(LogAsync));
             services.GetRequiredService<CommandService>().Log += LogAsync;
-            logger.LogTrace($"Attaching the InteractionService logger to {nameof(LogAsync)}");
+            logger.LogTrace("Attaching the InteractionService logger to {method}", nameof(LogAsync));
             services.GetRequiredService<InteractionService>().Log += LogAsync;
             logger.LogInformation("Most Discord related functionality has been setup - moving on...");
-            logger.LogInformation($"Initializing RavenDB connectivity...");
+            logger.LogInformation("Initializing RavenDB connectivity...");
             var ravenService = services.GetRequiredService<RavenDatabaseService>();
             await ravenService.InitializeService();
 
@@ -195,7 +194,7 @@ namespace Bot
             }
         }
 
-        private async Task<(ServiceProvider, IEnumerable<Type>)> ConfigureServices()
+        private static (ServiceProvider, IEnumerable<Type>) ConfigureServices()
         {
             // Let's discover all the types that implement
             // IEileenService and ensure we register them
@@ -224,7 +223,6 @@ namespace Bot
                 })
                 .AddTransient(provider => MersenneTwister.MTRandom.Create())
                 .AddSingleton<CancellationTokenSource>()
-                //.AddSingleton<Func<LogMessage, Task>>(LogAsync)
                 .AddSingleton((services) =>
                 {
                     var config = new DiscordSocketConfig

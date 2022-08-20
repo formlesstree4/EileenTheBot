@@ -188,7 +188,7 @@ namespace Bot.Modules
                 }
                 catch (ArgumentException are)
                 {
-                    logger.LogError(are, "Failed to create a Borru Post");
+                    logger.LogError(are, "Failed to create a Booru Post");
                     continue;
                 }
             }

@@ -12,15 +12,15 @@ namespace Bot.Modules
     public sealed class ProfileModule : InteractionModuleBase
     {
         private readonly UserService userService;
-        private readonly ModalHandlingService modalHandlingService;
+        private readonly InteractionHandlingService interactionHandlingService;
 
         public ProfileModule(
             UserService userService,
-            ModalHandlingService modalHandlingService)
+            InteractionHandlingService modalHandlingService)
         {
             this.userService = userService ?? throw new System.ArgumentNullException(nameof(userService));
-            this.modalHandlingService = modalHandlingService ?? throw new System.ArgumentNullException(nameof(modalHandlingService));
-            this.modalHandlingService.RegisterCallbackHandler("edit-profile", new ModalCallbackProvider(HandleEditProfileModal));
+            this.interactionHandlingService = modalHandlingService ?? throw new System.ArgumentNullException(nameof(modalHandlingService));
+            this.interactionHandlingService.RegisterCallbackHandler("edit-profile", new InteractionModalCallbackProvider(HandleEditProfileModal));
         }
 
 
