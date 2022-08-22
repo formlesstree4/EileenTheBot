@@ -34,7 +34,7 @@ namespace Bot.Modules
         public async Task SetResponderAsync([Summary("type", "The type of chat responder to use"), Autocomplete(typeof(ChatAutoCompleteHandler))] string type)
         {
             var scs = await serverConfigurationService.GetOrCreateConfigurationAsync(Context.Guild);
-            switch (type.ToLowerInvariant())
+            switch (type.ToLower())
             {
                 case "gpt":
                     scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.GPT;

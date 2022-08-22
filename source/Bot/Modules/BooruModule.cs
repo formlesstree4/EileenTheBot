@@ -201,7 +201,7 @@ namespace Bot.Modules
             var tags = new List<string>(c);
             var results = new List<string>();
             if (Context.Channel is ITextChannel t && !t.IsNsfw) tags.Add("-s");
-            foreach (var i in tags) results.Add(tagAliases.TryGetValue(i.ToLowerInvariant(), out var alias) ? alias : i);
+            foreach (var i in tags) results.Add(tagAliases.TryGetValue(i.ToLower(), out var alias) ? alias : i);
             return results.ToArray();
         }
 
@@ -215,7 +215,7 @@ namespace Bot.Modules
             };
             for (var index = 0; index < c.Length; index++)
             {
-                switch (c[index].ToLowerInvariant())
+                switch (c[index].ToLower())
                 {
                     case "--" + TakeParameter:
                         if (int.TryParse(c[index + 1], out var t))
