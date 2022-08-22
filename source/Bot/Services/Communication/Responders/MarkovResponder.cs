@@ -192,7 +192,7 @@ namespace Bot.Services.Communication.Responders
             var messageFragments = message.CleanContent.Split(" ", StringSplitOptions.RemoveEmptyEntries).ToList();
             for (var i = messageFragments.Count - 1; i >= 0; i--)
             {
-                var insensitive = messageFragments[i].ToLowerInvariant();
+                var insensitive = messageFragments[i].ToLower();
                 if (insensitive.Equals(triggerWord, StringComparison.OrdinalIgnoreCase) ||
                     insensitive.IndexOf(triggerWord, StringComparison.OrdinalIgnoreCase) > -1)
                 {

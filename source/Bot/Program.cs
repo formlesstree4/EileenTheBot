@@ -137,7 +137,7 @@ namespace Bot
         }
 
         
-        private static LogSeverity ParseEnvironmentLogLevel() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant() switch
+        private static LogSeverity ParseEnvironmentLogLevel() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpper() switch
         {
             "CRITICAL" or "0" => LogSeverity.Critical,
             "ERROR" or "1" => LogSeverity.Error,
@@ -147,7 +147,7 @@ namespace Bot
             "INFO" or "3" or null or _ => LogSeverity.Info
         };
 
-        private static Hangfire.Logging.LogLevel ParseEnvironmentLogLevelForHangfire() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpperInvariant() switch
+        private static Hangfire.Logging.LogLevel ParseEnvironmentLogLevelForHangfire() => Environment.GetEnvironmentVariable("LogLevel")?.ToUpper() switch
         {
             "CRITICAL" or "0" => Hangfire.Logging.LogLevel.Fatal,
             "ERROR" or "1" => Hangfire.Logging.LogLevel.Error,
