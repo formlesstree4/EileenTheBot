@@ -109,7 +109,7 @@ namespace Bot.Services.Communication
             logger.LogTrace($"Looking for trigger word in the message...");
             var shouldRespond = await DoesContainTriggerWord(message, instanceId);
 
-            if (shouldRespond.Item1 || canRespondToMessage)
+            if (shouldRespond.Item1 && canRespondToMessage)
             {
                 var response = await GenerateResponse(shouldRespond.Item2, message, instanceId);
                 if (!string.IsNullOrWhiteSpace(response))

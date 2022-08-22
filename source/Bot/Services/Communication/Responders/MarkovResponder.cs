@@ -116,43 +116,23 @@ namespace Bot.Services.Communication.Responders
             return chains.TryGetValue(chainId, out msi);
         }
 
-        internal override async Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId)
-        {
-            // may not be necessary to send this, but, it seems appropriate
-            logger.LogTrace("Checking to see if the message contains the appropriate trigger word...");
-            bool containsTriggerWord = DoesMessageContainProperWord(message, out _);
-            logger.LogTrace("{containsTriggerWord}: {containsTriggerWord}", nameof(containsTriggerWord), containsTriggerWord);
+        internal override Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId) => Task.FromResult(true);
 
-            ulong botId = Client.CurrentUser.Id;
-            logger.LogTrace("Looking to see if the bot was mentioned...");
-            containsTriggerWord |= message.MentionedUsers.Any(s => s.Id == botId); // The bot was mentioned.
-            logger.LogTrace("Looking to see if the message was responded to (via Discord's resposne/reply system)");
-            if (!containsTriggerWord && (message?.Reference?.MessageId.IsSpecified ?? false))
-            {
-                // AFAIK there is no reason that it's not a message channel
-                logger.LogTrace("Fetching channel...");
-                IMessageChannel messageChannel = (IMessageChannel)Client.GetChannel(message.Reference.ChannelId);
-                logger.LogTrace("Fetching message...");
-                IMessage msg = await messageChannel.GetMessageAsync(message.Reference.MessageId.Value);
-                logger.LogTrace("Got message, checking message author ({authorId} == {botId})", msg.Author.Id, botId);
-                if (msg.Author.Id == botId) containsTriggerWord = true;
-            }
-            containsTriggerWord |= message.Channel is IDMChannel;
-            var serverInstance = chains.GetOrAdd(
-                instanceId,
-                s =>
-                {
-                    logger.LogTrace("Creating new chain for {server}", s);
-                    return new MarkovServerInstance(s, Enumerable.Empty<string>());
-                });
-            serverInstance.AddHistoricalMessage(GetProperHistoricalMessage(message));
-            return containsTriggerWord;
-        }
-
-        internal override Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId)
+        internal override async Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId)
         {
-            var canResponse = DoesMessageContainProperWord(message, out _);
-            return Task.FromResult(canResponse ? (canResponse, Raven.Configuration.MarkovTrigger) : (canResponse, ""));
+            var botId = Client.CurrentUser.Id;
+
+            // The bot can respond if...
+            // 1. The message contains the trigger word [usually Erector]
+            // 2. The bot was mentioned in the message
+            // 3. Someone is responding to a message from the bot
+            // 4. The channel is a private message
+            var canRespond = DoesMessageContainProperWord(message, out _);
+            canRespond |= message.MentionedUsers.Select(c => c.Id).Contains(botId);
+            canRespond |= await IsMessageRespondingToBot(message);
+            canRespond |= message.Channel is IDMChannel;
+
+            return canRespond ? (canRespond, Raven.Configuration.MarkovTrigger) : (canRespond, "");
         }
 
         internal override Task<string> GenerateResponse(string triggerWord, SocketUserMessage message, ulong instanceId)
@@ -203,6 +183,22 @@ namespace Bot.Services.Communication.Responders
             }
             cleanedInput = string.Join(" ", messageFragments);
             return containsTriggerWord;
+        }
+
+        private async Task<bool> IsMessageRespondingToBot(SocketUserMessage message)
+        {
+            var botId = Client.CurrentUser.Id;
+            if ((message?.Reference?.MessageId.IsSpecified ?? false))
+            {
+                // AFAIK there is no reason that it's not a message channel
+                logger.LogTrace("Fetching channel...");
+                IMessageChannel messageChannel = (IMessageChannel)Client.GetChannel(message.Reference.ChannelId);
+                logger.LogTrace("Fetching message...");
+                IMessage msg = await messageChannel.GetMessageAsync(message.Reference.MessageId.Value);
+                logger.LogTrace("Got message, checking message author ({authorId} == {botId})", msg.Author.Id, botId);
+                if (msg.Author.Id == botId) return true;
+            }
+            return false;
         }
 
         private string GetProperHistoricalMessage(SocketUserMessage message)
