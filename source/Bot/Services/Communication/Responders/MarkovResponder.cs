@@ -116,7 +116,8 @@ namespace Bot.Services.Communication.Responders
             return chains.TryGetValue(chainId, out msi);
         }
 
-        internal override Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId) => Task.FromResult(true);
+        internal override Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId) =>
+            Task.FromResult((message.Channel is ITextChannel t && !t.IsNsfw) || true);
 
         internal override async Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId)
         {
