@@ -161,6 +161,9 @@ namespace Bot.Services.Communication.Responders
                 logger.LogTrace($"Response generated!");
             }
             logger.LogTrace($"Submitting Response...");
+
+            logger.LogTrace("Add more to learn...");
+            serverInstance.AddHistoricalMessage(GetProperHistoricalMessage(message));
             return Task.FromResult(messageToSend);
         }
 
