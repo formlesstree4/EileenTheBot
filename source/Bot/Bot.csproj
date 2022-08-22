@@ -34,17 +34,10 @@
     </None>
   </ItemGroup>
 
-  <Target Name="SetSourceRevisionId" BeforeTargets="InitializeSourceControlInformation">
-    <Exec Command="git describe --long --always --dirty --exclude='*' --abbrev=40"
-          ConsoleToMSBuild="True" IgnoreExitCode="False">
-      <Output PropertyName="SourceRevisionId" TaskParameter="ConsoleOutput" />
-    </Exec>
-  </Target>
-
   <Target Name="SetHash" AfterTargets="InitializeSourceControlInformation">
     <ItemGroup>
       <AssemblyAttribute Include="Bot.GitHashAttribute">
-        <_Parameter1>$(SourceRevisionId)</_Parameter1>
+        <_Parameter1>$(GITHUB_SHA)</_Parameter1>
       </AssemblyAttribute>
     </ItemGroup>
   </Target>
