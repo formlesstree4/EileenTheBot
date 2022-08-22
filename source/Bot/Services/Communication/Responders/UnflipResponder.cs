@@ -19,7 +19,7 @@ namespace Bot.Services.Communication.Responders
 
         internal override bool CanRespondInNsfw => true;
 
-        internal override Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId) => Task.FromResult(true);
+        internal override Task<bool> CanRespondToMessage(SocketUserMessage message, ulong instanceId) => Task.FromResult(message.CleanContent.Contains("(╯°□°）╯︵ ┻━┻"));
 
         internal override Task<(bool, string)> DoesContainTriggerWord(SocketUserMessage message, ulong instanceId)
         {
