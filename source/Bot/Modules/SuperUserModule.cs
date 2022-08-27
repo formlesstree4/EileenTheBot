@@ -1,8 +1,10 @@
+using Bot.Models.ChannelCommunication;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Communication.Responders;
 using Discord;
 using Discord.Interactions;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -207,7 +209,7 @@ namespace Bot.Modules
             }
 
             [SlashCommand("train", "Trains a new Markov Chain", runMode: RunMode.Async), RequireContext(ContextType.Guild)]
-            public async Task TrainChain(int length = 100)
+            public async Task TrainChain([Summary("length", "How many historical messages to pull")]int length = 100)
             {
                 if (!markovResponder.TryGetServerInstance(Context.Guild.Id, out var chain))
                 {
@@ -230,8 +232,86 @@ namespace Bot.Modules
         /// Sub-module for the auto-communication shit
         /// </summary>
         [Group("communications", "Auto-communication messages")]
-        public sealed class CommunicationModule
+        public sealed class CommunicationModule : InteractionModuleBase
         {
+            private readonly ChannelCommunicationService channelCommunicationService;
+            private readonly InteractionHandlingService interactionHandlingService;
+
+            public CommunicationModule(
+                ChannelCommunicationService channelCommunicationService, InteractionHandlingService interactionHandlingService)
+            {
+                this.channelCommunicationService = channelCommunicationService ?? throw new ArgumentNullException(nameof(channelCommunicationService));
+                this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
+            }
+
+
+            [SlashCommand("create", "Creates a repeatable message to run on the given CRON job", runMode: RunMode.Async), RequireContext(ContextType.Guild)]
+            public async Task ScheduleRepeatableMessage()
+            {
+                var callbackId = $"repeat-message-{Guid.NewGuid()}";
+                var modalBuilder = new ModalBuilder()
+                    .WithTitle($"Create Repeatable Message (for channel #{Context.Channel.Name})")
+                    .WithCustomId(callbackId)
+                    .AddTextInput("Message Name", "job-name", placeholder: "A unique name for the job. If left blank, a random ID will be generated instead")
+                    .AddTextInput("CRON expression", "cron-string", placeholder: "A valid CRON expression", required: true)
+                    .AddTextInput("Message", "repeat-message", placeholder: "This is the message you will have sent", required: true);
+
+                interactionHandlingService.RegisterCallbackHandler(callbackId, new InteractionModalCallbackProvider(async (context) =>
+                {
+                    var jobName = context.Data.Components.First(d => d.CustomId.Equals("job-name", StringComparison.OrdinalIgnoreCase)).Value;
+                    var cron = context.Data.Components.First(d => d.CustomId.Equals("cron-string", StringComparison.OrdinalIgnoreCase)).Value;
+                    var message = context.Data.Components.First(d => d.CustomId.Equals("repeat-message", StringComparison.OrdinalIgnoreCase)).Value;
+
+                    if (string.IsNullOrWhiteSpace(jobName))
+                    {
+                        jobName = Guid.NewGuid().ToString();
+                    }
+
+                    bool isCronExpression = false;
+                    Cronos.CronExpression cronExpression = null;
+
+                    try
+                    {
+                        cronExpression = Cronos.CronExpression.Parse(cron);
+                        isCronExpression = true;
+                    }
+                    catch (Exception) { }
+
+                    await channelCommunicationService.ScheduleNewTask(
+                        Context.Guild,
+                        new ChannelCommuncationJobEntry
+                        {
+                            ChannelId = Context.Channel.Id,
+                            Created = DateTime.Now,
+                            GuildId = Context.Guild.Id,
+                            HasRun = false,
+                            JobName = jobName,
+                            Message = message,
+                            Repeats = isCronExpression,
+                            WhenToRun = cron
+                        });
+
+                    if (isCronExpression)
+                    {
+                        await context.RespondAsync($"Your job has been scheduled successfully and will run at {cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"))}. Job ID: {jobName}", ephemeral: true);
+                    }
+                    else
+                    {
+                        await context.RespondAsync($"Your job has been scheduled successfully and will run in approximately {cron} minute(s). Job ID: {jobName}", ephemeral: true);
+                    }
+                }, true));
+
+                await RespondWithModalAsync(modalBuilder.Build());
+            }
+
+            [SlashCommand("remove", "Removes a scheduled message", runMode: RunMode.Async), RequireContext(ContextType.Guild)]
+            public async Task RemoveRepeatableMessage(
+                [Summary("Job", "The name of the job to cancel"), Autocomplete(typeof(MessageRemoverAutocompleteHandler))] string jobName)
+            {
+                // Falkenhoof: Instead of remove job why not put wolf job instead
+                await channelCommunicationService.RemoveJob(Context.Guild, jobName);
+                await RespondAsync($"Job {jobName} has been removed", ephemeral: true);
+            }
 
         }
 
@@ -261,8 +341,7 @@ namespace Bot.Modules
                 IParameterInfo parameter,
                 IServiceProvider services)
             {
-                var macroService = (MacroService)services.GetService(typeof(MacroService));
-
+                var macroService = services.GetRequiredService<MacroService>();
                 var macros = await macroService.GetServerMacros(context.Guild);
                 var results = new List<AutocompleteResult>();
                 foreach (var macro in macros)
@@ -270,6 +349,20 @@ namespace Bot.Modules
                     results.Add(new AutocompleteResult(macro.Macro, macro.Macro));
                 }
                 return await Task.FromResult(AutocompletionResult.FromSuccess(results));
+            }
+        }
+
+        private sealed class MessageRemoverAutocompleteHandler : AutocompleteHandler
+        {
+            public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+                IInteractionContext context,
+                IAutocompleteInteraction autocompleteInteraction,
+                IParameterInfo parameter,
+                IServiceProvider services)
+            {
+                var ccs = services.GetRequiredService<ChannelCommunicationService>();
+                var results = await ccs.GetServerJobs(context.Guild);
+                return AutocompletionResult.FromSuccess(results.Select(r => new AutocompleteResult(r.JobName, r.JobName)));
             }
         }
 

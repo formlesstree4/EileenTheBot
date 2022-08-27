@@ -79,7 +79,7 @@ namespace Bot.Services
         {
             if (jobEntry.Repeats)
             {
-                RecurringJob.AddOrUpdate(jobEntry.JobName, () => RunJobTask(jobEntry), jobEntry.WhenToRun);
+                RecurringJob.AddOrUpdate(jobEntry.JobName, () => RunJobTask(jobEntry), jobEntry.WhenToRun, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
             }
             else
             {
