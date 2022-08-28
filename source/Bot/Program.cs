@@ -47,7 +47,6 @@ namespace Bot
             logger.LogTrace("Entering MainAsync - Good Day");
             logger.LogTrace("Initializing Eileen... please wait!");
             logger.LogTrace("Current Log Level: {currentLogLevel}", currentLogLevel);
-            logger.LogInformation("Eileen - Commit Hash {hash}", Assembly.GetEntryAssembly().GetCustomAttribute<GitHashAttribute>().Hash);
 
             var client = services.GetRequiredService<DiscordSocketClient>();
             var cts = services.GetRequiredService<CancellationTokenSource>();

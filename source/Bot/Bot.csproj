@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
@@ -33,14 +33,4 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <Target Name="SetHash" AfterTargets="InitializeSourceControlInformation">
-    <ItemGroup>
-      <AssemblyAttribute Include="Bot.GitHashAttribute">
-        <_Parameter1>$(GITHUB_SHA)</_Parameter1>
-      </AssemblyAttribute>
-    </ItemGroup>
-  </Target>
-
-
 </Project>
