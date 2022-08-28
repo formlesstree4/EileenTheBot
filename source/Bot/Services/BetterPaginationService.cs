@@ -20,9 +20,6 @@ namespace Bot.Services
     [Summary("A simplified pagination service that handles rotating embeds using Reactions")]
     public sealed class BetterPaginationService : IDisposable, IEileenService
     {
-
-        private const string AGREE = "👍";
-        private const string DISAGREE = "👎";
         private const string FIRST = "⏮";
         private const string BACK = "◀";
         private const string NEXT = "▶";
@@ -37,6 +34,7 @@ namespace Bot.Services
         private readonly ConcurrentDictionary<ulong, BetterPaginationMessage> _messages;
         private readonly DiscordSocketClient _client;
         private readonly ILogger<BetterPaginationService> logger;
+        private readonly InteractionHandlingService interactionHandlingService;
         private readonly Timer _maintenanceTimer;
 
 
@@ -45,14 +43,17 @@ namespace Bot.Services
         /// </summary>
         /// <param name="dsc">A reference to the <see cref="DiscordSocketClient"/></param>
         /// <param name="logger">A logging function</param>
-        public BetterPaginationService(DiscordSocketClient dsc, ILogger<BetterPaginationService> logger)
+        public BetterPaginationService(
+            DiscordSocketClient dsc,
+            ILogger<BetterPaginationService> logger,
+            InteractionHandlingService interactionHandlingService)
         {
             _messages = new ConcurrentDictionary<ulong, BetterPaginationMessage>();
             _maintenanceTimer = new Timer(HandleMaintenance, null, 2000, 2000);
             logger.LogInformation("Initializing...");
             _client = dsc;
             this.logger = logger;
-            _client.ReactionAdded += OnReactionAdded;
+            this.interactionHandlingService = interactionHandlingService;
             _client.MessageDeleted += OnMessageDeleted;
             logger.LogInformation("{reaction} and {message} have been hooked", nameof(_client.ReactionAdded), nameof(_client.MessageDeleted));
         }
@@ -64,7 +65,6 @@ namespace Bot.Services
         /// </summary>
         public void Dispose()
         {
-            _client.ReactionAdded -= OnReactionAdded;
             _client.MessageDeleted -= OnMessageDeleted;
         }
 
@@ -80,59 +80,13 @@ namespace Bot.Services
             try
             {
                 logger.LogTrace("{message}", message.ToJson());
-                await context.Interaction.RespondAsync(embed: message.CurrentPage);
-                var paginatedMessage = await context.Interaction.GetOriginalResponseAsync();
-#pragma warning disable CS4014
-                Task.Run(async () =>
-                {
-                    await paginatedMessage.AddReactionsAsync(new[] { new Emoji(FIRST), new Emoji(BACK), new Emoji(NEXT), new Emoji(END), new Emoji(STOP) });
-                    logger.LogTrace("Monitoring {messageId}", paginatedMessage.Id);
-                });
-#pragma warning restore CS4014
-                _messages.TryAdd(paginatedMessage.Id, message);
-                return paginatedMessage;
+                return await CreateUserMessageAndButtons(context, message);
             }
             catch (Discord.Net.HttpException httpEx)
             {
                 logger.LogError(httpEx, "An error occurred sending the paginated message");
                 return null;
             }
-        }
-
-        /// <summary>
-        ///     Handles incoming reaction additions.
-        /// </summary>
-        /// <param name="messageParam">A possibly cached instance of a <see cref="IUserMessage"/></param>
-        /// <param name="channel">The <see cref="ISocketMessageChannel"/> implementation that the reaction was added from</param>
-        /// <param name="reaction">A reference to the <see cref="SocketReaction"/></param>
-        /// <returns>A promise to react to the <see cref="SocketReaction"/></returns>
-        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> messageParam, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
-        {
-            var message = await (messageParam.GetOrDownloadAsync());
-
-            if (!await HandleMessageValidation(message, reaction)) return;
-            if (!_messages.TryGetValue(message.Id, out BetterPaginationMessage betterMessage))
-            {
-                logger.LogWarning("An expired message was reacted to. Discarding / ignoring for the time being");
-                await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
-                return;
-            }
-
-            try
-            {
-                logger.LogTrace("Removing {reaction} from the message.", reaction.Emote.Name);
-                await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
-            }
-            catch (Discord.Net.HttpException httpEx)
-            {
-                logger.LogError(httpEx, "An error occurred sending the paginated message");
-                return;
-            }
-
-            // Now that we're here, we can do everything we need to do.
-            logger.LogTrace("Invoking {service} to handle the details.", nameof(HandleEmojiReaction));
-            await HandleEmojiReaction(message, reaction, betterMessage);
-
         }
 
         /// <summary>
@@ -171,123 +125,6 @@ namespace Bot.Services
             }
         }
 
-        /// <summary>
-        ///     Performs some validation of the incoming <see cref="IUserMessage"/> that was reacted to.
-        /// </summary>
-        /// <param name="message">The <see cref="IUserMessage"/> implementation that was reacted to</param>
-        /// <param name="reaction">The <see cref="SocketReaction"/> which contains the reaction details</param>
-        /// <returns>A boolean value that indicates if <paramref name="message"/> can be processed</returns>
-        private async Task<bool> HandleMessageValidation(IUserMessage message, SocketReaction reaction)
-        {
-            if (message is null)
-            {
-                logger.LogTrace("The message was not found, or, something went wrong retrieveing the message. This is informational but if it keeps happening it might be noteworthy");
-                return false;
-            }
-            if (!reaction.User.IsSpecified)
-            {
-                logger.LogTrace("The message {messageId} did not have a User specified", message.Id);
-                return false;
-            }
-            if (!_messages.TryGetValue(message.Id, out BetterPaginationMessage betterMessage))
-            {
-                logger.LogTrace("The message {messageId} was not a known tracked message", message.Id);
-                return false;
-            }
-            if (!betterMessage.User.Id.Equals(reaction.UserId))
-            {
-                logger.LogWarning("Expected User ID: {exected}. Actual User ID: {actual}. Discarding", betterMessage.User.Id, reaction.UserId);
-                //await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Expected User ID: {betterMessage.User.Id}. Actual User ID: {reaction.UserId}. Discarding."));
-                if (!reaction.UserId.Equals(_client.CurrentUser.Id))
-                {
-                    await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
-                }
-                return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        ///     Ensures <paramref name="message"/> contains the necessary <see cref="Emoji"/>
-        /// </summary>
-        /// <param name="message">The <see cref="IUserMessage"/> implementation to verify</param>
-        /// <returns></returns>
-        private static async Task EnsureMessageHasReactions(IUserMessage message)
-        {
-            if (!message.Reactions.ContainsKey(new Emoji(FIRST))) await message.AddReactionAsync(new Emoji(FIRST));
-            if (!message.Reactions.ContainsKey(new Emoji(BACK))) await message.AddReactionAsync(new Emoji(BACK));
-            if (!message.Reactions.ContainsKey(new Emoji(NEXT))) await message.AddReactionAsync(new Emoji(NEXT));
-            if (!message.Reactions.ContainsKey(new Emoji(END))) await message.AddReactionAsync(new Emoji(END));
-            if (!message.Reactions.ContainsKey(new Emoji(STOP))) await message.AddReactionAsync(new Emoji(STOP));
-        }
-
-        /// <summary>
-        ///     Handles the various reaction branches.
-        /// </summary>
-        /// <param name="message">The <see cref="IUserMessage"/> implementation that was reacted to</param>
-        /// <param name="reaction">The <see cref="SocketReaction"/> which contains the reaction details</param>
-        /// <param name="betterMessage">The <see cref="BetterPaginationMessage"/> that's the backing data source for <see cref="IUserMessage"/></param>
-        /// <returns></returns>
-        private async Task HandleEmojiReaction(IUserMessage message, SocketReaction reaction, BetterPaginationMessage betterMessage)
-        {
-            var purge = false; var show = false; var updateMessage = false;
-            switch (reaction.Emote.Name)
-            {
-                case FIRST:
-                    if (betterMessage.CurrentPageIndex == 0) return;
-                    //await WriteLog(new LogMessage(LogSeverity.Info, nameof(BetterPaginationService), $"Jumping to Page 0."));
-                    logger.LogTrace("Message {id}: Jumping to Page 0", message.Id);
-                    betterMessage.CurrentPageIndex = 0; updateMessage = true;
-                    break;
-                case BACK:
-                    if (betterMessage.CurrentPageIndex == 0) return;
-                    logger.LogTrace("Message {id}: Moving to Page {page}", message.Id, betterMessage.CurrentPageIndex - 1);
-                    betterMessage.CurrentPageIndex--; updateMessage = true;
-                    break;
-                case NEXT:
-                    if (betterMessage.CurrentPageIndex == betterMessage.Pages.Count - 1) return;
-                    logger.LogTrace("Message {id}: Moving to Page {page}", message.Id, betterMessage.CurrentPageIndex + 1);
-                    betterMessage.CurrentPageIndex++; updateMessage = true;
-                    break;
-                case END:
-                    if (betterMessage.CurrentPageIndex == betterMessage.Pages.Count - 1) return;
-                    logger.LogTrace("Message {id}: Moving to Page {page}", message.Id, betterMessage.Pages.Count - 1);
-                    betterMessage.CurrentPageIndex = betterMessage.Pages.Count - 1; updateMessage = true;
-                    break;
-                case STOP:
-                case DISAGREE:
-                    purge = true;
-                    logger.LogTrace("Message {id}: Deletion Request", message.Id);
-                    break;
-                case AGREE:
-                    logger.LogTrace("Message {id} is now visible to {channel}", message.Id, message.Channel.Name);
-                    show = true; updateMessage = true;
-                    break;
-                default:
-                    logger.LogTrace("Invalid or unknown reaction ({reaction})", reaction.Emote.Name);
-                    break;
-            }
-            if (purge)
-            {
-                logger.LogTrace("Attempting to delete {messageId}", message.Id);
-                await message.DeleteAsync();
-                return;
-            }
-            if (updateMessage)
-            {
-                logger.LogInformation("Message {messageId} is moving to Page {currentPageIndex}", message.Id, betterMessage.CurrentPageIndex);
-                await message.ModifyAsync(msg => msg.Embed = betterMessage.CurrentPage);
-
-                if (show && !message.Reactions.ContainsKey(new Emoji(FIRST)))
-                {
-                    await message.RemoveAllReactionsAsync();
-                    await EnsureMessageHasReactions(message);
-                }
-
-            }
-
-        }
-
         private void HandleMaintenance(object state)
         {
             var messageIds = _messages.Keys.ToList();
@@ -302,6 +139,71 @@ namespace Bot.Services
                 }
             }
         }
+
+        private async Task<IUserMessage> CreateUserMessageAndButtons(IInteractionContext context, BetterPaginationMessage message)
+        {
+            var messageGuid = Guid.NewGuid();
+            var buttonBuilder = CreateButtonBuilder(message, messageGuid);
+            await context.Interaction.RespondAsync(embed: message.CurrentPage, components: buttonBuilder.Build());
+            var discordMessage = await context.Interaction.GetOriginalResponseAsync();
+            HookUpInteractionButtons(messageGuid, message, discordMessage);
+            return discordMessage;
+        }
+
+        private void HookUpInteractionButtons(
+            Guid messageGuid,
+            BetterPaginationMessage message,
+            IUserMessage discordMessage)
+        {
+            _messages.TryAdd(discordMessage.Id, message);
+
+            interactionHandlingService.RegisterCallbackHandler($"FIRST-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (m.User != null && m.User.Id != smc.User.Id) return;
+                m.CurrentPageIndex = 0;
+                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+            }));
+            interactionHandlingService.RegisterCallbackHandler($"BACK-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (m.User != null && m.User.Id != smc.User.Id) return;
+                m.CurrentPageIndex--;
+                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+            }));
+            interactionHandlingService.RegisterCallbackHandler($"NEXT-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (m.User != null && m.User.Id != smc.User.Id) return;
+                m.CurrentPageIndex++;
+                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+            }));
+            interactionHandlingService.RegisterCallbackHandler($"END-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (m.User != null && m.User.Id != smc.User.Id) return;
+                m.CurrentPageIndex = m.Pages.Count - 1;
+                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+            }));
+            interactionHandlingService.RegisterCallbackHandler($"STOP-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (m.User != null && m.User.Id != smc.User.Id) return;
+                await smc.DeleteOriginalResponseAsync();
+                _messages.TryRemove(smc.Id, out _);
+            }));
+        }
+
+        private static ComponentBuilder CreateButtonBuilder(BetterPaginationMessage message, Guid messageGuid)
+        {
+            return new ComponentBuilder()
+                .WithButton(FIRST, $"FIRST-{messageGuid}")
+                .WithButton(BACK, $"BACK-{messageGuid}", disabled: message.CurrentPageIndex == 0)
+                .WithButton(NEXT, $"NEXT-{messageGuid}", disabled: message.CurrentPageIndex == message.Pages.Count - 1)
+                .WithButton(END, $"END-{messageGuid}")
+                .WithButton(STOP, $"STOP-{messageGuid}");
+        }
+
 
     }
 
