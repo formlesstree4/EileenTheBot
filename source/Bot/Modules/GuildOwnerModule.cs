@@ -230,42 +230,105 @@ namespace Bot.Modules
 
         }
 
-
-        [SlashCommand("schedule", "Schedules a message to be sent to this channel", runMode: RunMode.Async)]
-        public async Task ScheduleAsync(
-            [Summary("name", "The name of the job")] string jobName,
-            [Summary("message", "The message to send")] string message,
-            [Summary("expression", "CRON or offset in minutes")] string expression,
-            [Summary("repeats", "If true, expression is a CRON thing")] bool repeats)
+        /// <summary>
+        /// Sub-module for the auto-communication shit
+        /// </summary>
+        [Group("communications", "Auto-communication messages")]
+        public sealed class CommunicationModule : InteractionModuleBase
         {
-            var job = new ChannelCommuncationJobEntry
+            private readonly ChannelCommunicationService channelCommunicationService;
+            private readonly InteractionHandlingService interactionHandlingService;
+
+            public CommunicationModule(
+                ChannelCommunicationService channelCommunicationService, InteractionHandlingService interactionHandlingService)
             {
-                ChannelId = Context.Channel.Id,
-                Created = System.DateTime.Now,
-                GuildId = Context.Guild.Id,
-                HasRun = false,
-                JobName = jobName,
-                Message = message,
-                Repeats = repeats,
-                WhenToRun = expression
-            };
-            if (!repeats && !double.TryParse(expression, out _))
-            {
-                await RespondAsync($"A non-repeating message 'expression' needs to be numeric value. {expression} is not a valid number", ephemeral: true);
-                return;
+                this.channelCommunicationService = channelCommunicationService ?? throw new ArgumentNullException(nameof(channelCommunicationService));
+                this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
             }
-            if (repeats)
+
+
+            [SlashCommand("create", "Creates a repeatable message to run on the given CRON job", runMode: RunMode.Async), RequireContext(ContextType.Guild)]
+            public async Task ScheduleRepeatableMessage()
             {
-                try
+                var callbackId = $"repeat-message-{Guid.NewGuid()}";
+                var modalBuilder = new ModalBuilder()
+                    .WithTitle($"Create Repeatable Message (for channel #{Context.Channel.Name})")
+                    .WithCustomId(callbackId)
+                    .AddTextInput("Message Name", "job-name", placeholder: "A unique name for the job. If left blank, a random ID will be generated instead")
+                    .AddTextInput("CRON expression", "cron-string", placeholder: "A valid CRON expression", required: true)
+                    .AddTextInput("Message", "repeat-message", placeholder: "This is the message you will have sent", required: true);
+
+                interactionHandlingService.RegisterCallbackHandler(callbackId, new InteractionModalCallbackProvider(async (context) =>
                 {
-                    Cronos.CronExpression.Parse(expression);
-                }
-                catch (System.Exception error)
-                {
-                    await RespondAsync($"The cron expression '{expression}' could not be parsed: {error.Message}");
-                }
+                    var jobName = context.Data.Components.First(d => d.CustomId.Equals("job-name", StringComparison.OrdinalIgnoreCase)).Value;
+                    var cron = context.Data.Components.First(d => d.CustomId.Equals("cron-string", StringComparison.OrdinalIgnoreCase)).Value;
+                    var message = context.Data.Components.First(d => d.CustomId.Equals("repeat-message", StringComparison.OrdinalIgnoreCase)).Value;
+
+                    if (string.IsNullOrWhiteSpace(jobName))
+                    {
+                        jobName = Guid.NewGuid().ToString();
+                    }
+
+                    bool isCronExpression = false;
+                    Cronos.CronExpression cronExpression = null;
+
+                    try
+                    {
+                        cronExpression = Cronos.CronExpression.Parse(cron);
+                        isCronExpression = true;
+                    }
+                    catch (Exception) { }
+
+                    await channelCommunicationService.ScheduleNewTask(
+                        Context.Guild,
+                        new ChannelCommuncationJobEntry
+                        {
+                            ChannelId = Context.Channel.Id,
+                            Created = DateTime.Now,
+                            GuildId = Context.Guild.Id,
+                            HasRun = false,
+                            JobName = jobName,
+                            Message = message,
+                            Repeats = isCronExpression,
+                            WhenToRun = cron
+                        });
+
+                    if (isCronExpression)
+                    {
+                        await context.RespondAsync($"Your job has been scheduled successfully and will run at {cronExpression.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"))}. Job ID: {jobName}", ephemeral: true);
+                    }
+                    else
+                    {
+                        await context.RespondAsync($"Your job has been scheduled successfully and will run in approximately {cron} minute(s). Job ID: {jobName}", ephemeral: true);
+                    }
+                }, true));
+
+                await RespondWithModalAsync(modalBuilder.Build());
             }
-            await channelCommunicationService.ScheduleNewTask(Context.Guild, job);
+
+            [SlashCommand("remove", "Removes a scheduled message", runMode: RunMode.Async), RequireContext(ContextType.Guild)]
+            public async Task RemoveRepeatableMessage(
+                [Summary("Job", "The name of the job to cancel"), Autocomplete(typeof(MessageRemoverAutocompleteHandler))] string jobName)
+            {
+                // Falkenhoof: Instead of remove job why not put wolf job instead
+                await channelCommunicationService.RemoveJob(Context.Guild, jobName);
+                await RespondAsync($"Job {jobName} has been removed", ephemeral: true);
+            }
+
+        }
+
+        private sealed class MessageRemoverAutocompleteHandler : AutocompleteHandler
+        {
+            public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
+                IInteractionContext context,
+                IAutocompleteInteraction autocompleteInteraction,
+                IParameterInfo parameter,
+                IServiceProvider services)
+            {
+                var ccs = services.GetRequiredService<ChannelCommunicationService>();
+                var results = await ccs.GetServerJobs(context.Guild);
+                return AutocompletionResult.FromSuccess(results.Select(r => new AutocompleteResult(r.JobName, r.JobName)));
+            }
         }
 
     }
