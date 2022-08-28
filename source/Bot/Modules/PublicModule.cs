@@ -1,7 +1,8 @@
-using Bot.Models.ChannelCommunication;
 using Bot.Services;
+using Discord;
 using Discord.Interactions;
-using Hangfire;
+using Discord.WebSocket;
+using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,13 +15,16 @@ namespace Bot.Modules
 
         private readonly DiceRollService rollService;
         private readonly ChannelCommunicationService channelCommunicationService;
+        private readonly InteractionHandlingService interactionHandlingService;
 
         public GlobalModule(
             DiceRollService rollService,
-            ChannelCommunicationService channelCommunicationService)
+            ChannelCommunicationService channelCommunicationService,
+            InteractionHandlingService interactionHandlingService)
         {
             this.rollService = rollService ?? throw new System.ArgumentNullException(nameof(rollService));
             this.channelCommunicationService = channelCommunicationService;
+            this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
         }
 
 //#pragma warning disable CS1998
@@ -61,20 +65,39 @@ namespace Bot.Modules
             [Summary("expression", "The die expression to roll")] string expression,
             [Summary("private", "True or false for the roll being hidden")] bool isPrivate = true)
         {
+            var diceExpression = RollDiceAndGetBackString(expression);
+            var rerollId = Guid.NewGuid().ToString();
+            var buttonBuilder = new ComponentBuilder().WithButton(emote: new Emoji("🎲"), customId: rerollId);
+
+            interactionHandlingService.RegisterCallbackHandler(rerollId, new InteractionButtonCallbackProvider(async smc =>
+            {
+                var updatedExpression = RollDiceAndGetBackString(expression);
+                await smc.UpdateAsync(mp =>
+                {
+                    mp.Content = updatedExpression;
+                    mp.Components = buttonBuilder.Build();
+                });
+            }));
+
+            await RespondAsync(diceExpression, ephemeral: isPrivate, components: buttonBuilder.Build());
+        }
+
+        private string RollDiceAndGetBackString(string expression)
+        {
             var expr = rollService.GetDiceExpression(expression);
             var roll = expr.EvaluateWithDetails();
             var total = roll.Values.SelectMany(f => f).Sum();
             var builder = new StringBuilder();
             builder.AppendLine("```");
+            builder.AppendLine(expr.ToString());
             builder.AppendLine($"Total: {total}");
-            foreach(var value in roll)
+            foreach (var value in roll)
             {
                 builder.AppendLine($"\t{value.Key}: {string.Join(", ", value.Value)}");
             }
             builder.AppendLine("```");
-            await RespondAsync(builder.ToString(), ephemeral: isPrivate);
+            return builder.ToString();
         }
-
     }
 
 }
