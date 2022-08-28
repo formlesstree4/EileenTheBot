@@ -159,49 +159,55 @@ namespace Bot.Services
 
             interactionHandlingService.RegisterCallbackHandler($"FIRST-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
-                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex = 0;
-                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+                await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
             interactionHandlingService.RegisterCallbackHandler($"BACK-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
-                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex--;
-                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+                await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
             interactionHandlingService.RegisterCallbackHandler($"NEXT-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
-                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex++;
-                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+                await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
             interactionHandlingService.RegisterCallbackHandler($"END-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
-                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex = m.Pages.Count - 1;
-                await smc.ModifyOriginalResponseAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
+                await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
             interactionHandlingService.RegisterCallbackHandler($"STOP-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
-                if (!_messages.TryGetValue(smc.Id, out var m)) return;
+                if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
-                await smc.DeleteOriginalResponseAsync();
-                _messages.TryRemove(smc.Id, out _);
+                _messages.TryRemove(smc.Message.Id, out _);
+                await smc.Message.DeleteAsync();
+                interactionHandlingService.RemoveButtonCallbacks(
+                    $"FIRST-{messageGuid}",
+                    $"BACK-{messageGuid}",
+                    $"NEXT-{messageGuid}",
+                    $"END-{messageGuid}",
+                    $"STOP-{messageGuid}");
             }));
         }
 
         private static ComponentBuilder CreateButtonBuilder(BetterPaginationMessage message, Guid messageGuid)
         {
             return new ComponentBuilder()
-                .WithButton(FIRST, $"FIRST-{messageGuid}")
-                .WithButton(BACK, $"BACK-{messageGuid}", disabled: message.CurrentPageIndex == 0)
-                .WithButton(NEXT, $"NEXT-{messageGuid}", disabled: message.CurrentPageIndex == message.Pages.Count - 1)
-                .WithButton(END, $"END-{messageGuid}")
-                .WithButton(STOP, $"STOP-{messageGuid}");
+                .WithButton(emote: new Emoji(FIRST), customId: $"FIRST-{messageGuid}")
+                .WithButton(emote: new Emoji(BACK), customId: $"BACK-{messageGuid}", disabled: message.CurrentPageIndex == 0)
+                .WithButton(emote: new Emoji(NEXT), customId: $"NEXT-{messageGuid}", disabled: message.CurrentPageIndex == message.Pages.Count - 1)
+                .WithButton(emote: new Emoji(END), customId: $"END-{messageGuid}")
+                .WithButton(emote: new Emoji(STOP), customId: $"STOP-{messageGuid}");
         }
 
 

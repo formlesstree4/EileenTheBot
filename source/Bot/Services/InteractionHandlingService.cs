@@ -142,6 +142,29 @@ namespace Bot.Services
             selectionCallbacks[name] = provider;
         }
 
+        public void RemoveModalCallbacks(params string[] names)
+        {
+            foreach(var name in names)
+            {
+                modalCallbacks.Remove(name);
+            }
+        }
+
+        public void RemoveButtonCallbacks(params string[] names)
+        {
+            foreach(var name in names)
+            {
+                buttonCallbacks.Remove(name);
+            }
+        }
+
+        public void RemoveSelectionCallbacks(params string[] names)
+        {
+            foreach(var name in names)
+            {
+                selectionCallbacks.Remove(name);
+            }
+        }
 
     }
 
