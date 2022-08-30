@@ -18,13 +18,16 @@ namespace Bot.Modules
     {
         private readonly ServerConfigurationService serverConfigurationService;
         private readonly ChannelCommunicationService channelCommunicationService;
+        private readonly BlackJackService blackJackService;
 
         public GuildOwnerModule(
             ServerConfigurationService serverConfigurationService,
-            ChannelCommunicationService channelCommunicationService)
+            ChannelCommunicationService channelCommunicationService,
+            BlackJackService blackJackService)
         {
             this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
-            this.channelCommunicationService = channelCommunicationService;
+            this.channelCommunicationService = channelCommunicationService ?? throw new ArgumentNullException(nameof(channelCommunicationService));
+            this.blackJackService = blackJackService ?? throw new ArgumentNullException(nameof(blackJackService));
         }
 
         [SlashCommand("prefix", "Alters the character prefix the bot will use in order to be triggered")]
@@ -34,6 +37,26 @@ namespace Bot.Modules
             configuration.CommandPrefix = prefix;
             await RespondAsync($"This server now uses the character prefix '{prefix}'", ephemeral: true);
         }
+
+        [Group("blackjack", "Guild Owner BlackJack commands")]
+        public sealed class GuildOwnerBlackJackModule : InteractionModuleBase
+        {
+            private readonly BlackJackService blackJackService;
+
+            public GuildOwnerBlackJackModule(BlackJackService blackJackService)
+            {
+                this.blackJackService = blackJackService ?? throw new ArgumentNullException(nameof(blackJackService));
+            }
+
+            [SlashCommand("set", "Sets the current room as the BlackJack room for this Guild")]
+            public async Task SetBlackJackChannel()
+            {
+                blackJackService.SetBlackJackChannel(Context.Guild, Context.Channel);
+                await RespondAsync($"This channel has now been set as the BlackJack hub for this Guild", ephemeral: true);
+            }
+        }
+
+
 
 
         [Group("permissions", "Manages permissions for slash commands across channels"), RequireUserPermission(GuildPermission.ManageChannels)]
