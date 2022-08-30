@@ -152,6 +152,7 @@ namespace Bot.Models.BlackJack
             {
                 player.Hand.Clear();
             }
+            Dealer.Hand.Clear();
             IsGameActive = false;
         }
 
@@ -192,7 +193,7 @@ namespace Bot.Models.BlackJack
                 {
                     var user = await discordSocketClient.GetUserAsync(player.User.UserId);
                     var dm = await user.CreateDMChannelAsync();
-                    await dm.SendFilesAsync(player.GetHandAsAttachments(), $"Here is your current hand: {player.GetHandAsString} for {player.Value}");
+                    await dm.SendFilesAsync(await player.GetHandAsAttachment(), $"Here is your current hand: {player.GetHandAsString()} for {player.Value}");
                 }
 
                 var dealerHand = await ShowDealerHand();
@@ -204,7 +205,6 @@ namespace Bot.Models.BlackJack
                 }
 
                 // Dealer time
-                await dealerHand.DeleteAsync();
                 await HandleDealer();
                 HandleScoringCalculations();
 
@@ -252,7 +252,6 @@ namespace Bot.Models.BlackJack
             var buttons = new ComponentBuilder()
                 .WithButton("Hit", $"hit-{uniqueId}")
                 .WithButton("Stand", $"stand-{uniqueId}");
-            IUserMessage previousMessage = null;
 
 
             interactionHandlingService.RegisterCallbackHandler($"hit-{uniqueId}", new InteractionButtonCallbackProvider(async smc =>
@@ -260,40 +259,37 @@ namespace Bot.Models.BlackJack
                 if (smc.User.Id != currentPlayer.User.UserId) return;
                 var nextCard = Deck.GetNextCard();
                 currentPlayer.Hand.Add(nextCard);
-                await previousMessage?.DeleteAsync();
                 await smc.RespondAsync($"<@{currentPlayer.User.UserId}> asked for a card: {nextCard.GetDisplayName}");
                 if (currentPlayer.IsBust)
                 {
-                    previousMessage = await threadChannel.SendMessageAsync($"<@{currentPlayer.User.UserId}> has busted!");
+                    await threadChannel.SendFilesAsync(await currentPlayer.GetHandAsAttachment(), $"Busted! <@{currentPlayer.User.UserId}>'s hand. Showing: {currentPlayer.Value}");
                 }
                 else
                 {
-                    previousMessage = await threadChannel.SendFilesAsync(currentPlayer.GetHandAsAttachments(), $"<@{currentPlayer.User.UserId}>'s hand. Showing: {currentPlayer.Value}", components: buttons.Build());
+                    await threadChannel.SendFilesAsync(await currentPlayer.GetHandAsAttachment(), $"<@{currentPlayer.User.UserId}>'s hand. Showing: {currentPlayer.Value}", components: buttons.Build());
                 }
             }));
 
             interactionHandlingService.RegisterCallbackHandler($"stand-{uniqueId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (smc.User.Id != currentPlayer.User.UserId) return;
-                await smc.RespondAsync($"<@{currentPlayer.User.UserId}> has finished their turn!");
+                await smc.RespondAsync($"<@{currentPlayer.User.UserId}> has finished their turn!", components: null);
                 hasStood = true;
             }));
 
-            previousMessage = await threadChannel.SendFilesAsync(currentPlayer.GetHandAsAttachments(), $"<@{currentPlayer.User.UserId}>'s turn! Showing: {currentPlayer.Value}", components: buttons.Build());
+            var message = await threadChannel.SendFilesAsync(await currentPlayer.GetHandAsAttachment(), $"<@{currentPlayer.User.UserId}>'s turn! Showing: {currentPlayer.Value}", components: buttons.Build());
             SpinWait.SpinUntil(() => token.IsCancellationRequested || currentPlayer.IsBust || hasStood);
             interactionHandlingService.RemoveButtonCallbacks($"hit-{uniqueId}", $"stand-{uniqueId}");
         }
 
         private async Task HandleDealer()
         {
-            IUserMessage previousDealerHand = null;
             while (Dealer.Value < 17)
             {
                 var nextCard = Deck.GetNextCard();
                 await threadChannel.SendMessageAsync($"The Dealer has requested a card! The {nextCard.GetDisplayName}!");
                 Dealer.Hand.Add(nextCard);
-                await previousDealerHand?.DeleteAsync();
-                previousDealerHand = await ShowDealerHand();
+                await ShowDealerHand();
                 if (Dealer.IsBust)
                 {
                     await threadChannel.SendMessageAsync("The Dealer has busted!");
@@ -303,11 +299,16 @@ namespace Bot.Models.BlackJack
                     await Task.Delay(TimeSpan.FromSeconds(2));
                 }
             }
+
+            if (!Dealer.IsBust)
+            {
+                await threadChannel.SendMessageAsync($"The Dealer has finished their turn and ended their turn with a hand score of {Dealer.Value}!");
+            }
         }
 
         private async Task<IUserMessage> ShowDealerHand()
         {
-            return await threadChannel.SendFilesAsync(Dealer.GetHandAsAttachments(), $"Dealer's is showing {Dealer.Value} total.");
+            return await threadChannel.SendFilesAsync(await Dealer.GetHandAsAttachment(), $"Dealer's is showing {Dealer.Value} total.");
         }
     }
 

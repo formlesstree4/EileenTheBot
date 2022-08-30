@@ -120,7 +120,7 @@ namespace Bot.Services
             BlackJackTable table,
             bool createFirstMessage)
         {
-            interactionHandlingService.RegisterCallbackHandler($"join-{table.GameId}", new InteractionButtonCallbackProvider(async smc =>
+            interactionHandlingService.RegisterCallbackHandler($"join-{thread.Id}", new InteractionButtonCallbackProvider(async smc =>
             {
                 var userData = await userService.GetOrCreateUserData(smc.User.Id);
                 if (!table.IsPlaying(userData))
@@ -136,7 +136,7 @@ namespace Bot.Services
                     }
                 }
             }), true);
-            interactionHandlingService.RegisterCallbackHandler($"leave-{table.GameId}", new InteractionButtonCallbackProvider(async smc =>
+            interactionHandlingService.RegisterCallbackHandler($"leave-{thread.Id}", new InteractionButtonCallbackProvider(async smc =>
             {
                 var userData = await userService.GetOrCreateUserData(smc.User.Id);
                 if (table.IsPlaying(userData))
@@ -155,8 +155,8 @@ namespace Bot.Services
             if (createFirstMessage)
             {
                 var builder = new ComponentBuilder()
-                    .WithButton("Join", $"join-{table.GameId}")
-                    .WithButton("Leave", $"leave-{table.GameId}");
+                    .WithButton("Join", $"join-{thread.Id}")
+                    .WithButton("Leave", $"leave-{thread.Id}");
                 var message = await thread.SendMessageAsync($"Welcome To {thread.Name}. You may use this message to Join or Leave by pressing the appropriate button", components: builder.Build());
                 await message.PinAsync();
             }
