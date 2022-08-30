@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Services
@@ -18,6 +19,7 @@ namespace Bot.Services
         private readonly ServerConfigurationService serverConfigurationService;
         private readonly InteractionHandlingService interactionHandlingService;
         private readonly UserService userService;
+        private readonly CurrencyService currencyService;
         private readonly ILogger<BlackJackService> logger;
         public Dictionary<ulong, BlackJackServerDetails> blackJackDetails = new();
 
@@ -28,12 +30,14 @@ namespace Bot.Services
             ServerConfigurationService serverConfigurationService,
             InteractionHandlingService interactionHandlingService,
             UserService userService,
+            CurrencyService currencyService,
             ILogger<BlackJackService> logger)
         {
             this.discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
             this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
             this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
             this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
+            this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.discordSocketClient.Ready += HandleClientIsReady;
         }
@@ -86,12 +90,12 @@ namespace Bot.Services
                 if (threadId == null)
                 {
                     gameThread = await textChannel.CreateThreadAsync($"BlackJack Table {serverDetails.ActiveGames.Count + 1}", ThreadType.PublicThread);
-                    blackJackTable = new BlackJackTable(discordSocketClient, interactionHandlingService, gameThread, gameGuid);
+                    blackJackTable = new BlackJackTable(discordSocketClient, currencyService, interactionHandlingService, gameThread, gameGuid);
                 }
                 else
                 {
                     gameThread = await guild.GetThreadChannelAsync((ulong)threadId);
-                    blackJackTable = new BlackJackTable(discordSocketClient, interactionHandlingService, gameThread, gameGuid);
+                    blackJackTable = new BlackJackTable(discordSocketClient, currencyService, interactionHandlingService, gameThread, gameGuid);
                 }
                 // hook up the buttons and make the inital message
                 await CreateAndAttachButtonCallbacks(guild, gameThread, blackJackTable, threadId == null);
@@ -111,6 +115,15 @@ namespace Bot.Services
             {
                 serverDetails.ChannelId = channel.Id;
             }
+        }
+
+        public BlackJackTable FindBlackJackGame(IGuild guild, IThreadChannel thread)
+        {
+            if (blackJackDetails.TryGetValue(guild.Id, out var serverDetails))
+            {
+                return serverDetails.ActiveGames.FirstOrDefault(ag => ag.ThreadId == thread.Id);
+            }
+            return null;
         }
 
 

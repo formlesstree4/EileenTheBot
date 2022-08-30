@@ -19,6 +19,7 @@ namespace Bot.Models.BlackJack
         private bool isGameLoopRunning = false;
         private CancellationTokenSource cancellationTokenSource;
         private readonly DiscordSocketClient discordSocketClient;
+        private readonly CurrencyService currencyService;
         private readonly InteractionHandlingService interactionHandlingService;
         private readonly IThreadChannel threadChannel;
 
@@ -70,11 +71,13 @@ namespace Bot.Models.BlackJack
         /// </summary>
         public BlackJackTable(
             DiscordSocketClient discordSocketClient,
+            CurrencyService currencyService,
             InteractionHandlingService interactionHandlingService,
             IThreadChannel threadChannel,
             Guid gameId)
         {
             this.discordSocketClient = discordSocketClient;
+            this.currencyService = currencyService;
             this.interactionHandlingService = interactionHandlingService;
             this.threadChannel = threadChannel;
             GameId = gameId;
@@ -107,6 +110,13 @@ namespace Bot.Models.BlackJack
         {
             Leaving.Add(userData);
         }
+
+        /// <summary>
+        /// Finds a Player that's seated at the table
+        /// </summary>
+        /// <param name="userData"></param>
+        /// <returns></returns>
+        public BlackJackPlayer GetPlayer(EileenUserData userData) => Players.FirstOrDefault(c => c.User.UserId == userData.UserId);
 
         /// <summary>
         ///     A check to see if the players have finished
@@ -176,6 +186,7 @@ namespace Bot.Models.BlackJack
                 // add the pending and remove any that chose to leave
                 HandleGameFinish();
                 HandleGameStart();
+                await EnsurePeopleHaveEnoughMoneyToPlay();
 
                 if (Players.Count == 0)
                 {
@@ -221,11 +232,49 @@ namespace Bot.Models.BlackJack
         }
 
 
-        private void HandleScoringCalculations()
+        private async Task HandleScoringCalculations()
         {
             var winners = Players.Where(player => (player.Value > Dealer.Value) || player.IsBlackJack || Dealer.IsBust).ToList();
             var losers = Players.Where(player => (player.Value < Dealer.Value) || player.IsBust && !Dealer.IsBust).ToList();
             var neutrals = Players.Where(player => (player.Value == Dealer.Value) || (player.IsBust && Dealer.IsBust));
+
+            var users = new List<IUser>();
+            foreach (var winner in winners
+                .Union(losers)
+                .Union(neutrals))
+            {
+                users.Add(await discordSocketClient.GetUserAsync(winner.User.UserId));
+            }
+
+            await threadChannel.SendMessageAsync($"Winners: {string.Join(", ", from w in winners let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+            await threadChannel.SendMessageAsync($"Losers: {string.Join(", ", from w in losers let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+            await threadChannel.SendMessageAsync($"Neutrals: {string.Join(", ", from w in neutrals let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+
+            foreach (var winner in winners)
+            {
+                var winnerCurrency = currencyService.GetOrCreateCurrencyData(winner.User);
+                winnerCurrency.Currency += winner.IsBlackJack ? (ulong)Math.Round(winner.Bet * 1.5) : winner.Bet;
+            }
+
+            foreach (var loser in losers)
+            {
+                var loserCurrency = currencyService.GetOrCreateCurrencyData(loser.User);
+                loserCurrency.Currency -= loser.Bet;
+            }
+        }
+
+        private async Task EnsurePeopleHaveEnoughMoneyToPlay()
+        {
+            for (int i = Players.Count - 1; i >= 0; i--)
+            {
+                BlackJackPlayer player = Players[i];
+                var playerCurrency = currencyService.GetOrCreateCurrencyData(player.User);
+                if (playerCurrency.Currency < player.Bet || player.Bet == 0)
+                {
+                    await threadChannel.SendMessageAsync($"Unfortunately <@{player.User.UserId}> is stepping away from the table as they either did not set a bet in time OR they can't cover their own bet!");
+                    Players.RemoveAt(i);
+                }
+            }
         }
 
         private void DealOutHands()

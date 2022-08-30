@@ -92,15 +92,26 @@ namespace Bot.Models.BlackJack
             }
         }
 
+        /// <summary>
+        ///     Gets or sets the player's bet
+        /// </summary>
+        public ulong Bet { get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets whether this was from a split
+        /// </summary>
+        public bool IsFromSplit { get; } = false;
+
 
 
         /// <summary>
         ///     Creates a new Player object
         /// </summary>
         /// <param name="user"></param>
-        public BlackJackPlayer(EileenUserData user)
+        public BlackJackPlayer(EileenUserData user, bool isFromSplit = false)
         {
             User = user;
+            IsFromSplit = isFromSplit;
         }
 
 
