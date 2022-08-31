@@ -77,10 +77,10 @@ namespace Bot.Models.BlackJack
             IThreadChannel threadChannel,
             Guid gameId)
         {
-            this.discordSocketClient = discordSocketClient;
-            this.currencyService = currencyService;
-            this.interactionHandlingService = interactionHandlingService;
-            this.threadChannel = threadChannel;
+            this.discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
+            this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
+            this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
+            this.threadChannel = threadChannel ?? throw new ArgumentNullException(nameof(threadChannel));
             GameId = gameId;
         }
 
@@ -375,12 +375,12 @@ namespace Bot.Models.BlackJack
         private async Task HandleDealer()
         {
             await ShowDealerHand(false);
+            await Task.Delay(TimeSpan.FromSeconds(2));
             while (Dealer.Value < 17)
             {
                 var nextCard = Deck.GetNextCard();
                 await threadChannel.SendMessageAsync($"The Dealer takes a hit! The {nextCard.GetDisplayName}!");
                 Dealer.Hand.Add(nextCard);
-                await Task.Delay(TimeSpan.FromSeconds(2));
                 await ShowDealerHand(false);
                 if (Dealer.IsBust)
                 {

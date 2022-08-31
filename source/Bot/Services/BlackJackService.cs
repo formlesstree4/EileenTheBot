@@ -40,6 +40,25 @@ namespace Bot.Services
             this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.discordSocketClient.Ready += HandleClientIsReady;
+            this.discordSocketClient.ThreadDeleted += HandleThreadDeleted;
+        }
+
+        private Task HandleThreadDeleted(Cacheable<SocketThreadChannel, ulong> arg)
+        {
+            var threadId = arg.Id;
+            foreach (var server in blackJackDetails)
+            {
+                for (int i = server.Value.ActiveGames.Count - 1; i >= 0 ; i--)
+                {
+                    BlackJackTable game = server.Value.ActiveGames[i];
+                    if (game.ThreadId == threadId)
+                    {
+                        server.Value.ActiveGames.RemoveAt(i);
+                        game.EndGameLoop();
+                    }
+                }
+            }
+            return Task.CompletedTask;
         }
 
         private async Task HandleClientIsReady()

@@ -101,6 +101,11 @@ namespace Bot.Modules
                 return;
             }
             var gameData = blackJackService.FindBlackJackGame(Context.Guild, tc);
+            if (gameData is null)
+            {
+                await RespondAsync("Couldn't find an active game... for some reason...", ephemeral: true);
+                return;
+            }
             if (!gameData.IsPlaying(userData))
             {
                 await RespondAsync("You can only do this Command in this room if you're playing!", ephemeral: true);
