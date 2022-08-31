@@ -88,7 +88,7 @@ namespace Bot.Models.BlackJack
         {
             get
             {
-                return false;
+                return Hand.Count == 2 && Hand[0].Face == Hand[1].Face;
             }
         }
 

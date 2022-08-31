@@ -32,6 +32,63 @@ namespace Bot.Modules
             await RespondAsync("A new game table has been created!");
         }
 
+        [SlashCommand("join", "Joins a BlackJack table")]
+        public async Task Join()
+        {
+            var userData = await userService.GetOrCreateUserData(Context.User);
+            if (Context.Channel is not IThreadChannel tc)
+            {
+                await RespondAsync("You can only do this Command in an appropriate Table Thread", ephemeral: true);
+                return;
+            }
+            var gameData = blackJackService.FindBlackJackGame(Context.Guild, tc);
+            if (gameData is null)
+            {
+                await RespondAsync("This isn't a BlackJack table room!", ephemeral: true);
+                return;
+            }
+            if (!gameData.IsPlaying(userData))
+            {
+                gameData.AddPlayer(userData);
+                if (gameData.IsGameActive)
+                {
+                    await RespondAsync($"{Context.User.Mention} will be joining in for the next hand");
+                }
+                else
+                {
+                    await RespondAsync($"{Context.User.Mention} has joined the table");
+                }
+            }
+        }
+
+        [SlashCommand("leave", "Leaves a BlackJack table")]
+        public async Task Leave()
+        {
+            var userData = await userService.GetOrCreateUserData(Context.User);
+            if (Context.Channel is not IThreadChannel tc)
+            {
+                await RespondAsync("You can only do this Command in an appropriate Table Thread", ephemeral: true);
+                return;
+            }
+            var gameData = blackJackService.FindBlackJackGame(Context.Guild, tc);
+            if (gameData is null)
+            {
+                await RespondAsync("This isn't a BlackJack table room!", ephemeral: true);
+                return;
+            }
+            if (gameData.IsPlaying(userData))
+            {
+                gameData.RemovePlayer(userData);
+                if (gameData.IsGameActive)
+                {
+                    await RespondAsync($"{Context.User.Mention} will be leaving after the current round has completed");
+                }
+                else
+                {
+                    await RespondAsync($"{Context.User.Mention} has left the table");
+                }
+            }
+        }
 
         [SlashCommand("bet", "Gets or sets your static Bet for the room")]
         public async Task Bet(ulong? amount = null)

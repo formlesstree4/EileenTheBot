@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -91,8 +92,18 @@ namespace Bot.Models.BlackJack
         /// <param name="userData"><see cref="EileenUserData"/></param>
         public void AddPlayer(EileenUserData userData)
         {
-            Pending.Add(userData);
-            RunGameLoop();
+            if (IsGameActive)
+            {
+                Pending.Add(userData);
+            }
+            else
+            {
+                Players.Add(new BlackJackPlayer(userData));
+                ThreadPool.QueueUserWorkItem(async (state) =>
+                {
+                    await RunGameLoop();
+                });
+            }
         }
 
         /// <summary>
@@ -207,7 +218,7 @@ namespace Bot.Models.BlackJack
                     await dm.SendFilesAsync(await player.GetHandAsAttachment(), $"Here is your current hand: {player.GetHandAsString()} for {player.Value}");
                 }
 
-                var dealerHand = await ShowDealerHand();
+                await ShowDealerHand();
 
                 // Now then, player fun time
                 foreach (var player in Players)
@@ -215,9 +226,11 @@ namespace Bot.Models.BlackJack
                     await HandleCurrentPlayerHand(player, cancellationTokenSource.Token);
                 }
 
+                await Task.Delay(TimeSpan.FromSeconds(2));
+
                 // Dealer time
                 await HandleDealer();
-                HandleScoringCalculations();
+                await HandleScoringCalculations();
 
                 await threadChannel?.SendMessageAsync("The current round has concluded. There will be a 30 second delay before the start of the next round!");
                 HandleGameFinish();
@@ -234,8 +247,8 @@ namespace Bot.Models.BlackJack
 
         private async Task HandleScoringCalculations()
         {
-            var winners = Players.Where(player => (player.Value > Dealer.Value) || player.IsBlackJack || Dealer.IsBust).ToList();
-            var losers = Players.Where(player => (player.Value < Dealer.Value) || player.IsBust && !Dealer.IsBust).ToList();
+            var winners = Players.Where(player => (player.Value > Dealer.Value && !player.IsBust) || player.IsBlackJack || Dealer.IsBust).ToList();
+            var losers = Players.Where(player => (player.Value < Dealer.Value) || (player.IsBust && !Dealer.IsBust)).ToList();
             var neutrals = Players.Where(player => (player.Value == Dealer.Value) || (player.IsBust && Dealer.IsBust));
 
             var users = new List<IUser>();
@@ -246,20 +259,34 @@ namespace Bot.Models.BlackJack
                 users.Add(await discordSocketClient.GetUserAsync(winner.User.UserId));
             }
 
-            await threadChannel.SendMessageAsync($"Winners: {string.Join(", ", from w in winners let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
-            await threadChannel.SendMessageAsync($"Losers: {string.Join(", ", from w in losers let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
-            await threadChannel.SendMessageAsync($"Neutrals: {string.Join(", ", from w in neutrals let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+            var roundResultBuilder = new StringBuilder();
+            roundResultBuilder.AppendLine($"Winners: {string.Join(", ", from w in winners let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+            roundResultBuilder.AppendLine($"Losers: {string.Join(", ", from w in losers let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+            roundResultBuilder.AppendLine($"Neutrals: {string.Join(", ", from w in neutrals let wu = users.First(u => u.Id == w.User.UserId) select wu.Username)}");
+            await threadChannel.SendMessageAsync(roundResultBuilder.ToString());
 
-            foreach (var winner in winners)
+            var earningsBuilder = new StringBuilder();
+            foreach (var winner in from w in winners
+                                   let wu = users.First(u => u.Id == w.User.UserId)
+                                   select (w, wu))
             {
-                var winnerCurrency = currencyService.GetOrCreateCurrencyData(winner.User);
-                winnerCurrency.Currency += winner.IsBlackJack ? (ulong)Math.Round(winner.Bet * 1.5) : winner.Bet;
+                var winnerCurrency = currencyService.GetOrCreateCurrencyData(winner.w.User);
+                var winnings = winner.w.IsBlackJack ? (ulong)Math.Round(winner.w.Bet * 1.5) : winner.w.Bet;
+                earningsBuilder.AppendLine($"{winner.wu.Username}: {winnings}");
             }
 
-            foreach (var loser in losers)
+            foreach (var loser in from l in losers
+                                  let lu = users.First(u => u.Id == l.User.UserId)
+                                  select (l, lu))
             {
-                var loserCurrency = currencyService.GetOrCreateCurrencyData(loser.User);
-                loserCurrency.Currency -= loser.Bet;
+                var loserCurrency = currencyService.GetOrCreateCurrencyData(loser.l.User);
+                loserCurrency.Currency -= loser.l.Bet;
+                earningsBuilder.AppendLine($"{loser.lu.Username}: -{loser.l.Bet}");
+            }
+
+            if (earningsBuilder.Length > 0)
+            {
+                await threadChannel.SendMessageAsync(earningsBuilder.ToString());
             }
         }
 
@@ -302,6 +329,11 @@ namespace Bot.Models.BlackJack
                 .WithButton("Hit", $"hit-{uniqueId}")
                 .WithButton("Stand", $"stand-{uniqueId}");
 
+            if (currentPlayer.IsSplittable)
+            {
+                //buttons = buttons
+                //    .WithButton("Split", $"split-{uniqueId}");
+            }
 
             interactionHandlingService.RegisterCallbackHandler($"hit-{uniqueId}", new InteractionButtonCallbackProvider(async smc =>
             {
@@ -326,9 +358,18 @@ namespace Bot.Models.BlackJack
                 hasStood = true;
             }));
 
+            if (currentPlayer.IsSplittable)
+            {
+                interactionHandlingService.RegisterCallbackHandler($"split-{uniqueId}", new InteractionButtonCallbackProvider(async smc =>
+                {
+
+                }));
+            }
+            
+
             var message = await threadChannel.SendFilesAsync(await currentPlayer.GetHandAsAttachment(), $"<@{currentPlayer.User.UserId}>'s turn! Showing: {currentPlayer.Value}", components: buttons.Build());
             SpinWait.SpinUntil(() => token.IsCancellationRequested || currentPlayer.IsBust || hasStood);
-            interactionHandlingService.RemoveButtonCallbacks($"hit-{uniqueId}", $"stand-{uniqueId}");
+            interactionHandlingService.RemoveButtonCallbacks($"hit-{uniqueId}", $"stand-{uniqueId}", $"split-{uniqueId}");
         }
 
         private async Task HandleDealer()
