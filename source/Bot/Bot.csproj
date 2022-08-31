@@ -153,6 +153,9 @@
     <None Update="Resources\ace_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\back.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\jack_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

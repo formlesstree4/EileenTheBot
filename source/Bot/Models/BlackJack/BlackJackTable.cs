@@ -247,8 +247,8 @@ namespace Bot.Models.BlackJack
 
         private async Task HandleScoringCalculations()
         {
-            var winners = Players.Where(player => (player.Value > Dealer.Value && !player.IsBust) || player.IsBlackJack || Dealer.IsBust).ToList();
-            var losers = Players.Where(player => (player.Value < Dealer.Value) || (player.IsBust && !Dealer.IsBust)).ToList();
+            var winners = Players.Where(player => (player.Value > Dealer.Value && !player.IsBust) || player.IsBlackJack || (Dealer.IsBust && !player.IsBust)).ToList();
+            var losers = Players.Where(player => (player.Value < Dealer.Value && !Dealer.IsBust) || (player.IsBust && !Dealer.IsBust)).ToList();
             var neutrals = Players.Where(player => (player.Value == Dealer.Value) || (player.IsBust && Dealer.IsBust));
 
             var users = new List<IUser>();
@@ -340,7 +340,7 @@ namespace Bot.Models.BlackJack
                 if (smc.User.Id != currentPlayer.User.UserId) return;
                 var nextCard = Deck.GetNextCard();
                 currentPlayer.Hand.Add(nextCard);
-                await smc.RespondAsync($"<@{currentPlayer.User.UserId}> asked for a card: {nextCard.GetDisplayName}");
+                await smc.RespondAsync($"<@{currentPlayer.User.UserId}> takes a hit: The {nextCard.GetDisplayName}");
                 if (currentPlayer.IsBust)
                 {
                     await threadChannel.SendFilesAsync(await currentPlayer.GetHandAsAttachment(), $"Busted! <@{currentPlayer.User.UserId}>'s hand. Showing: {currentPlayer.Value}");
@@ -374,12 +374,14 @@ namespace Bot.Models.BlackJack
 
         private async Task HandleDealer()
         {
+            await ShowDealerHand(false);
             while (Dealer.Value < 17)
             {
                 var nextCard = Deck.GetNextCard();
-                await threadChannel.SendMessageAsync($"The Dealer has requested a card! The {nextCard.GetDisplayName}!");
+                await threadChannel.SendMessageAsync($"The Dealer takes a hit! The {nextCard.GetDisplayName}!");
                 Dealer.Hand.Add(nextCard);
-                await ShowDealerHand();
+                await Task.Delay(TimeSpan.FromSeconds(2));
+                await ShowDealerHand(false);
                 if (Dealer.IsBust)
                 {
                     await threadChannel.SendMessageAsync("The Dealer has busted!");
@@ -396,9 +398,9 @@ namespace Bot.Models.BlackJack
             }
         }
 
-        private async Task<IUserMessage> ShowDealerHand()
+        private async Task<IUserMessage> ShowDealerHand(bool hideFirstCard = true)
         {
-            return await threadChannel.SendFilesAsync(await Dealer.GetHandAsAttachment(), $"Dealer's is showing {Dealer.Value} total.");
+            return await threadChannel.SendFilesAsync(await Dealer.GetHandAsAttachment(hideFirstCard), $"Dealer's is showing {(hideFirstCard ? Dealer.DealerValue : Dealer.Value)} total.");
         }
     }
 
