@@ -130,6 +130,13 @@ namespace Bot.Models.BlackJack
         public BlackJackPlayer GetPlayer(EileenUserData userData) => Players.FirstOrDefault(c => c.User.UserId == userData.UserId);
 
         /// <summary>
+        /// Finds a Player that's seated at the table
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public BlackJackPlayer GetPlayer(ulong userId) => Players.FirstOrDefault(c => c.User.UserId == userId);
+
+        /// <summary>
         ///     A check to see if the players have finished
         /// </summary>
         /// <returns></returns>
@@ -188,10 +195,23 @@ namespace Bot.Models.BlackJack
             if (reset) ResetGameLoop();
             isGameLoopRunning = true;
 
-            await threadChannel.SendMessageAsync("At least one Player has joined the table! The table will wait approximately 30 seconds for others to join in before starting the round. This is a one time courtesy and future rounds will start much faster.");
+            var gameLoopId = Guid.NewGuid();
+            var quickBetButtons = new ComponentBuilder()
+                .WithButton("Bet 1", $"bet-1-{gameLoopId}")
+                .WithButton("Bet 5", $"bet-5-{gameLoopId}")
+                .WithButton("Bet 10", $"bet-10-{gameLoopId}");
+
+            await threadChannel.SendMessageAsync("At least one Player has joined the table! The table will wait approximately 30 seconds for others to join in before starting the round. You may now place your bets with a quick button below or by typing in `/blackjack bet <amount>`",
+                components: quickBetButtons.Build());
+
+            RegisterQuickBetButtons(gameLoopId);
+
             await Task.Delay(TimeSpan.FromSeconds(15));
             await threadChannel.SendMessageAsync("15 seconds remaining before the round starts!");
             await Task.Delay(TimeSpan.FromSeconds(15));
+
+            interactionHandlingService.RemoveButtonCallbacks($"bet-1-{gameLoopId}", $"bet-5-{gameLoopId}", $"bet-10-{gameLoopId}");
+
             while (!cancellationTokenSource.IsCancellationRequested)
             {
                 // add the pending and remove any that chose to leave
@@ -402,6 +422,33 @@ namespace Bot.Models.BlackJack
         {
             return await threadChannel.SendFilesAsync(await Dealer.GetHandAsAttachment(hideFirstCard), $"Dealer's is showing {(hideFirstCard ? Dealer.DealerValue : Dealer.Value)} total.");
         }
+
+        private void RegisterQuickBetButtons(Guid gameLoopGuid)
+        {
+            static async Task HandleBet(SocketMessageComponent smc, BlackJackPlayer player, ulong amount)
+            {
+                if (player is null) return;
+                player.Bet = amount;
+                await smc.RespondAsync($"Your bet has been set to {amount}");
+            }
+
+            interactionHandlingService.RegisterCallbackHandler($"bet-1-{gameLoopGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                await HandleBet(smc, GetPlayer(smc.User.Id), 1);
+            }));
+
+            interactionHandlingService.RegisterCallbackHandler($"bet-5-{gameLoopGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                await HandleBet(smc, GetPlayer(smc.User.Id), 5);
+            }));
+
+            interactionHandlingService.RegisterCallbackHandler($"bet-10-{gameLoopGuid}", new InteractionButtonCallbackProvider(async smc =>
+            {
+                await HandleBet(smc, GetPlayer(smc.User.Id), 10);
+            }));
+
+        }
+
     }
 
 }

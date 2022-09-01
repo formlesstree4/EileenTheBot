@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Bot.Models.BlackJack
 {
@@ -13,6 +14,7 @@ namespace Bot.Models.BlackJack
         /// <summary>
         /// Gets the collection of currently active games
         /// </summary>
+        [JsonIgnore, Newtonsoft.Json.JsonIgnore]
         public List<BlackJackTable> ActiveGames { get; set; } = new();
 
     }
