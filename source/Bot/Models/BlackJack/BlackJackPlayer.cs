@@ -76,5 +76,8 @@ namespace Bot.Models.BlackJack
             };
         }
 
+
+        public override string ToString() => Name;
+
     }
 }
