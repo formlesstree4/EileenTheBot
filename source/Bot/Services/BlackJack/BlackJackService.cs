@@ -40,7 +40,7 @@ namespace Bot.Services.BlackJack
         private Task HandleThreadDeleted(Cacheable<SocketThreadChannel, ulong> arg)
         {
             var threadId = arg.Id;
-            
+            blackJackTableRunnerService.StopAndRemoveBlackJackTable(threadId);
             return Task.CompletedTask;
         }
 
@@ -55,7 +55,7 @@ namespace Bot.Services.BlackJack
                 foreach (var thread in guild.ThreadChannels)
                 {
                     if (thread.ParentChannel.Id != details.ChannelId) continue;
-
+                    await CreateNewBlackJackGame(guild, thread.Id);
                 }
             }
         }
@@ -71,7 +71,23 @@ namespace Bot.Services.BlackJack
 
         public async Task<BlackJackTable> CreateNewBlackJackGame(IGuild guild, ulong? threadId = null)
         {
-            
+            var bjChannel = blackJackDetails[guild.Id].ChannelId;
+            if (bjChannel is null) return null; // fuck it I don't care
+            var channel = await discordSocketClient.GetChannelAsync((ulong)bjChannel) as ITextChannel;
+            if (threadId is null)
+            {
+                var thread = await channel.CreateThreadAsync("BlackJack Table");
+                var table = blackJackTableRunnerService.GetOrCreateBlackJackTable(thread);
+                blackJackTableRunnerService.StartBlackJackTableForChannel(thread);
+                return table;
+            }
+            else
+            {
+                var thread = await discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
+                var table = blackJackTableRunnerService.GetOrCreateBlackJackTable(thread);
+                blackJackTableRunnerService.StartBlackJackTableForChannel(thread);
+                return table;
+            }
         }
 
         public void SetBlackJackChannel(IGuild guild, IChannel channel)
@@ -84,7 +100,7 @@ namespace Bot.Services.BlackJack
 
         public BlackJackTable FindBlackJackGame(IThreadChannel thread)
         {
-
+            return blackJackTableRunnerService.GetOrCreateBlackJackTable(thread);
         }
 
     }
