@@ -297,12 +297,22 @@ namespace Bot.Services.BlackJack
                 if (await CanPlayerChangeCurrentBet(currentTable, smc))
                 {
                     var player = currentTable.FindPlayer(smc.User.Id);
+                    var currencyData = currencyService.GetOrCreateCurrencyData(player.User);
+
                     var oldBet = player.CurrentBet;
                     amountSetterAction(player);
                     player.CurrentBet = Math.Max(0, player.CurrentBet);
                     var newBet = player.CurrentBet;
                     logger.LogTrace("Changing bet from {old bet} to {new bet} for user {userName} {userId}", oldBet, newBet, player.Name, player.User.UserId);
-                    await smc.RespondAsync($"Your bet has been set to {player.CurrentBet}", ephemeral: true);
+
+                    if (currencyData.Currency > player.CurrentBet)
+                    {
+                        await smc.RespondAsync($"Your bet has been set to {player.CurrentBet}. However, that's more than you currently can afford (your currency is {currencyData.Currency}).", ephemeral: true);
+                    }
+                    else
+                    {
+                        await smc.RespondAsync($"Your bet has been set to {player.CurrentBet}", ephemeral: true);
+                    }
                 }
             }
             interactionHandlingService.RegisterCallbackHandler($"join-{threadId}", new InteractionButtonCallbackProvider(async smc =>
