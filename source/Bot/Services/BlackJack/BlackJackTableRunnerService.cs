@@ -315,7 +315,7 @@ namespace Bot.Services.BlackJack
                     var newBet = player.CurrentBet;
                     logger.LogTrace("Changing bet from {old bet} to {new bet} for user {userName} {userId}", oldBet, newBet, player.Name, player.User.UserId);
 
-                    if (currencyData.Currency > player.CurrentBet)
+                    if (currencyData.Currency < player.CurrentBet)
                     {
                         await smc.RespondAsync($"Your bet has been set to {player.CurrentBet}. However, that's more than you currently can afford (your currency is {currencyData.Currency}).", ephemeral: true);
                     }
