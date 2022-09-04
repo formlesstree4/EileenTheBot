@@ -228,7 +228,58 @@ namespace Bot.Modules
 
         }
 
+        /// <summary>
+        /// Sub-module for currency stuff
+        /// </summary>
+        [Group("currency", "Administrative overrides for the currency system")]
+        public sealed class CurrencyModule : InteractionModuleBase
+        {
+            private readonly UserService userService;
+            private readonly CurrencyService currencyService;
 
+            public CurrencyModule(
+                UserService userService,
+                CurrencyService currencyService)
+            {
+                this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
+                this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
+            }
+
+            [SlashCommand("set", "Sets the User Currency")]
+            public async Task SetCurrencyAmount(
+                [Summary("User", "The Discord User to interact with")] IUser user,
+                [Summary("Amount", "The amount to set")] ulong amount)
+            {
+                var userData = await userService.GetOrCreateUserData(user);
+                var currencyData = currencyService.GetOrCreateCurrencyData(userData);
+                currencyData.Currency = amount;
+                await RespondAsync($"User {user.Username} has had their currency set to {amount}", ephemeral: true);
+            }
+
+
+            [SlashCommand("add", "Sets the User Currency")]
+            public async Task AddCurrencyAmount(
+                [Summary("User", "The Discord User to interact with")] IUser user,
+                [Summary("Amount", "The amount to add")] ulong amount)
+            {
+                var userData = await userService.GetOrCreateUserData(user);
+                var currencyData = currencyService.GetOrCreateCurrencyData(userData);
+                currencyData.Currency += amount;
+                await RespondAsync($"User {user.Username} has had their currency set to {currencyData.Currency}", ephemeral: true);
+            }
+
+            [SlashCommand("remove", "Sets the User Currency")]
+            public async Task RemoveCurrencyAmount(
+                [Summary("User", "The Discord User to interact with")] IUser user,
+                [Summary("Amount", "The amount to remove")] ulong amount)
+            {
+                var userData = await userService.GetOrCreateUserData(user);
+                var currencyData = currencyService.GetOrCreateCurrencyData(userData);
+                currencyData.Currency -= amount;
+                await RespondAsync($"User {user.Username} has had their currency set to {currencyData.Currency}", ephemeral: true);
+            }
+
+        }
 
 
         private sealed class ChatAutoCompleteHandler : AutocompleteHandler
