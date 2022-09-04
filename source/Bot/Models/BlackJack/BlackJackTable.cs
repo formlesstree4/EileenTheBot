@@ -126,6 +126,7 @@ namespace Bot.Models.BlackJack
         public void InsertSplitPlayerOntoStack(BlackJackPlayer splitHandPlayer)
         {
             currentRoundPlayers.Push(splitHandPlayer);
+            Players.Add(splitHandPlayer);
         }
 
         /// <summary>
