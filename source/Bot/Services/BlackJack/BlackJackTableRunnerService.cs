@@ -151,7 +151,7 @@ namespace Bot.Services.BlackJack
                     table.IsGameActive = true;
                     token.ThrowIfCancellationRequested();
                     DealCardsToPlayers(table);
-                    await thread.SendMessageAsync("The round of BlackJack has begun! All players have been dealt their hands. At any time you may request to see your hand with the button on this message OR when it is your turn", components: GetHandViewComponent(thread.Id).Build());
+                    await thread.SendMessageAsync("The round of BlackJack has begun! All players have been dealt their hands. At any time you may request to see your hand with the button on this message OR when it is your turn", components: GetHandViewComponent(thread.Id, GetBidButtonComponents(thread.Id)).Build());
                     await ShowHandToChannel(thread, table.Dealer, component: null, hideFirstCard: true);
                     table.SetupTable();
                     while (table.GetNextPlayer(out var currentPlayer))
@@ -175,7 +175,8 @@ namespace Bot.Services.BlackJack
                     await HandleScoreCalculation(thread, table);
                     HandlePostGameCleanUp(table);
                     table.IsGameActive = false;
-                    await thread.SendMessageAsync("The round of BlackJack has concluded!");
+                    await thread.SendMessageAsync("The round of BlackJack has concluded! The round will pause for approximately 15 seconds for bid adjustments before resuming", components: GetBidButtonComponents(thread.Id).Build());
+                    await Task.Delay(TimeSpan.FromSeconds(15));
                 }
             }
             catch (OperationCanceledException oce)
@@ -692,9 +693,9 @@ namespace Bot.Services.BlackJack
             }
         }
 
-        public static ComponentBuilder GetBidButtonComponents(ulong threadId)
+        public static ComponentBuilder GetBidButtonComponents(ulong threadId, ComponentBuilder builder = null)
         {
-            return new ComponentBuilder()
+            return (builder ?? new ComponentBuilder())
                 .WithButton("Bid 1", $"bid-1-{threadId}")
                 .WithButton("Bid 5", $"bid-5-{threadId}")
                 .WithButton("Bid 10", $"bid-10-{threadId}")
@@ -702,22 +703,22 @@ namespace Bot.Services.BlackJack
                 .WithButton("Bid -5", $"bid-rem-5-{threadId}");
         }
 
-        private static ComponentBuilder GetJoinAndLeaveComponents(ulong threadId)
+        private static ComponentBuilder GetJoinAndLeaveComponents(ulong threadId, ComponentBuilder builder = null)
         {
-            return new ComponentBuilder()
+            return (builder ?? new ComponentBuilder())
                 .WithButton("Join", $"join-{threadId}")
                 .WithButton("Leave", $"leave-{threadId}");
         }
 
-        private static ComponentBuilder GetHandViewComponent(ulong threadId)
+        private static ComponentBuilder GetHandViewComponent(ulong threadId, ComponentBuilder builder = null)
         {
-            return new ComponentBuilder()
+            return (builder ?? new ComponentBuilder())
                 .WithButton("See Hand", $"hand-{threadId}");
         }
 
-        private static ComponentBuilder GetHandComponents(ulong threadId, BlackJackPlayer player)
+        private static ComponentBuilder GetHandComponents(ulong threadId, BlackJackPlayer player, ComponentBuilder builder = null)
         {
-            var cb = GetHandViewComponent(threadId)
+            var cb = GetHandViewComponent(threadId, builder)
                 .WithButton("Hit", $"hit-{threadId}-{player.User.UserId}")
                 .WithButton("Stand", $"stand-{threadId}-{player.User.UserId}");
             if (player.Hand.IsSplittable && !player.IsFromSplit)
