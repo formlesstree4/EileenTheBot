@@ -344,11 +344,11 @@ namespace Bot.Services.BlackJack
                 logger.LogTrace("Leave event for {threadId}", threadId);
                 if (RemovePlayerSafelyFromTable(table, smc.User))
                 {
-                    await smc.RespondAsync($"You have been removed from the table! Thank you for playing.", ephemeral: true);
+                    await smc.RespondAsync($"Your removal has been scheduled. If a round is currently going you will be removed at the end of the round.", ephemeral: true);
                 }
                 else
                 {
-                    await smc.RespondAsync("Couldn't remove you from the table. Have you already left?");
+                    await smc.RespondAsync("Couldn't remove you from the table. Have you already left?", ephemeral: true);
                 }
             }));
             interactionHandlingService.RegisterCallbackHandler($"bid-1-{threadId}", new InteractionButtonCallbackProvider(async smc =>
@@ -656,10 +656,11 @@ namespace Bot.Services.BlackJack
                     await smc.DeferAsync();
                     return;
                 }
-                await smc.RespondAsync($"{player.DiscordUser.Mention} is going to split their hand!");
                 var newHand = new Hand();
                 newHand.Cards.Add(player.Hand.Cards[1]);
+                newHand.Cards.Add(table.Deck.GetNextCard());
                 player.Hand.Cards.RemoveAt(1);
+                player.Hand.Cards.Add(table.Deck.GetNextCard());
                 var temporaryPlayer = BlackJackPlayer.CreateSplit(player, newHand);
                 table.InsertSplitPlayerOntoStack(temporaryPlayer);
                 var handToShow = await player.Hand.GetHandAsAttachment();
@@ -667,7 +668,7 @@ namespace Bot.Services.BlackJack
                 {
                     properties.Attachments = new[] { handToShow };
                     properties.Components = GetHandComponents(thread.Id, player).Build();
-                    properties.Content = $"{player.DiscordUser.Mention}'s is showing {player.Hand.Value} total.";
+                    properties.Content = $"{player.DiscordUser.Mention} split their hand! Their current hand is showing {player.Hand.Value} total.";
                 });
             }));
 
