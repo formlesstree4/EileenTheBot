@@ -427,6 +427,7 @@ namespace Bot.Services.BlackJack
         private void HandlePostGameCleanUp(BlackJackTable table)
         {
             HandleLeavingUsers(table);
+            RemoveSplitSourcePlayers(table);
             CleanUpHands(table);
         }
 
@@ -682,6 +683,14 @@ namespace Bot.Services.BlackJack
             interactionHandlingService.RemoveButtonCallbacks($"hit-{threadId}-{playerId}", $"stand-{threadId}-{playerId}", $"split-{threadId}-{playerId}");
         }
 
+        private static void RemoveSplitSourcePlayers(BlackJackTable table)
+        {
+            for (int i = table.Players.Count - 1; i >= 0; i--)
+            {
+                BlackJackPlayer player = table.Players[i];
+                if (player.IsFromSplit) table.Players.RemoveAt(i);
+            }
+        }
 
         public static ComponentBuilder GetBidButtonComponents(ulong threadId)
         {
@@ -711,7 +720,7 @@ namespace Bot.Services.BlackJack
             var cb = GetHandViewComponent(threadId)
                 .WithButton("Hit", $"hit-{threadId}-{player.User.UserId}")
                 .WithButton("Stand", $"stand-{threadId}-{player.User.UserId}");
-            if (player.Hand.IsSplittable)
+            if (player.Hand.IsSplittable && !player.IsFromSplit)
             {
                 cb = cb.WithButton("Split", $"split-{threadId}-{player.User.UserId}");
             }
