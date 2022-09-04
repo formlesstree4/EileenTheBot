@@ -586,42 +586,45 @@ namespace Bot.Services.BlackJack
             {
                 if (smc.User.Id != playerId)
                 {
-                    await smc.RespondAsync("This interaction isn't for you!", ephemeral: true);
+                    await smc.DeferAsync();
                     return;
                 }
                 var card = table.Deck.GetNextCard();
-                await smc.RespondAsync($"The Dealer hands you a card! It is a {card}!", ephemeral: true);
+                await smc.DeferAsync();
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 player.Hand.Cards.Add(card);
+
                 var handToShow = await player.Hand.GetHandAsAttachment();
+                var content = $"Next card: {card}! {player.Name}'s is showing {player.Hand.Value} total.";
+                var components = GetHandComponents(thread.Id, player).Build();
+
                 if (player.Hand.IsBust)
                 {
-                    await playerHand.ModifyAsync(properties =>
-                    {
-                        properties.Attachments = new[] { handToShow };
-                        properties.Components = null;
-                        properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total. Bust!";
-                    });
+                    content += " Bust!";
+                    components = null;
                     hasProcessedBust = true;
                 }
-                else
+                await playerHand.ModifyAsync(properties =>
                 {
-                    await playerHand.ModifyAsync(properties =>
-                    {
-                        properties.Attachments = new[] { handToShow };
-                        properties.Components = GetHandComponents(thread.Id, player).Build();
-                        properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total.";
-                    });
-                }
+                    properties.Attachments = new[] { handToShow };
+                    properties.Components = components;
+                    properties.Content = content;
+                });
             }));
             interactionHandlingService.RegisterCallbackHandler($"stand-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (smc.User.Id != playerId)
                 {
-                    await smc.RespondAsync("This interaction isn't for you!", ephemeral: true);
+                    await smc.DeferAsync();
                     return;
                 }
-                await smc.RespondAsync($"{player.Name} stands!");
+                var handToShow = await player.Hand.GetHandAsAttachment();
+                await playerHand.ModifyAsync(properties =>
+                {
+                    properties.Attachments = new[] { handToShow };
+                    properties.Components = null;
+                    properties.Content = $"{player.Name} is standing with a hand total of {player.Hand.Value}.";
+                });
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 hasStood = true;
             }));
@@ -629,7 +632,7 @@ namespace Bot.Services.BlackJack
             {
                 if (smc.User.Id != playerId)
                 {
-                    await smc.RespondAsync("This interaction isn't for you!", ephemeral: true);
+                    await smc.DeferAsync();
                     return;
                 }
                 await smc.RespondAsync($"{player.Name} is going to split their hand!");
@@ -648,11 +651,6 @@ namespace Bot.Services.BlackJack
             }));
 
             SpinWait.SpinUntil(() => (player.Hand.IsBust && hasProcessedBust) || hasStood);
-
-            if (!player.Hand.IsBust)
-            {
-                await thread.SendMessageAsync($"{player.Name} has finished their turn and ended with a hand of {player.Hand.Value}");
-            }
         }
 
         private void RemovePlayerBettingInteractions(IThreadChannel thread, BlackJackPlayer player)
