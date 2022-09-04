@@ -600,9 +600,10 @@ namespace Bot.Services.BlackJack
                 }
                 else
                 {
-                    await playerHand.ModifyAsync(async properties =>
+                    var handToShow = await player.Hand.GetHandAsAttachment();
+                    await playerHand.ModifyAsync(properties =>
                     {
-                        properties.Attachments = new[] { await player.Hand.GetHandAsAttachment() };
+                        properties.Attachments = new[] { handToShow };
                         properties.Components = GetHandComponents(thread.Id, player).Build();
                         properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total.";
                     });
@@ -632,9 +633,10 @@ namespace Bot.Services.BlackJack
                 player.Hand.Cards.RemoveAt(1);
                 var temporaryPlayer = BlackJackPlayer.CreateSplit(player, newHand);
                 table.InsertSplitPlayerOntoStack(temporaryPlayer);
-                await playerHand.ModifyAsync(async properties =>
+                var handToShow = await player.Hand.GetHandAsAttachment();
+                await playerHand.ModifyAsync(properties =>
                 {
-                    properties.Attachments = new[] { await player.Hand.GetHandAsAttachment() };
+                    properties.Attachments = new[] { handToShow };
                     properties.Components = GetHandComponents(thread.Id, player).Build();
                     properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total.";
                 });
