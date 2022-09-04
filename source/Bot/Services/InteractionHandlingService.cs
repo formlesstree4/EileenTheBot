@@ -2,6 +2,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
@@ -21,9 +22,9 @@ namespace Bot.Services
         private readonly CancellationTokenSource cts;
         private readonly IServiceProvider provider;
 
-        private readonly Dictionary<string, InteractionModalCallbackProvider> modalCallbacks;
-        private readonly Dictionary<string, InteractionButtonCallbackProvider> buttonCallbacks;
-        private readonly Dictionary<string, InteractionSelectionCallbackProvider> selectionCallbacks;
+        private readonly ConcurrentDictionary<string, InteractionModalCallbackProvider> modalCallbacks;
+        private readonly ConcurrentDictionary<string, InteractionButtonCallbackProvider> buttonCallbacks;
+        private readonly ConcurrentDictionary<string, InteractionSelectionCallbackProvider> selectionCallbacks;
 
 
         public bool AutoInitialize() => false;
@@ -41,9 +42,9 @@ namespace Bot.Services
             this.logger = logger;
             this.cts = cts;
             this.provider = provider;
-            modalCallbacks = new Dictionary<string, InteractionModalCallbackProvider>();
-            buttonCallbacks = new Dictionary<string, InteractionButtonCallbackProvider>();
-            selectionCallbacks = new Dictionary<string, InteractionSelectionCallbackProvider>();
+            modalCallbacks = new ConcurrentDictionary<string, InteractionModalCallbackProvider>();
+            buttonCallbacks = new ConcurrentDictionary<string, InteractionButtonCallbackProvider>();
+            selectionCallbacks = new ConcurrentDictionary<string, InteractionSelectionCallbackProvider>();
         }
 
         public async Task InitializeService()
@@ -76,7 +77,7 @@ namespace Bot.Services
                         {
                             if (callbackProvider.SingleUse)
                             {
-                                modalCallbacks.Remove(modalKey);
+                                modalCallbacks.TryRemove(modalKey, out var _);
                             }
                             await callbackProvider.Callback(modalSubmitted);
                         }
@@ -88,7 +89,7 @@ namespace Bot.Services
                         {
                             if (callbackProvider.SingleUse)
                             {
-                                buttonCallbacks.Remove(buttonLookupKey);
+                                buttonCallbacks.TryRemove(buttonLookupKey, out var _);
                             }
                             await callbackProvider.Callback(buttonClicked);
                         }
@@ -100,7 +101,7 @@ namespace Bot.Services
                         {
                             if (callbackProvider.SingleUse)
                             {
-                                selectionCallbacks.Remove(menuKey);
+                                selectionCallbacks.TryRemove(menuKey, out var _);
                             }
                             await callbackProvider.Callback(menuItemSelected);
                         }
@@ -127,26 +128,27 @@ namespace Bot.Services
         public void RegisterCallbackHandler(string name, InteractionModalCallbackProvider provider, bool replace = false)
         {
             if (modalCallbacks.ContainsKey(name) && !replace) return;
-            modalCallbacks[name] = provider;
+            modalCallbacks.TryAdd(name, provider);
         }
 
         public void RegisterCallbackHandler(string name, InteractionButtonCallbackProvider provider, bool replace = false)
         {
             if (buttonCallbacks.ContainsKey(name) && !replace) return;
             buttonCallbacks[name] = provider;
+            buttonCallbacks.TryAdd(name, provider);
         }
 
         public void RegisterCallbackHandler(string name, InteractionSelectionCallbackProvider provider, bool replace = false)
         {
             if (selectionCallbacks.ContainsKey(name) && !replace) return;
-            selectionCallbacks[name] = provider;
+            selectionCallbacks.TryAdd(name, provider);
         }
 
         public void RemoveModalCallbacks(params string[] names)
         {
             foreach(var name in names)
             {
-                modalCallbacks.Remove(name);
+                modalCallbacks.TryRemove(name, out var _);
             }
         }
 
@@ -154,7 +156,7 @@ namespace Bot.Services
         {
             foreach(var name in names)
             {
-                buttonCallbacks.Remove(name);
+                buttonCallbacks.TryRemove(name, out var _);
             }
         }
 
@@ -162,7 +164,7 @@ namespace Bot.Services
         {
             foreach(var name in names)
             {
-                selectionCallbacks.Remove(name);
+                selectionCallbacks.TryRemove(name, out var _);
             }
         }
 

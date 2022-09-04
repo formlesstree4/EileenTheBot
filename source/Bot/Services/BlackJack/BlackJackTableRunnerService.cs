@@ -165,8 +165,7 @@ namespace Bot.Services.BlackJack
                     await HandleScoreCalculation(thread, table);
                     HandlePostGameCleanUp(table);
                     table.IsGameActive = false;
-                    await thread.SendMessageAsync("The round of BlackJack has concluded. The table will take a short 30 second pause before beginning a new round!");
-                    await Task.Delay(TimeSpan.FromSeconds(30), token);
+                    await thread.SendMessageAsync("The round of BlackJack has concluded!");
                 }
             }
             catch (OperationCanceledException oce)
@@ -314,6 +313,10 @@ namespace Bot.Services.BlackJack
                     await smc.RespondAsync($"Welcome to the table {smc.User.Username}! Here are a few preset Bid buttons to interact with. Alternately you set your Bid directly with `/blackjack bid <amount>` to set your Bid to any number",
                         ephemeral: true, components: GetBidButtonComponents(threadId).Build());
                 }
+                else
+                {
+                    await smc.RespondAsync("Couldn't add you to the table. Have you already joined?");
+                }
             }));
             interactionHandlingService.RegisterCallbackHandler($"leave-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
@@ -321,6 +324,10 @@ namespace Bot.Services.BlackJack
                 if (RemovePlayerSafelyFromTable(table, smc.User))
                 {
                     await smc.RespondAsync($"You have been removed from the table! Thank you for playing.", ephemeral: true);
+                }
+                else
+                {
+                    await smc.RespondAsync("Couldn't remove you from the table. Have you already left?");
                 }
             }));
             interactionHandlingService.RegisterCallbackHandler($"bid-1-{threadId}", new InteractionButtonCallbackProvider(async smc =>
@@ -483,22 +490,24 @@ namespace Bot.Services.BlackJack
 
         private async Task HandlePlayerHand(IThreadChannel thread, BlackJackTable table, BlackJackPlayer player)
         {
-            await ShowHandToChannel(thread, player,
-                message: $"It is now {player.Name}'s turn! Their hand currently showing {player.Hand.Value}.",
-                component: GetHandComponents(thread.Id, player).Build());
             await HandlePlayerBettingInteractions(thread, table, player);
             RemovePlayerBettingInteractions(thread, player);
         }
 
         private static async Task HandleDealerHand(IThreadChannel thread, BlackJackTable table, BlackJackPlayer dealer)
         {
-            await ShowHandToChannel(thread, dealer);
+            var hand = await ShowHandToChannel(thread, dealer);
             await Task.Delay(TimeSpan.FromSeconds(2));
             while (dealer.Hand.Value < 17)
             {
                 var card = table.Deck.GetNextCard();
                 dealer.Hand.Cards.Add(card);
-                await ShowHandToChannel(thread, dealer, $"{dealer.Name} takes a hit! It is a {card}! {dealer.Name} is now showing {dealer.Hand.Value}");
+                var newHand = await dealer.Hand.GetHandAsAttachment();
+                await hand.ModifyAsync(properties =>
+                {
+                    properties.Attachments = new[] { newHand };
+                    properties.Content = $"{dealer.Name}'s is showing {dealer.Hand.Value} total.";
+                });
                 await Task.Delay(TimeSpan.FromSeconds(2));
                 if (dealer.Hand.IsBust)
                 {
@@ -549,14 +558,14 @@ namespace Bot.Services.BlackJack
             await thread.SendMessageAsync(roundResultBuilder.ToString());
         }
 
-        private static async Task ShowHandToChannel(
+        private static async Task<IUserMessage> ShowHandToChannel(
             IThreadChannel thread,
             BlackJackPlayer player,
             string message = null,
             MessageComponent component = null,
             bool hideFirstCard = false)
         {
-            await thread.SendFileAsync(
+            return await thread.SendFileAsync(
                 await player.Hand.GetHandAsAttachment(hideFirstCard),
                 message ?? $"{player.Name}'s is showing {(hideFirstCard ? player.Hand.MaskedValue(1) : player.Hand.Value)} total.",
                 components: component);
@@ -569,6 +578,10 @@ namespace Bot.Services.BlackJack
             var hasProcessedBust = false;
             var hasStood = false;
 
+            var playerHand = await ShowHandToChannel(thread, player,
+                message: $"It is now {player.Name}'s turn! Their hand currently showing {player.Hand.Value}.",
+                component: GetHandComponents(thread.Id, player).Build());
+
             interactionHandlingService.RegisterCallbackHandler($"hit-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (smc.User.Id != playerId)
@@ -577,7 +590,7 @@ namespace Bot.Services.BlackJack
                     return;
                 }
                 var card = table.Deck.GetNextCard();
-                await smc.RespondAsync($"{player.Name} takes a hit! It is a {card}!");
+                await smc.RespondAsync($"The Dealer hands you a card! It is a {card}!", ephemeral: true);
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 player.Hand.Cards.Add(card);
                 if (player.Hand.IsBust)
@@ -587,7 +600,12 @@ namespace Bot.Services.BlackJack
                 }
                 else
                 {
-                    await ShowHandToChannel(thread, player, component: GetHandComponents(thread.Id, player).Build());
+                    await playerHand.ModifyAsync(async properties =>
+                    {
+                        properties.Attachments = new[] { await player.Hand.GetHandAsAttachment() };
+                        properties.Components = GetHandComponents(thread.Id, player).Build();
+                        properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total.";
+                    });
                 }
             }));
             interactionHandlingService.RegisterCallbackHandler($"stand-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
@@ -614,7 +632,12 @@ namespace Bot.Services.BlackJack
                 player.Hand.Cards.RemoveAt(1);
                 var temporaryPlayer = BlackJackPlayer.CreateSplit(player, newHand);
                 table.InsertSplitPlayerOntoStack(temporaryPlayer);
-                await ShowHandToChannel(thread, player, component: GetHandComponents(thread.Id, player).Build());
+                await playerHand.ModifyAsync(async properties =>
+                {
+                    properties.Attachments = new[] { await player.Hand.GetHandAsAttachment() };
+                    properties.Components = GetHandComponents(thread.Id, player).Build();
+                    properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total.";
+                });
             }));
 
             SpinWait.SpinUntil(() => (player.Hand.IsBust && hasProcessedBust) || hasStood);
