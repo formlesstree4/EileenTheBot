@@ -118,6 +118,7 @@ namespace Bot.Services.BlackJack
             var thread = blackJackTableDetails.ThreadChannel;
             var table = blackJackTableDetails.Table;
             var token = blackJackTableDetails.CancellationTokenSource.Token;
+            var isFirstRun = true;
 
             // Hook up table level Interaction Buttons
             HandleTableLevelInteractions(table, thread);
@@ -130,8 +131,17 @@ namespace Bot.Services.BlackJack
                     SpinWait.SpinUntil(() => IsTableReadyToPlay(table) || HasPendingPlayers(table));
                     HandlePreGameStartup(table);
                     token.ThrowIfCancellationRequested();
-                    await HandleGameStartup(thread, table);
-                    await MoveAndNotifyZeroBetAndBrokePlayers(thread, table);
+                    if (isFirstRun)
+                    {
+                        isFirstRun = false;
+                        await HandleGameStartup(thread, table);
+                        await MoveAndNotifyZeroBetAndBrokePlayers(thread, table);
+                    }
+                    else
+                    {
+                        await thread.SendMessageAsync("A new round of BlackJack is beginning. If you would like to Join for the next round or Leave after this round, you may do so here.", components: GetJoinAndLeaveComponents(thread.Id).Build());
+                        await Task.Delay(TimeSpan.FromSeconds(2));
+                    }
                     if (!IsTableReadyToPlay(table))
                     {
                         await thread.SendMessageAsync("It seems that there are no qualified Players available for the current round. The table will adjourn for thirty seconds and try again.");
@@ -578,7 +588,7 @@ namespace Bot.Services.BlackJack
         {
             return await thread.SendFileAsync(
                 await player.Hand.GetHandAsAttachment(hideFirstCard),
-                message ?? $"{player.DiscordUser.Mention}'s is showing {(hideFirstCard ? player.Hand.MaskedValue(1) : player.Hand.Value)} total.",
+                message ?? $"{player.Name}'s is showing {(hideFirstCard ? player.Hand.MaskedValue(1) : player.Hand.Value)} total.",
                 components: component);
         }
 
