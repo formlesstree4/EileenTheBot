@@ -595,7 +595,13 @@ namespace Bot.Services.BlackJack
                 player.Hand.Cards.Add(card);
                 if (player.Hand.IsBust)
                 {
-                    await ShowHandToChannel(thread, player, message: $"Unfortunately, {player.Name}'s hand has bust with a value of {player.Hand.Value}!", component: GetHandComponents(thread.Id, player).Build());
+                    var handToShow = await player.Hand.GetHandAsAttachment();
+                    await playerHand.ModifyAsync(properties =>
+                    {
+                        properties.Attachments = new[] { handToShow };
+                        properties.Components = null;
+                        properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total. Bust!";
+                    });
                     hasProcessedBust = true;
                 }
                 else
