@@ -593,9 +593,9 @@ namespace Bot.Services.BlackJack
                 await smc.RespondAsync($"The Dealer hands you a card! It is a {card}!", ephemeral: true);
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 player.Hand.Cards.Add(card);
+                var handToShow = await player.Hand.GetHandAsAttachment();
                 if (player.Hand.IsBust)
                 {
-                    var handToShow = await player.Hand.GetHandAsAttachment();
                     await playerHand.ModifyAsync(properties =>
                     {
                         properties.Attachments = new[] { handToShow };
@@ -606,7 +606,6 @@ namespace Bot.Services.BlackJack
                 }
                 else
                 {
-                    var handToShow = await player.Hand.GetHandAsAttachment();
                     await playerHand.ModifyAsync(properties =>
                     {
                         properties.Attachments = new[] { handToShow };
