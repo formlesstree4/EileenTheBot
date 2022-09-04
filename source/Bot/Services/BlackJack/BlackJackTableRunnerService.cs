@@ -299,6 +299,7 @@ namespace Bot.Services.BlackJack
                     var player = currentTable.FindPlayer(smc.User.Id);
                     var oldBet = player.CurrentBet;
                     amountSetterAction(player);
+                    player.CurrentBet = Math.Max(0, player.CurrentBet);
                     var newBet = player.CurrentBet;
                     logger.LogTrace("Changing bet from {old bet} to {new bet} for user {userName} {userId}", oldBet, newBet, player.Name, player.User.UserId);
                     await smc.RespondAsync($"Your bet has been set to {player.CurrentBet}", ephemeral: true);
@@ -567,7 +568,7 @@ namespace Bot.Services.BlackJack
         {
             return await thread.SendFileAsync(
                 await player.Hand.GetHandAsAttachment(hideFirstCard),
-                message ?? $"{player.Name}'s is showing {(hideFirstCard ? player.Hand.MaskedValue(1) : player.Hand.Value)} total.",
+                message ?? $"{player.DiscordUser.Mention}'s is showing {(hideFirstCard ? player.Hand.MaskedValue(1) : player.Hand.Value)} total.",
                 components: component);
         }
 
@@ -579,7 +580,7 @@ namespace Bot.Services.BlackJack
             var hasStood = false;
 
             var playerHand = await ShowHandToChannel(thread, player,
-                message: $"It is now {player.Name}'s turn! Their hand currently showing {player.Hand.Value}.",
+                message: $"It is now {player.DiscordUser.Mention}'s turn! Their hand currently showing {player.Hand.Value}.",
                 component: GetHandComponents(thread.Id, player).Build());
 
             interactionHandlingService.RegisterCallbackHandler($"hit-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
@@ -595,7 +596,7 @@ namespace Bot.Services.BlackJack
                 player.Hand.Cards.Add(card);
 
                 var handToShow = await player.Hand.GetHandAsAttachment();
-                var content = $"Next card: {card}! {player.Name}'s is showing {player.Hand.Value} total.";
+                var content = $"Next card: {card}! {player.DiscordUser.Mention}'s is showing {player.Hand.Value} total.";
                 var components = GetHandComponents(thread.Id, player).Build();
 
                 if (player.Hand.IsBust)
@@ -623,7 +624,7 @@ namespace Bot.Services.BlackJack
                 {
                     properties.Attachments = new[] { handToShow };
                     properties.Components = null;
-                    properties.Content = $"{player.Name} is standing with a hand total of {player.Hand.Value}.";
+                    properties.Content = $"{player.DiscordUser.Mention} is standing with a hand total of {player.Hand.Value}.";
                 });
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 hasStood = true;
@@ -635,7 +636,7 @@ namespace Bot.Services.BlackJack
                     await smc.DeferAsync();
                     return;
                 }
-                await smc.RespondAsync($"{player.Name} is going to split their hand!");
+                await smc.RespondAsync($"{player.DiscordUser.Mention} is going to split their hand!");
                 var newHand = new Hand();
                 newHand.Cards.Add(player.Hand.Cards[1]);
                 player.Hand.Cards.RemoveAt(1);
@@ -646,7 +647,7 @@ namespace Bot.Services.BlackJack
                 {
                     properties.Attachments = new[] { handToShow };
                     properties.Components = GetHandComponents(thread.Id, player).Build();
-                    properties.Content = $"{player.Name}'s is showing {player.Hand.Value} total.";
+                    properties.Content = $"{player.DiscordUser.Mention}'s is showing {player.Hand.Value} total.";
                 });
             }));
 
@@ -661,7 +662,7 @@ namespace Bot.Services.BlackJack
         }
 
 
-        private static ComponentBuilder GetBidButtonComponents(ulong threadId)
+        public static ComponentBuilder GetBidButtonComponents(ulong threadId)
         {
             return new ComponentBuilder()
                 .WithButton("Bid 1", $"bid-1-{threadId}")
