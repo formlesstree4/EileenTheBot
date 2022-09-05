@@ -1,4 +1,4 @@
-namespace Bot.Models.BlackJack
+namespace Bot.Models.Casino
 {
     public sealed class Card
     {
