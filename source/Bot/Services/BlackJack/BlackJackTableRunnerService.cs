@@ -139,19 +139,20 @@ namespace Bot.Services.BlackJack
                     }
                     else
                     {
-                        await thread.SendMessageAsync("A new round of BlackJack is beginning. If you would like to Join for the next round or Leave after this round, you may do so here.", components: GetJoinAndLeaveComponents(thread.Id).Build());
+                        await thread.SendMessageAsync("A new round of BlackJack is beginning. If you would like to Join for the next round or Leave after this round, you may do so here.", components: GetJoinLeaveAndBidButtonComponents(thread.Id).Build());
                         await Task.Delay(TimeSpan.FromSeconds(2));
                     }
                     if (!IsTableReadyToPlay(table))
                     {
                         await thread.SendMessageAsync("It seems that there are no qualified Players available for the current round. The table will adjourn for thirty seconds and try again.");
                         await Task.Delay(TimeSpan.FromSeconds(30));
+                        isFirstRun = true; // reset for the first run
                         continue;
                     }
                     table.IsGameActive = true;
                     token.ThrowIfCancellationRequested();
                     DealCardsToPlayers(table);
-                    await thread.SendMessageAsync("The round of BlackJack has begun! All players have been dealt their hands. At any time you may request to see your hand with the button on this message OR when it is your turn", components: GetHandViewComponent(thread.Id, GetBidButtonComponents(thread.Id)).Build());
+                    await thread.SendMessageAsync("The round of BlackJack has begun! All players have been dealt their hands. At any time you may request to see your hand with the button on this message OR when it is your turn", components: GetJoinLeaveAndBidButtonComponents(thread.Id).Build());
                     await ShowHandToChannel(thread, table.Dealer, component: null, hideFirstCard: true);
                     table.SetupTable();
                     while (table.GetNextPlayer(out var currentPlayer))
@@ -175,7 +176,7 @@ namespace Bot.Services.BlackJack
                     await HandleScoreCalculation(thread, table);
                     HandlePostGameCleanUp(table);
                     table.IsGameActive = false;
-                    await thread.SendMessageAsync("The round of BlackJack has concluded! The round will pause for approximately 15 seconds for bid adjustments before resuming", components: GetBidButtonComponents(thread.Id).Build());
+                    await thread.SendMessageAsync("The round of BlackJack has concluded! The round will pause for approximately 15 seconds for bid adjustments before resuming", components: GetJoinLeaveAndBidButtonComponents(thread.Id).Build());
                     await Task.Delay(TimeSpan.FromSeconds(15));
                 }
             }
@@ -708,6 +709,11 @@ namespace Bot.Services.BlackJack
             return (builder ?? new ComponentBuilder())
                 .WithButton("Join", $"join-{threadId}")
                 .WithButton("Leave", $"leave-{threadId}");
+        }
+
+        private static ComponentBuilder GetJoinLeaveAndBidButtonComponents(ulong threadId, ComponentBuilder builder = null)
+        {
+            return GetBidButtonComponents(threadId, GetJoinAndLeaveComponents(threadId));
         }
 
         private static ComponentBuilder GetHandViewComponent(ulong threadId, ComponentBuilder builder = null)
