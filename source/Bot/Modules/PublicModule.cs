@@ -84,7 +84,7 @@ namespace Bot.Modules
 
         private string RollDiceAndGetBackString(string expression)
         {
-            var expr = rollService.GetDiceExpression(expression);
+            var expr = DiceRollService.GetDiceExpression(expression);
             var roll = expr.EvaluateWithDetails();
             var total = roll.Values.SelectMany(f => f).Sum();
             var builder = new StringBuilder();
