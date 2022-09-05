@@ -1,4 +1,3 @@
-using Bot.Services;
 using Bot.Services.BlackJack;
 using Discord;
 using Discord.Interactions;
@@ -12,22 +11,13 @@ namespace Bot.Modules
     {
         private readonly BlackJackService blackJackService;
         private readonly BlackJackTableRunnerService blackJackTableRunnerService;
-        private readonly CurrencyService currencyService;
-        private readonly InteractionHandlingService interactionHandlingService;
-        private readonly UserService userService;
 
         public BlackJackModule(
             BlackJackService blackJackService,
-            BlackJackTableRunnerService blackJackTableRunnerService,
-            CurrencyService currencyService,
-            InteractionHandlingService interactionHandlingService,
-            UserService userService)
+            BlackJackTableRunnerService blackJackTableRunnerService)
         {
-            this.blackJackService = blackJackService ?? throw new System.ArgumentNullException(nameof(blackJackService));
-            this.blackJackTableRunnerService = blackJackTableRunnerService ?? throw new System.ArgumentNullException(nameof(blackJackTableRunnerService));
-            this.currencyService = currencyService ?? throw new System.ArgumentNullException(nameof(currencyService));
-            this.interactionHandlingService = interactionHandlingService ?? throw new System.ArgumentNullException(nameof(interactionHandlingService));
-            this.userService = userService ?? throw new System.ArgumentNullException(nameof(userService));
+            this.blackJackService = blackJackService ?? throw new ArgumentNullException(nameof(blackJackService));
+            this.blackJackTableRunnerService = blackJackTableRunnerService ?? throw new ArgumentNullException(nameof(blackJackTableRunnerService));
         }
 
         [SlashCommand("begin", "Opens a new BlackJack Table")]

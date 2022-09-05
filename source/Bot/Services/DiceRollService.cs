@@ -33,7 +33,7 @@ namespace Bot.Services
         /// </summary>
         /// <param name="expression">The string expression to convert</param>
         /// <returns><see cref="DiceExpression"/></returns>
-        public DiceExpression GetDiceExpression(string expression) => new(expression, DiceExpressionOptions.SimplifyStringValue);
+        public static DiceExpression GetDiceExpression(string expression) => new(expression, DiceExpressionOptions.SimplifyStringValue);
 
     }
 
@@ -58,7 +58,7 @@ namespace Bot.Services
 
         private readonly Regex numberToken = new("^[0-9]+$", RegexOptions.Compiled);
         private readonly Regex diceRollToken = new("^([0-9]*)d([0-9]+|%)$", RegexOptions.Compiled);
-        private List<KeyValuePair<long, IDiceExpressionNode>> nodes = new();
+        private readonly List<KeyValuePair<long, IDiceExpressionNode>> nodes = new();
 
 
 
@@ -239,7 +239,7 @@ namespace Bot.Services
 
         public sealed class NumberNode : IDiceExpressionNode
         {
-            private long _theNumber;
+            private readonly long _theNumber;
             public NumberNode(long theNumber)
             {
                 _theNumber = theNumber;
@@ -267,8 +267,8 @@ namespace Bot.Services
         {
             private static readonly Random roller = new SecureRandom();
 
-            private long _numberOfDice;
-            private long _diceType;
+            private readonly long _numberOfDice;
+            private readonly long _diceType;
             public DiceRollNode(long numberOfDice, long diceType)
             {
                 _numberOfDice = numberOfDice;
