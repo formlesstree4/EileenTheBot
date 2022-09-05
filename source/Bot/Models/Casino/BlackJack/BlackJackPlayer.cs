@@ -1,6 +1,7 @@
+using Bot.Models.Casino;
 using Discord;
 
-namespace Bot.Models.BlackJack
+namespace Bot.Models.Casino.BlackJack
 {
     /// <summary>
     ///     Defines a Player that is sitting at a <see cref="BlackJackTable"/>

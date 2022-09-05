@@ -1,4 +1,4 @@
-namespace Bot.Models.BlackJack
+namespace Bot.Models.Casino.BlackJack
 {
     public sealed class BlackJackServerDetails
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Bot.Models.BlackJack
+namespace Bot.Models.Casino
 {
 
     /// <summary>

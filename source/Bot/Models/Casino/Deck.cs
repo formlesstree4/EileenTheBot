@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Bot.Models.BlackJack
+namespace Bot.Models.Casino
 {
 
     /// <summary>
@@ -97,7 +97,7 @@ namespace Bot.Models.BlackJack
         {
             if (numberOfDecks <= 0) throw new ArgumentException("Must be more than zero decks", nameof(numberOfDecks));
             var cards = new List<Card>();
-            for(var i = 0; i < numberOfDecks; i++)
+            for (var i = 0; i < numberOfDecks; i++)
             {
                 cards.AddRange(StandardDeck);
             }

@@ -1,5 +1,7 @@
 using Bot.Models.BlackJack;
 using Bot.Models.BlackJack.Extensions;
+using Bot.Models.Casino;
+using Bot.Models.Casino.BlackJack;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;

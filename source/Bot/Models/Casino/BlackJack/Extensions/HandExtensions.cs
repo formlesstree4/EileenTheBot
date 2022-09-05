@@ -1,3 +1,4 @@
+using Bot.Models.Casino;
 using Discord;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
