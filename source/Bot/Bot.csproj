@@ -196,4 +196,7 @@
   <ItemGroup>
     <Folder Include="Resources\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HandEvaluator\HandEvaluator.csproj" />
+  </ItemGroup>
 </Project>

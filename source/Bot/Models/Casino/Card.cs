@@ -35,14 +35,20 @@ namespace Bot.Models.Casino
 
         public string GetDisplayName => $"{Face} of {Suit}";
 
+        public string GetEvaulationString => $"{GetFaceCharacter(Face)}{GetSuitCharacter(Suit)}";
+
         private static string FixTheFace(Face face)
         {
             return face switch
             {
-                Face.Ace or Face.King or Face.Queen or Face.Jack => face.ToString(),
+                Face.Ace or Face.King or Face.Queen or Face.Jack => face.ToString().ToLowerInvariant(),
                 _ => ((int)face).ToString(),
             };
         }
+
+        private static char GetFaceCharacter(Face face) => FixTheFace(face)[0];
+
+        private static char GetSuitCharacter(Suit suit) => suit.ToString().ToLowerInvariant()[0];
 
         public override string ToString()
         {

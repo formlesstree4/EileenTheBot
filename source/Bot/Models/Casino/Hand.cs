@@ -65,6 +65,11 @@ namespace Bot.Models.Casino
         public bool IsFromSplit { get; } = false;
 
         /// <summary>
+        /// Gets the evaluation string to be used by the hand evaluation engine
+        /// </summary>
+        public string GetEvaluationString => string.Join(" ", Cards.Select(c => c.GetEvaulationString));
+
+        /// <summary>
         ///     Converts the hand to a representation
         /// </summary>
         /// <returns><see cref="string"/></returns>
