@@ -137,13 +137,13 @@ namespace Bot.Services.BlackJack
                     {
                         isFirstRun = false;
                         await HandleGameStartup(thread, table);
-                        await MoveAndNotifyZeroBetAndBrokePlayers(thread, table);
                     }
                     else
                     {
                         await thread.SendMessageAsync("A new round of BlackJack is beginning. If you would like to Join for the next round or Leave after this round, you may do so here.", components: GetJoinLeaveAndBidButtonComponents(thread.Id).Build());
                         await Task.Delay(TimeSpan.FromSeconds(2));
                     }
+                    await MoveAndNotifyZeroBetAndBrokePlayers(thread, table);
                     if (!IsTableReadyToPlay(table))
                     {
                         await thread.SendMessageAsync("It seems that there are no qualified Players available for the current round. The table will adjourn for thirty seconds and try again.");
@@ -321,7 +321,8 @@ namespace Bot.Services.BlackJack
 
                     if (currencyData.Currency < player.CurrentBet)
                     {
-                        await smc.RespondAsync($"Your bet has been set to {player.CurrentBet}. However, that's more than you currently can afford (your currency is {currencyData.Currency}).", ephemeral: true);
+                        player.CurrentBet = currencyData.Currency;
+                        await smc.RespondAsync($"Your bet has been set to {player.CurrentBet} instead of {newBet} as you couldn't afford the original amount.", ephemeral: true);
                     }
                     else
                     {
@@ -369,11 +370,19 @@ namespace Bot.Services.BlackJack
             }));
             interactionHandlingService.RegisterCallbackHandler($"bid-add-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
-                await HandleChangingPlayerBet(table, smc, bjp => bjp.CurrentBet += 5);
+                await HandleChangingPlayerBet(table, smc, bjp =>
+                {
+                    var currentValue = bjp.CurrentBet;
+                    bjp.CurrentBet += 5;
+                });
             }));
             interactionHandlingService.RegisterCallbackHandler($"bid-rem-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
-                await HandleChangingPlayerBet(table, smc, bjp => bjp.CurrentBet -= 5);
+                await HandleChangingPlayerBet(table, smc, bjp =>
+                {
+                    var currentValue = bjp.CurrentBet;
+                    if ((bjp.CurrentBet -= 5) > currentValue) bjp.CurrentBet = 0;
+                });
             }));
             interactionHandlingService.RegisterCallbackHandler($"hand-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
@@ -471,6 +480,7 @@ namespace Bot.Services.BlackJack
                     table.Players.RemoveAt(playerIndex);
                 }
             }
+            table.LeavingPlayers.Clear();
         }
 
         private static IEnumerable<BlackJackPlayer> GetZeroBetPlayers(BlackJackTable table)
@@ -503,12 +513,13 @@ namespace Bot.Services.BlackJack
                 var currentPlayer = table.Players[playerIndex];
                 var playerCurrency = currencyService.GetOrCreateCurrencyData(currentPlayer.User);
                 currentPlayer.CurrentBet = Math.Min(currentPlayer.CurrentBet, playerCurrency.Currency);
-                if (currentPlayer.CurrentBet == 0 || playerCurrency.Currency < currentPlayer.CurrentBet)
+                if (currentPlayer.CurrentBet == 0)
                 {
                     logger.LogInformation("Player {player} is being moved to Pending Players as they are not ready to play yet!", currentPlayer.Name);
                     moved.Add(currentPlayer);
                     table.Players.RemoveAt(playerIndex);
                     table.PendingPlayers.Add(currentPlayer);
+                    continue;
                 }
             }
             await thread.SendMessageAsync($"The following players will not be playing this round but can still set their bet: {GetCommaSeparatedUserNames(moved)}");
@@ -605,7 +616,9 @@ namespace Bot.Services.BlackJack
             var hasStood = false;
 
             var playerHand = await ShowHandToChannel(thread, player,
-                message: $"It is now {player.DiscordUser.Mention}'s turn! Their hand currently showing {player.Hand.Value}.",
+                message: player.Hand.IsBlackJack ?
+                    $"It is now {player.DiscordUser.Mention}'s turn! Their hand is a BlackJack! Congratulations!" :
+                    $"It is now {player.DiscordUser.Mention}'s turn! Their hand currently showing {player.Hand.Value}.",
                 component: GetHandComponents(thread.Id, player).Build());
 
             interactionHandlingService.RegisterCallbackHandler($"hit-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
@@ -629,6 +642,12 @@ namespace Bot.Services.BlackJack
                     content += " Bust!";
                     components = null;
                     hasProcessedBust = true;
+                }
+                if (player.Hand.Value == 21)
+                {
+                    content += " Your hand has concluded!";
+                    components = null;
+                    hasStood = true;
                 }
                 await playerHand.ModifyAsync(properties =>
                 {
@@ -675,9 +694,13 @@ namespace Bot.Services.BlackJack
                     properties.Components = GetHandComponents(thread.Id, player).Build();
                     properties.Content = $"{player.DiscordUser.Mention} split their hand! Their current hand is showing {player.Hand.Value} total.";
                 });
+                await smc.DeferAsync();
             }));
 
-            SpinWait.SpinUntil(() => (player.Hand.IsBust && hasProcessedBust) || hasStood);
+            if (!player.Hand.IsBlackJack)
+            {
+                SpinWait.SpinUntil(() => (player.Hand.IsBust && hasProcessedBust) || hasStood);
+            }
         }
 
         private void RemovePlayerBettingInteractions(IThreadChannel thread, BlackJackPlayer player)
@@ -721,7 +744,7 @@ namespace Bot.Services.BlackJack
         private static ComponentBuilder GetHandViewComponent(ulong threadId, ComponentBuilder builder = null)
         {
             return (builder ?? new ComponentBuilder())
-                .WithButton("See Hand", $"hand-{threadId}");
+                /*.WithButton("See Hand", $"hand-{threadId}")*/;
         }
 
         private static ComponentBuilder GetHandComponents(ulong threadId, BlackJackPlayer player, ComponentBuilder builder = null)
