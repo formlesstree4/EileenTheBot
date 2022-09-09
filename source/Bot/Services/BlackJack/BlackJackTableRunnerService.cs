@@ -1,7 +1,6 @@
-using Bot.Models.BlackJack;
-using Bot.Models.BlackJack.Extensions;
 using Bot.Models.Casino;
 using Bot.Models.Casino.BlackJack;
+using Bot.Models.Extensions;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
@@ -156,7 +155,7 @@ namespace Bot.Services.BlackJack
                     DealCardsToPlayers(table);
                     await thread.SendMessageAsync("The round of BlackJack has begun! All players have been dealt their hands. At any time you may request to see your hand with the button on this message OR when it is your turn", components: GetJoinLeaveAndBidButtonComponents(thread.Id).Build());
                     await ShowHandToChannel(thread, table.Dealer, component: null, hideFirstCard: true);
-                    table.SetupTable();
+                    table.PopulateTableStack();
                     while (table.GetNextPlayer(out var currentPlayer))
                     {
                         token.ThrowIfCancellationRequested();

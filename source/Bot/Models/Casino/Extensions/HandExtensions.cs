@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bot.Models.BlackJack.Extensions
+namespace Bot.Models.Extensions
 {
     public static class HandExtensions
     {
