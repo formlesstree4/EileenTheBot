@@ -195,6 +195,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
+    <Folder Include="Services\Casino\HoldEm\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HandEvaluator\HandEvaluator.csproj" />

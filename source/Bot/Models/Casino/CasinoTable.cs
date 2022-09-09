@@ -49,6 +49,11 @@ namespace Bot.Models.Casino
         public Deck Deck { get; private set; }
 
         /// <summary>
+        ///     Gets whether or not the table is currently playing a game.
+        /// </summary>
+        public bool IsGameActive { get; set; } = false;
+
+        /// <summary>
         /// Gets the <see cref="Stack{T}"/> of players that are yet to go for this round
         /// </summary>
         public Stack<TPlayer> CurrentRoundPlayers => currentRoundPlayers;

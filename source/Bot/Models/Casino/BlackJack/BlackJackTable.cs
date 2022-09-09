@@ -10,13 +10,6 @@ namespace Bot.Models.Casino.BlackJack
     {
 
         /// <summary>
-        ///     Gets whether or not the table is currently playing a game.
-        /// </summary>
-        public bool IsGameActive { get; set; } = false;
-
-
-
-        /// <summary>
         ///     Creates a new <see cref="BlackJackTable"/>
         /// </summary>
         /// <param name="deck">The Deck of cards to use indefinitely for this table</param>
