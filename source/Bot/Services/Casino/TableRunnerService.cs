@@ -9,22 +9,21 @@ using System.Threading.Tasks;
 
 namespace Bot.Services.Casino
 {
-    public abstract class TableRunnerService<TTable, TPlayer, TTableDetails, TServerDetails> : IEileenService
+    public abstract class TableRunnerService<TTable, TPlayer, TTableDetails> : IEileenService
         where TTable : CasinoTable<TPlayer>
         where TPlayer : CasinoPlayer
         where TTableDetails : CasinoTableDetails<TTable, TPlayer>
-        where TServerDetails : CasinoServerDetails
     {
 
         private readonly ConcurrentDictionary<ulong, TTableDetails> tables = new();
-        private readonly ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, TServerDetails>> logger;
+        private readonly ILogger<TableRunnerService<TTable, TPlayer, TTableDetails>> logger;
         private readonly UserService userService;
 
 
         /// <summary>
         /// Gets the ILogger associated with this runner service
         /// </summary>
-        public ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, TServerDetails>> Logger => logger;
+        public ILogger<TableRunnerService<TTable, TPlayer, TTableDetails>> Logger => logger;
 
         /// <summary>
         /// Gets the internal dictionary which contains the collection of active tables
@@ -38,7 +37,7 @@ namespace Bot.Services.Casino
 
         public TableRunnerService(
             CancellationTokenSource cancellationTokenSource,
-            ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, TServerDetails>> logger,
+            ILogger<TableRunnerService<TTable, TPlayer, TTableDetails>> logger,
             UserService userService)
         {
             this.logger = logger;
@@ -115,7 +114,7 @@ namespace Bot.Services.Casino
         /// <param name="table">The table to add the user to</param>
         /// <param name="user">A reference to the Discord <see cref="IUser"/></param>
         /// <returns>A promise that, if true, means the player was added successfully</returns>
-        public async Task<bool> AddPlayerSafelyToTable(TTable table, IUser user)
+        public virtual async Task<bool> AddPlayerSafelyToTable(TTable table, IUser user)
         {
             if (!table.PendingPlayers.Any(pp => pp.User.UserId == user.Id) &&
                 !table.Players.Any(p => p.User.UserId == user.Id))
@@ -144,7 +143,7 @@ namespace Bot.Services.Casino
         /// <param name="table">The table to remove the user from</param>
         /// <param name="user">A reference to the Discord <see cref="IUser"/></param>
         /// <returns>A promise that, if true, means the player was removed successfully</returns>
-        public bool RemovePlayerSafelyFromTable(TTable table, IUser user)
+        public virtual bool RemovePlayerSafelyFromTable(TTable table, IUser user)
         {
             if (table.IsGameActive && !table.LeavingPlayers.Any(lp => lp.User.UserId == user.Id))
             {

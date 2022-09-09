@@ -19,14 +19,13 @@ namespace Bot.Services.Casino.BlackJack
     /// <summary>
     ///     Provides table and job management to handle running numerous tables
     /// </summary>
-    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackTable, BlackJackPlayer, BlackJackTableDetails, BlackJackServerDetails>
+    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackTable, BlackJackPlayer, BlackJackTableDetails>
     {
 
         private readonly ConcurrentDictionary<ulong, BlackJackTableDetails> tables = new();
         private readonly CurrencyService currencyService;
         private readonly DiscordSocketClient client;
         private readonly InteractionHandlingService interactionHandlingService;
-        private readonly UserService userService;
 
         public BlackJackTableRunnerService(
             CancellationTokenSource cancellationTokenSource,
@@ -39,7 +38,6 @@ namespace Bot.Services.Casino.BlackJack
             this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
             this.client = client ?? throw new ArgumentNullException(nameof(client));
             this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
-            this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
             this.client.ThreadMemberLeft += smc =>
             {
                 Logger.LogTrace("A user has left a thread. Lookign to see if it is a thread we are concerned with...");
