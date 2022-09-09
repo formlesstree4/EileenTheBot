@@ -15,6 +15,9 @@
 
 // Written (ported) by Keith Rule - Sept 2005
 
+#pragma warning disable IDE0051
+#pragma warning disable IDE0052
+
 using System;
 using System.Text;
 using System.Diagnostics;
@@ -187,11 +190,11 @@ namespace HoldemHand
         /// <exclude/>
         private static readonly int TOP_CARD_SHIFT = 16;
         /// <exclude/>
-        private static readonly System.UInt32 TOP_CARD_MASK = 0x000F0000;
+        private static readonly uint TOP_CARD_MASK = 0x000F0000;
         /// <exclude/>
         private static readonly int SECOND_CARD_SHIFT = 12;
         /// <exclude/>
-        private static readonly System.UInt32 SECOND_CARD_MASK = 0x0000F000;
+        private static readonly uint SECOND_CARD_MASK = 0x0000F000;
         /// <exclude/>
         private static readonly int THIRD_CARD_SHIFT = 8;
         /// <exclude/>
@@ -199,18 +202,18 @@ namespace HoldemHand
         /// <exclude/>
         private static readonly int FIFTH_CARD_SHIFT = 0;
         /// <exclude/>
-        private static readonly System.UInt32 FIFTH_CARD_MASK = 0x0000000F;
+        private static readonly uint FIFTH_CARD_MASK = 0x0000000F;
         /// <exclude/>
         private static readonly int CARD_WIDTH = 4;
         /// <exclude/>
-        private static readonly System.UInt32 CARD_MASK = 0x0F;
+        private static readonly uint CARD_MASK = 0x0F;
         #endregion
 
         #region Private Fields
         /// <summary>
         /// Hand mask for the current card set
         /// </summary>
-        private System.UInt64 handmask;
+        private ulong handmask;
         /// <summary>
         /// Contains string representing the pocket cards
         /// </summary>
@@ -223,7 +226,7 @@ namespace HoldemHand
         /// The value of the current had. This value allows hands to be 
         /// compared using a normal arithmitic compare function.
         /// </summary>
-        private System.UInt32 handval;
+        private uint handval;
         #endregion
 
         #region Constructor
@@ -274,12 +277,8 @@ namespace HoldemHand
         /// <param name="board">Board</param>
         public Hand(string pocket, string board)
         {
-#if DEBUG
-            if (pocket == null) throw new ArgumentNullException("pocket");
-            if (board == null) throw new ArgumentNullException("board");
-#endif
-            PocketCards = pocket;
-            Board = board;
+            PocketCards = pocket ?? throw new ArgumentNullException(nameof(pocket));
+            Board = board ?? throw new ArgumentNullException(nameof(board));
         }
         #endregion
 
@@ -330,8 +329,8 @@ namespace HoldemHand
         public static bool ValidateHand(string pocket, string board)
         {
 #if DEBUG
-            if (pocket == null || pocket.Trim().Length == 0) throw new ArgumentNullException("pocket");
-            if (board == null || board.Trim().Length == 0) throw new ArgumentNullException("board");
+            if (pocket == null || pocket.Trim().Length == 0) throw new ArgumentNullException(nameof(pocket));
+            if (board == null || board.Trim().Length == 0) throw new ArgumentNullException(nameof(board));
 #endif
             return ValidateHand(pocket + " " + board);
         }
@@ -377,7 +376,7 @@ namespace HoldemHand
             ulong handmask = 0UL;
 
 #if DEBUG
-            if (hand == null) throw new ArgumentNullException("hand");
+            if (hand == null) throw new ArgumentNullException(nameof(hand));
 #endif
 
             // A null hand is okay
@@ -423,7 +422,7 @@ namespace HoldemHand
         {
 #if DEBUG
             if (card == null) 
-                throw new ArgumentNullException("card");
+                throw new ArgumentNullException(nameof(card));
 #endif
             int index = 0;
             return NextCard(card, ref index);
@@ -439,7 +438,7 @@ namespace HoldemHand
         {
             int rank = 0, suit = 0;
 #if DEBUG
-            if (cards == null) throw new ArgumentNullException("cards");
+            if (cards == null) throw new ArgumentNullException(nameof(cards));
 #endif
 
             // Remove whitespace
@@ -567,7 +566,7 @@ namespace HoldemHand
 #if DEBUG
             // Legal values are 0 - 52.
             if (card < 0 || card > 52)
-                throw new ArgumentOutOfRangeException("card");
+                throw new ArgumentOutOfRangeException(nameof(card));
 #endif
             return card % 13;
         }
@@ -582,7 +581,7 @@ namespace HoldemHand
 #if DEBUG
             // Legal values are 0 - 52.
             if (card < 0 || card > 52)
-                throw new ArgumentOutOfRangeException("card");
+                throw new ArgumentOutOfRangeException(nameof(card));
 #endif
             return card / 13;
         }
@@ -602,7 +601,7 @@ namespace HoldemHand
         /// <exclude/>
         public static string DescriptionFromHandValueInternal(uint handValue)
         {
-            StringBuilder b = new StringBuilder();
+            StringBuilder b = new();
 
             switch ((HandTypes)HandType(handValue))
             {
@@ -670,7 +669,7 @@ namespace HoldemHand
             int cards = BitCount(mask);
             // Must have 1 - 7 cards defined.
             if (cards < 1 || cards > 7)
-                throw new ArgumentOutOfRangeException("mask");
+                throw new ArgumentOutOfRangeException(nameof(mask));
             return DescriptionFromMask(mask);
 #else
             return DescriptionFromMask(mask);
@@ -689,7 +688,7 @@ namespace HoldemHand
 #if DEBUG
             // This functions supports 1-7 cards
             if (numberOfCards < 1 || numberOfCards > 7)
-                throw new ArgumentOutOfRangeException("numberOfCards");
+                throw new InvalidOperationException($"{nameof(numberOfCards)} is outside the expected range. Must be between 1 and 7");
 #endif
             // Seperate out by suit
             uint sc = (uint)((cards >> (CLUB_OFFSET)) & 0x1fffUL);
@@ -767,7 +766,7 @@ namespace HoldemHand
 #if DEBUG
             // Must not be null string
             if (hand == null)
-                throw new ArgumentNullException("hand");
+                throw new ArgumentNullException(nameof(hand));
 #endif
             return DescriptionFromMask(ParseHand(hand, ref cards));
         }
@@ -798,7 +797,7 @@ namespace HoldemHand
         /// <summary>
         /// Returns hand mask value
         /// </summary>
-        public System.UInt64 MaskValue
+        public ulong MaskValue
         {
             get { return handmask; }
         }
@@ -807,7 +806,7 @@ namespace HoldemHand
         /// Represents the Mask of the Pocket cards for this instance
         /// of Hand
         /// </summary>
-        public System.UInt64 PocketMask
+        public ulong PocketMask
         {
             set
             {
@@ -824,7 +823,7 @@ namespace HoldemHand
         /// Represents the Mask of the Board cards for this instance
         /// of Hand
         /// </summary>
-        public System.UInt64 BoardMask
+        public ulong BoardMask
         {
             set
             {
@@ -847,10 +846,10 @@ namespace HoldemHand
             {
 #if DEBUG
                 if (value == null)
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
 
                 if (value.Trim().Length <= 0 || !Hand.ValidateHand(value))
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
 #endif
 
                 pocket = value.Trim();
@@ -868,7 +867,7 @@ namespace HoldemHand
             {
 #if DEBUG
                 if (value == null || value.Trim().Length <= 0 || !Hand.ValidateHand(value))
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
 #endif
                 board = value;
                 UpdateHandMask();
@@ -935,31 +934,31 @@ namespace HoldemHand
         //}
 
         /// <exclude/>
-        public static uint TopCard(System.UInt32 hv)
+        public static uint TopCard(uint hv)
         {
             return ((hv >> TOP_CARD_SHIFT) & CARD_MASK);
         }
 
         /// <exclude/>
-        private static uint SECOND_CARD(System.UInt32 hv)
+        private static uint SECOND_CARD(uint hv)
         {
             return (((hv) >> SECOND_CARD_SHIFT) & CARD_MASK);
         }
 
         /// <exclude/>
-        private static uint THIRD_CARD(System.UInt32 hv)
+        private static uint THIRD_CARD(uint hv)
         {
             return (((hv) >> THIRD_CARD_SHIFT) & CARD_MASK);
         }
 
         /// <exclude/>
-        private static uint FOURTH_CARD(System.UInt32 hv)
+        private static uint FOURTH_CARD(uint hv)
         {
             return (((hv) >> FOURTH_CARD_SHIFT) & CARD_MASK);
         }
 
         /// <exclude/>
-        private static uint FIFTH_CARD(System.UInt32 hv)
+        private static uint FIFTH_CARD(uint hv)
         {
             return (((hv) >> FIFTH_CARD_SHIFT) & CARD_MASK);
         }
@@ -977,19 +976,19 @@ namespace HoldemHand
         //}
 
         /// <exclude/>
-        private static uint TOP_CARD_VALUE(System.UInt32 c)
+        private static uint TOP_CARD_VALUE(uint c)
         {
             return ((c) << TOP_CARD_SHIFT);
         }
 
         /// <exclude/>
-        private static uint SECOND_CARD_VALUE(System.UInt32 c)
+        private static uint SECOND_CARD_VALUE(uint c)
         {
             return ((c) << SECOND_CARD_SHIFT);
         }
 
         /// <exclude/>
-        private static uint THIRD_CARD_VALUE(System.UInt32 c)
+        private static uint THIRD_CARD_VALUE(uint c)
         {
             return ((c) << THIRD_CARD_SHIFT);
         }
@@ -1023,7 +1022,7 @@ namespace HoldemHand
         /// <returns>human readable string that is equivalent to the hand represented by the mask</returns>
         public static string MaskToString(ulong mask)
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new();
             int count = 0;
             for (int i = 51; i >= 0; i--)
             {
@@ -1031,7 +1030,7 @@ namespace HoldemHand
                 {
                     if (count != 0)
                     {
-                        builder.Append(" ");
+                        builder.Append(' ');
                     }
                     builder.Append(Hand.CardTable[i]);
                     count++;
@@ -1079,7 +1078,7 @@ namespace HoldemHand
         {
 #if DEBUG
             int cards = BitCount(mask);
-            if (cards <= 0 || cards > 7) throw new ArgumentException("mask");
+            if (cards <= 0 || cards > 7) throw new ArgumentException("You cannot have less than 1 or more than 7 cards when evaluating hand type!", nameof(mask));
             return EvaluateType(mask, cards);
 #else
             return EvaluateType(mask, BitCount(mask));
@@ -1224,7 +1223,7 @@ namespace HoldemHand
 #if DEBUG
             // This functions supports 1-7 cards
             if (numberOfCards < 1 || numberOfCards > 7) 
-                throw new ArgumentOutOfRangeException("numberOfCards");
+                throw new ArgumentOutOfRangeException(nameof(numberOfCards));
 #endif
             // Seperate out by suit
             uint sc = (uint)((cards >> (CLUB_OFFSET)) & 0x1fffUL);
@@ -1446,10 +1445,8 @@ namespace HoldemHand
         /// </example>
         static public bool operator ==(Hand op1, Hand op2)
         {
-#if DEBUG
-            if (object.ReferenceEquals(op1, null) || object.ReferenceEquals(op2, null))
-                throw new ArgumentNullException();
-#endif
+            if (op1 is null) throw new ArgumentNullException(nameof(op1));
+            if (op2 is null) throw new ArgumentNullException(nameof(op2));
             return op1.handval == op2.handval;
         }
 
@@ -1472,10 +1469,8 @@ namespace HoldemHand
         /// </example>
         static public bool operator !=(Hand op1, Hand op2)
         {
-#if DEBUG
-            if (object.ReferenceEquals(op1, null) || object.ReferenceEquals(op2, null))
-                throw new ArgumentNullException();
-#endif
+            if (op1 is null) throw new ArgumentNullException(nameof(op1));
+            if (op2 is null) throw new ArgumentNullException(nameof(op2));
             return op1.handval != op2.handval;
         }
 
@@ -1498,10 +1493,8 @@ namespace HoldemHand
         /// </example>
         static public bool operator >(Hand op1, Hand op2)
         {
-#if DEBUG
-            if (object.ReferenceEquals(op1, null) || object.ReferenceEquals(op2, null))
-                throw new ArgumentNullException();
-#endif
+            if (op1 is null) throw new ArgumentNullException(nameof(op1));
+            if (op2 is null) throw new ArgumentNullException(nameof(op2));
             return op1.handval > op2.handval;
         }
 
@@ -1524,10 +1517,8 @@ namespace HoldemHand
         /// </example>
         static public bool operator >=(Hand op1, Hand op2)
         {
-#if DEBUG
-            if (object.ReferenceEquals(op1, null) || object.ReferenceEquals(op2, null))
-                throw new ArgumentNullException();
-#endif
+            if (op1 is null) throw new ArgumentNullException(nameof(op1));
+            if (op2 is null) throw new ArgumentNullException(nameof(op2));
             return op1.handval >= op2.handval;
         }
 
@@ -1539,10 +1530,8 @@ namespace HoldemHand
         /// <returns>returns true if the left item is less than the right item.</returns>
         static public bool operator <(Hand op1, Hand op2)
         {
-#if DEBUG
-            if (object.ReferenceEquals(op1, null) || object.ReferenceEquals(op2, null))
-                throw new ArgumentNullException();
-#endif
+            if (op1 is null) throw new ArgumentNullException(nameof(op1));
+            if (op2 is null) throw new ArgumentNullException(nameof(op2));
             return op1.handval < op2.handval;
         }
 
@@ -1554,10 +1543,8 @@ namespace HoldemHand
         /// <returns>returns true if the left item is less than or equal to the right item.</returns>
         static public bool operator <=(Hand op1, Hand op2)
         {
-#if DEBUG
-            if (object.ReferenceEquals(op1, null) || object.ReferenceEquals(op2, null))
-                throw new ArgumentNullException();
-#endif
+            if (op1 is null) throw new ArgumentNullException(nameof(op1));
+            if (op2 is null) throw new ArgumentNullException(nameof(op2));
             return op1.handval <= op2.handval;
         }
 
@@ -1611,7 +1598,7 @@ namespace HoldemHand
 
         #region nBitsAndStr Table
         /// <exclude/>
-        private static readonly UInt16[] nBitsAndStrTable = 
+        private static readonly ushort[] nBitsAndStrTable = 
 			{ 
 				0x00 ,
 				0x04 ,
@@ -9811,7 +9798,7 @@ namespace HoldemHand
         #region nBitsTable
         // A table representing the bit count for a 13 bit integer.
         /// <exclude/>
-        private static readonly System.UInt16[] nBitsTable = 
+        private static readonly ushort[] nBitsTable = 
 		{ 
 			0x00 ,
 			0x01 ,
@@ -18011,7 +17998,7 @@ namespace HoldemHand
         #region StraightTable
         // This table returns a straights starting card (0 if not a straight)
         /// <exclude/>
-        private static readonly System.UInt16[] straightTable = 
+        private static readonly ushort[] straightTable = 
 		{ 
 			0x00 ,
 			0x00 ,
@@ -26210,7 +26197,7 @@ namespace HoldemHand
 
         #region Top Five Card Table
         /// <exclude/>
-        private static readonly System.UInt32[] topFiveCardsTable = 
+        private static readonly uint[] topFiveCardsTable = 
 		{ 
 			0x00000000 ,
 			0x00000000 ,
@@ -34409,7 +34396,7 @@ namespace HoldemHand
 
         #region Top Card Table
         /// <exclude/>
-        private static readonly System.UInt16[] topCardTable = 
+        private static readonly ushort[] topCardTable = 
 		{ 
 			0x00 ,
 			0x00 ,
