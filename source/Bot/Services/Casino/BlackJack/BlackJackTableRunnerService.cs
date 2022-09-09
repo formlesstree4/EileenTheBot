@@ -662,9 +662,5 @@ namespace Bot.Services.Casino.BlackJack
 
         #endregion Helper Methods
 
-
-
-
-
     }
 }

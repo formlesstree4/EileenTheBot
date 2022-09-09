@@ -4,6 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,17 +33,42 @@ namespace Bot.Models.Extensions
         /// <returns>A promise to create a <see cref="Stream"/> that contains the appropriate image data</returns>
         public static async Task<Stream> GetHandAsImage(this Hand hand, bool hideFirstCard = false)
         {
+            var hideMask = Enumerable.Repeat<byte>(0, hand.Cards.Count).ToArray();
+            if (hideFirstCard) hideMask[0] = 1;
+            return await hand.GetHandAsImage(hideMask);
+        }
+
+        /// <summary>
+        ///     Gets a <see cref="Stream"/> that contains the image data for the given <see cref="Hand"/>
+        /// </summary>
+        /// <param name="hand">The <see cref="Hand"/> to create an image of</param>
+        /// <param name="cardsToHide">A byte array that is the same size as <see cref="Hand.Cards"/> where if the matching index equals to 1, the card is hidden</param>
+        /// <returns>A promise to create a <see cref="Stream"/> that contains the appropriate image data</returns>
+        public static async Task<Stream> GetHandAsImage(this Hand hand, byte[] cardsToHide)
+        {
+            if (cardsToHide.Length != hand.Cards.Count) throw new ArgumentException($"Argument size mismatch - {nameof(cardsToHide)} ({cardsToHide.Length}) must be equal in size to number of cards in {nameof(hand)} ({hand.Cards.Count})!", nameof(cardsToHide));
             List<Image<Rgba32>> images = new();
             MemoryStream output = new();
 
+            Image<Rgba32> backImage = await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", "back.png"));
+            Dictionary<string, Image<Rgba32>> cachedImages = new();
+
+            var hideIndex = 0;
             foreach (var card in hand.Cards)
             {
-                if (images.Count == 0 && hideFirstCard)
+                if (cardsToHide[hideIndex] == 1)
                 {
-                    images.Add(await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", "back.png")));
-                    continue;
+                    images.Add(backImage);
                 }
-                images.Add(await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", card.GetImageName)));
+                else
+                {
+                    var key = card.GetImageName;
+                    if (!cachedImages.ContainsKey(key))
+                    {
+                        cachedImages.Add(key, await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", card.GetImageName)));
+                    }
+                    images.Add(cachedImages[key]);
+                }
             }
 
             // Height shouldn't change but width will
@@ -57,16 +83,15 @@ namespace Bot.Models.Extensions
                     {
                         var img = images[imgIndex];
                         o.DrawImage(img, new Point(img.Width * imgIndex, 0), 1.0f);
-                        img.Dispose();
                     }
                     o.Resize(width / 4, height / 4);
                 });
                 handImage.Save(output, new PngEncoder());
             }
-            images.Clear();
+            foreach (var image in cachedImages.Values) image.Dispose();
+            backImage.Dispose();
             return output;
         }
-
 
     }
 }
