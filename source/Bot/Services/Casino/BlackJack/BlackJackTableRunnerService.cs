@@ -1,3 +1,4 @@
+using Bot.Models;
 using Bot.Models.Casino;
 using Bot.Models.Casino.BlackJack;
 using Bot.Models.Extensions;
@@ -12,20 +13,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Bot.Services.BlackJack
+namespace Bot.Services.Casino.BlackJack
 {
 
     /// <summary>
     ///     Provides table and job management to handle running numerous tables
     /// </summary>
-    public sealed class BlackJackTableRunnerService : IEileenService
+    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackTable, BlackJackPlayer, BlackJackTableDetails, BlackJackServerDetails>
     {
 
         private readonly ConcurrentDictionary<ulong, BlackJackTableDetails> tables = new();
         private readonly CurrencyService currencyService;
         private readonly DiscordSocketClient client;
         private readonly InteractionHandlingService interactionHandlingService;
-        private readonly ILogger<BlackJackTableRunnerService> logger;
         private readonly UserService userService;
 
         public BlackJackTableRunnerService(
@@ -34,86 +34,32 @@ namespace Bot.Services.BlackJack
             DiscordSocketClient client,
             InteractionHandlingService interactionHandlingService,
             ILogger<BlackJackTableRunnerService> logger,
-            UserService userService)
+            UserService userService) : base(cancellationTokenSource, logger, userService)
         {
             this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
             this.client = client ?? throw new ArgumentNullException(nameof(client));
             this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.userService = userService ?? throw new ArgumentNullException(nameof(userService));
-            cancellationTokenSource.Token.Register(() =>
-            {
-                foreach (var table in tables)
-                {
-                    table.Value.CancellationTokenSource.Cancel();
-                }
-            });
             this.client.ThreadMemberLeft += smc =>
             {
-                logger.LogTrace("A user has left a thread. Lookign to see if it is a thread we are concerned with...");
+                Logger.LogTrace("A user has left a thread. Lookign to see if it is a thread we are concerned with...");
                 var thread = smc.Thread;
                 if (tables.TryGetValue(thread.Id, out var details))
                 {
-                    logger.LogInformation("A user {username} has left the thread {thread}; removing them from the table (if they were even involved)", smc.Username, thread.Name);
+                    Logger.LogInformation("A user {username} has left the thread {thread}; removing them from the table (if they were even involved)", smc.Username, thread.Name);
                     RemovePlayerSafelyFromTable(details.Table, smc);
                 }
                 return Task.CompletedTask;
             };
         }
 
+        internal override BlackJackTable CreateNewTable(IThreadChannel threadChannel) => new(Deck.CreateDeck(4));
 
+        internal override BlackJackTableDetails CreateTableDetails(BlackJackTable table, IThreadChannel channel) => new(table, channel);
 
+        internal override BlackJackPlayer CreatePlayer(EileenUserData userData, IUser user) => new(userData, user);
 
-        /// <summary>
-        /// Gets or creates a new <see cref="BlackJackTable"/> for the given <see cref="IThreadChannel"/>
-        /// </summary>
-        /// <param name="threadChannel">The thread channel to get or create a <see cref="BlackJackTable"/> for</param>
-        /// <returns><see cref="BlackJackTable"/></returns>
-        public BlackJackTable GetOrCreateBlackJackTable(IThreadChannel threadChannel)
-        {
-            if (!tables.TryGetValue(threadChannel.Id, out var t))
-            {
-                logger.LogInformation("Creating a new BlackJack table for thread {threadId}", threadChannel.Id);
-                var deck = Deck.CreateDeck(4);
-                var bjt = new BlackJackTable(deck);
-                tables.TryAdd(threadChannel.Id, new(bjt, threadChannel));
-                return bjt;
-            }
-            logger.LogInformation("Returning an already created table for thread {threadId}", threadChannel.Id);
-            return t.Table;
-        }
-
-        /// <summary>
-        ///     Starts the thread 
-        /// </summary>
-        /// <param name="threadChannel"></param>
-        public bool StartBlackJackTableForChannel(IThreadChannel threadChannel)
-        {
-            logger.LogInformation("Attempting to start the game loop for thread {threadId}", threadChannel.Id);
-            if (!tables.TryGetValue(threadChannel.Id, out var details)) return false;
-            if (details.IsThreadCurrentlyRunning) return true;
-            ThreadPool.QueueUserWorkItem(async bjtd => { await TableRunnerLoop(bjtd); }, details, false);
-            logger.LogInformation("The game loop for thread {threadId} has begun", threadChannel.Id);
-            return true;
-        }
-
-        /// <summary>
-        /// Stops a running table and removes it from the internal dictionary
-        /// </summary>
-        /// <param name="threadId">The ID of the thread to look for</param>
-        public void StopAndRemoveBlackJackTable(ulong threadId)
-        {
-            if (tables.TryGetValue(threadId, out var t))
-            {
-                logger.LogInformation("Attempting to stop the game loop for thread {threadId}", threadId);
-                t.CancellationTokenSource.Cancel();
-                tables.Remove(threadId, out _);
-                logger.LogInformation("A cancellation request for {threadId} has been initiated; logs will indicate if this was successful", threadId);
-            }
-        }
-
-
-        private async Task TableRunnerLoop(BlackJackTableDetails blackJackTableDetails)
+        internal override async Task TableRunnerLoop(BlackJackTableDetails blackJackTableDetails)
         {
             // I'm lazy
             var thread = blackJackTableDetails.ThreadChannel;
@@ -159,7 +105,7 @@ namespace Bot.Services.BlackJack
                     while (table.GetNextPlayer(out var currentPlayer))
                     {
                         token.ThrowIfCancellationRequested();
-                        logger.LogInformation("Player {player} is now taking their turn...", currentPlayer.Name);
+                        Logger.LogInformation("Player {player} is now taking their turn...", currentPlayer.Name);
                         await HandlePlayerHand(thread, table, currentPlayer);
                         await Task.Delay(TimeSpan.FromSeconds(2));
                     }
@@ -183,100 +129,47 @@ namespace Bot.Services.BlackJack
             }
             catch (OperationCanceledException oce)
             {
-                logger.LogWarning(oce, "A BlackJack game has been cancelled!");
+                Logger.LogWarning(oce, "A BlackJack game has been cancelled!");
                 try
                 {
                     await thread.SendMessageAsync("Attention Players - The BlackJack Runner Service has been ordered to cancel this game. Please contact the Administrator.");
                 }
                 catch (Exception uh)
                 {
-                    logger.LogCritical(uh, "Unable to notify thread of game cancellation. It is possible the thread no longer exists on Discord!");
+                    Logger.LogCritical(uh, "Unable to notify thread of game cancellation. It is possible the thread no longer exists on Discord!");
                 }
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "A critical error has caused the BlackJack game loop to exit! Examine the stacktrace for more details");
+                Logger.LogError(exception, "A critical error has caused the BlackJack game loop to exit! Examine the stacktrace for more details");
                 try
                 {
                     await thread.SendMessageAsync("Attention Players - The BlackJack Runner Service has encountered an unrecoverable error and is immediately shutting down the game table. Please contact the Administrator.");
                 }
                 catch (Exception uh)
                 {
-                    logger.LogCritical(uh, "Unable to notify thread of game cancellation. It is possible the thread no longer exists on Discord!");
+                    Logger.LogCritical(uh, "Unable to notify thread of game cancellation. It is possible the thread no longer exists on Discord!");
                 }
             }
             blackJackTableDetails.IsThreadCurrentlyRunning = false;
             RemoveTableLevelInteractions(thread.Id);
         }
 
-        /// <summary>
-        ///     Safely adds a <see cref="IUser"/> to the supplied <see cref="BlackJackTable"/>
-        /// </summary>
-        /// <param name="table">The table to add the user to</param>
-        /// <param name="user">A reference to the Discord <see cref="IUser"/></param>
-        /// <returns>A promise that, if true, means the player was added successfully</returns>
-        public async Task<bool> AddPlayerSafelyToTable(BlackJackTable table, IUser user)
-        {
-            if (!table.PendingPlayers.Any(pp => pp.User.UserId == user.Id) &&
-                !table.Players.Any(p => p.User.UserId == user.Id))
-            {
-                var userData = await userService.GetOrCreateUserData(user);
-                var blackJackPlayer = new BlackJackPlayer(userData, user);
-                if (table.IsGameActive)
-                {
-                    logger.LogInformation("Adding {player} to the Pending Players collection", blackJackPlayer.Name);
-                    table.PendingPlayers.Add(blackJackPlayer);
-                }
-                else
-                {
-                    logger.LogInformation("Adding {player} to the Players collection", blackJackPlayer.Name);
-                    table.Players.Add(blackJackPlayer);
-                }
-                return true;
-            }
-            logger.LogInformation("{player} is already part of the game!", user.Username);
-            return false;
-        }
-
-        /// <summary>
-        ///     Safely removes a <see cref="IUser"/>
-        /// </summary>
-        /// <param name="table">The table to remove the user from</param>
-        /// <param name="user">A reference to the Discord <see cref="IUser"/></param>
-        /// <returns>A promise that, if true, means the player was removed successfully</returns>
-        public bool RemovePlayerSafelyFromTable(BlackJackTable table, IUser user)
-        {
-            if (table.IsGameActive && !table.LeavingPlayers.Any(lp => lp.User.UserId == user.Id))
-            {
-                logger.LogInformation("Adding {player} to the Leaving Players collection", user.Username);
-                table.LeavingPlayers.Add(table.Players.First(p => p.User.UserId == user.Id));
-                return true;
-            }
-            if (!table.IsGameActive && table.Players.Any(p => p.User.UserId == user.Id))
-            {
-                logger.LogInformation("Removing {player}...", user.Username);
-                table.Players.Remove(table.Players.First(p => p.User.UserId == user.Id));
-                return true;
-            }
-            return false;
-        }
-
-
         #region Helper Methods
 
         private void DealCardsToPlayers(BlackJackTable table)
         {
-            logger.LogTrace("Dealing out hands to {count} players", table.Players.Count);
+            Logger.LogTrace("Dealing out hands to {count} players", table.Players.Count);
             for (var c = 0; c < 2; c++)
             {
                 foreach (var player in table.Players)
                 {
                     var card = table.Deck.GetNextCard();
-                    logger.LogTrace("{player} got {card}", player.Name, card.ToString());
+                    Logger.LogTrace("{player} got {card}", player.Name, card.ToString());
                     player.Hand.Cards.Add(card);
                 }
                 var dealerCard = table.Deck.GetNextCard();
-                logger.LogTrace("{player} got {card}", table.Dealer.Name, dealerCard.ToString());
+                Logger.LogTrace("{player} got {card}", table.Dealer.Name, dealerCard.ToString());
                 table.Dealer.Hand.Cards.Add(dealerCard);
             }
         }
@@ -284,7 +177,7 @@ namespace Bot.Services.BlackJack
         private void HandleTableLevelInteractions(BlackJackTable table, IThreadChannel thread)
         {
             var threadId = thread.Id;
-            logger.LogInformation("Attaching interaction callbacks for thread {threadId}", thread.Id);
+            Logger.LogInformation("Attaching interaction callbacks for thread {threadId}", thread.Id);
             async Task<bool> CanPlayerChangeCurrentBet(
                 BlackJackTable currentTable,
                 SocketMessageComponent smc)
@@ -316,7 +209,7 @@ namespace Bot.Services.BlackJack
                     amountSetterAction(player);
                     player.CurrentBet = Math.Max(0, player.CurrentBet);
                     var newBet = player.CurrentBet;
-                    logger.LogTrace("Changing bet from {old bet} to {new bet} for user {userName} {userId}", oldBet, newBet, player.Name, player.User.UserId);
+                    Logger.LogTrace("Changing bet from {old bet} to {new bet} for user {userName} {userId}", oldBet, newBet, player.Name, player.User.UserId);
 
                     if (currencyData.Currency < player.CurrentBet)
                     {
@@ -331,7 +224,7 @@ namespace Bot.Services.BlackJack
             }
             interactionHandlingService.RegisterCallbackHandler($"join-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
-                logger.LogTrace("Join event for {threadId}", threadId);
+                Logger.LogTrace("Join event for {threadId}", threadId);
                 if (await AddPlayerSafelyToTable(table, smc.User))
                 {
                     await thread.AddUserAsync(smc.User as IGuildUser);
@@ -345,7 +238,7 @@ namespace Bot.Services.BlackJack
             }));
             interactionHandlingService.RegisterCallbackHandler($"leave-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
-                logger.LogTrace("Leave event for {threadId}", threadId);
+                Logger.LogTrace("Leave event for {threadId}", threadId);
                 if (RemovePlayerSafelyFromTable(table, smc.User))
                 {
                     await smc.RespondAsync($"Your removal has been scheduled. If a round is currently going you will be removed at the end of the round.", ephemeral: true);
@@ -402,7 +295,7 @@ namespace Bot.Services.BlackJack
 
         private void RemoveTableLevelInteractions(ulong threadId)
         {
-            logger.LogInformation("Removing interaction callbacks for {threadId}", threadId);
+            Logger.LogInformation("Removing interaction callbacks for {threadId}", threadId);
             interactionHandlingService.RemoveButtonCallbacks(
                 $"join-{threadId}",
                 $"leave-{threadId}",
@@ -420,7 +313,7 @@ namespace Bot.Services.BlackJack
             var pinned = await thread.GetPinnedMessagesAsync();
             if (!pinned.Any())
             {
-                logger.LogInformation("Creating initial pinned messages for thread {threadId}", thread.Id);
+                Logger.LogInformation("Creating initial pinned messages for thread {threadId}", thread.Id);
                 var welcomeMsg = await thread.SendMessageAsync($"Welcome to Table '{thread.Name}'. Please use these two buttons to Join or Leave the game. Alternatively, you can also use `/blackjack join` and `/blackjack leave` inside this thread to join and leave",
                     components: GetJoinAndLeaveComponents(thread.Id).Build());
                 var betMsg = await thread.SendMessageAsync("Once you have joined the table, you can set your bet by typing `/blackjack bet <amount>` to manually specify your amount OR you can use these quick bet options",
@@ -445,8 +338,8 @@ namespace Bot.Services.BlackJack
 
         private void CleanUpHands(BlackJackTable table)
         {
-            logger.LogInformation("Cleaning up the Player & Dealer Hands");
-            foreach(var player in table.Players
+            Logger.LogInformation("Cleaning up the Player & Dealer Hands");
+            foreach (var player in table.Players
                 .Union(table.PendingPlayers)
                 .Union(table.LeavingPlayers))
             {
@@ -457,11 +350,11 @@ namespace Bot.Services.BlackJack
 
         private void HandleJoiningUsers(BlackJackTable table)
         {
-            foreach(var pending in table.PendingPlayers)
+            foreach (var pending in table.PendingPlayers)
             {
                 if (!table.Players.Any(p => p.User.UserId == pending.User.UserId))
                 {
-                    logger.LogInformation("Adding {player} to the Players collection", pending.Name);
+                    Logger.LogInformation("Adding {player} to the Players collection", pending.Name);
                     table.Players.Add(pending);
                 }
             }
@@ -475,7 +368,7 @@ namespace Bot.Services.BlackJack
                 var currentPlayer = table.Players[playerIndex];
                 if (table.LeavingPlayers.Any(lp => lp.User.UserId == currentPlayer.User.UserId))
                 {
-                    logger.LogInformation("Removing {player} from the Players collection", currentPlayer.Name);
+                    Logger.LogInformation("Removing {player} from the Players collection", currentPlayer.Name);
                     table.Players.RemoveAt(playerIndex);
                 }
             }
@@ -489,7 +382,7 @@ namespace Bot.Services.BlackJack
 
         private async Task HandleGameStartup(IThreadChannel thread, BlackJackTable table)
         {
-            logger.LogInformation("Beginning game for thread {threadId}", thread.Id);
+            Logger.LogInformation("Beginning game for thread {threadId}", thread.Id);
             await thread.SendMessageAsync("A round of BlackJack is going to begin shortly. For all players joining, please ensure your bets are in within the next thirty seconds.\r\nThere will be a fifteen second warning that will include players who have not set their bets yet!", components: GetJoinAndLeaveComponents(thread.Id).Build());
             await Task.Delay(TimeSpan.FromSeconds(15));
             var zeroBetPlayers = GetZeroBetPlayers(table).ToList();
@@ -514,7 +407,7 @@ namespace Bot.Services.BlackJack
                 currentPlayer.CurrentBet = Math.Min(currentPlayer.CurrentBet, playerCurrency.Currency);
                 if (currentPlayer.CurrentBet == 0)
                 {
-                    logger.LogInformation("Player {player} is being moved to Pending Players as they are not ready to play yet!", currentPlayer.Name);
+                    Logger.LogInformation("Player {player} is being moved to Pending Players as they are not ready to play yet!", currentPlayer.Name);
                     moved.Add(currentPlayer);
                     table.Players.RemoveAt(playerIndex);
                     table.PendingPlayers.Add(currentPlayer);
@@ -560,17 +453,17 @@ namespace Bot.Services.BlackJack
         private async Task HandleScoreCalculation(IThreadChannel thread, BlackJackTable table)
         {
             var winners = table.Players.Where(player =>
-                (player.Hand.Value > table.Dealer.Hand.Value && !player.Hand.IsBust) ||
+                player.Hand.Value > table.Dealer.Hand.Value && !player.Hand.IsBust ||
                     player.Hand.IsBlackJack ||
-                    (table.Dealer.Hand.IsBust && !player.Hand.IsBust)).ToList();
+                    table.Dealer.Hand.IsBust && !player.Hand.IsBust).ToList();
 
             var losers = table.Players.Where(player =>
-                (player.Hand.Value < table.Dealer.Hand.Value && !table.Dealer.Hand.IsBust) ||
-                (player.Hand.IsBust && !table.Dealer.Hand.IsBust)).ToList();
+                player.Hand.Value < table.Dealer.Hand.Value && !table.Dealer.Hand.IsBust ||
+                player.Hand.IsBust && !table.Dealer.Hand.IsBust).ToList();
 
             var neutrals = table.Players.Where(player =>
-                (player.Hand.Value == table.Dealer.Hand.Value && !player.Hand.IsBust) ||
-                (player.Hand.IsBust && table.Dealer.Hand.IsBust)).ToList();
+                player.Hand.Value == table.Dealer.Hand.Value && !player.Hand.IsBust ||
+                player.Hand.IsBust && table.Dealer.Hand.IsBust).ToList();
 
             var roundResultBuilder = new StringBuilder();
             roundResultBuilder.AppendLine($"Winners: {GetCommaSeparatedUserNames(winners)}");
@@ -698,7 +591,7 @@ namespace Bot.Services.BlackJack
 
             if (!player.Hand.IsBlackJack)
             {
-                SpinWait.SpinUntil(() => (player.Hand.IsBust && hasProcessedBust) || hasStood);
+                SpinWait.SpinUntil(() => player.Hand.IsBust && hasProcessedBust || hasStood);
             }
         }
 
@@ -742,7 +635,7 @@ namespace Bot.Services.BlackJack
 
         private static ComponentBuilder GetHandViewComponent(ulong threadId, ComponentBuilder builder = null)
         {
-            return (builder ?? new ComponentBuilder())
+            return builder ?? new ComponentBuilder()
                 /*.WithButton("See Hand", $"hand-{threadId}")*/;
         }
 
@@ -771,23 +664,7 @@ namespace Bot.Services.BlackJack
 
 
 
-        private sealed class BlackJackTableDetails
-        {
-            public BlackJackTable Table { get; }
 
-            public IThreadChannel ThreadChannel { get; }
-
-            public bool IsThreadCurrentlyRunning { get; set; } = false;
-
-            public CancellationTokenSource CancellationTokenSource { get; set; } = new();
-
-
-            public BlackJackTableDetails(BlackJackTable table, IThreadChannel threadChannel)
-            {
-                Table = table;
-                ThreadChannel = threadChannel;
-            }
-        }
 
     }
 }

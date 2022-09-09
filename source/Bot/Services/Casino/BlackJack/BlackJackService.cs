@@ -1,14 +1,12 @@
-using Bot.Models.BlackJack;
 using Bot.Models.Casino.BlackJack;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bot.Services.BlackJack
+namespace Bot.Services.Casino.BlackJack
 {
 
     /// <summary>
@@ -41,7 +39,7 @@ namespace Bot.Services.BlackJack
         private Task HandleThreadDeleted(Cacheable<SocketThreadChannel, ulong> arg)
         {
             var threadId = arg.Id;
-            blackJackTableRunnerService.StopAndRemoveBlackJackTable(threadId);
+            blackJackTableRunnerService.StopAndRemoveTable(threadId);
             return Task.CompletedTask;
         }
 
@@ -78,15 +76,15 @@ namespace Bot.Services.BlackJack
             if (threadId is null)
             {
                 var thread = await channel.CreateThreadAsync("BlackJack Table");
-                var table = blackJackTableRunnerService.GetOrCreateBlackJackTable(thread);
-                blackJackTableRunnerService.StartBlackJackTableForChannel(thread);
+                var table = blackJackTableRunnerService.GetOrCreateTable(thread);
+                blackJackTableRunnerService.StartTableForChannel(thread);
                 return table;
             }
             else
             {
                 var thread = await discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
-                var table = blackJackTableRunnerService.GetOrCreateBlackJackTable(thread);
-                blackJackTableRunnerService.StartBlackJackTableForChannel(thread);
+                var table = blackJackTableRunnerService.GetOrCreateTable(thread);
+                blackJackTableRunnerService.StartTableForChannel(thread);
                 return table;
             }
         }
@@ -101,7 +99,7 @@ namespace Bot.Services.BlackJack
 
         public BlackJackTable FindBlackJackGame(IThreadChannel thread)
         {
-            return blackJackTableRunnerService.GetOrCreateBlackJackTable(thread);
+            return blackJackTableRunnerService.GetOrCreateTable(thread);
         }
 
     }

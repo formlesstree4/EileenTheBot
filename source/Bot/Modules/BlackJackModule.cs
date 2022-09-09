@@ -1,4 +1,4 @@
-using Bot.Services.BlackJack;
+using Bot.Services.Casino.BlackJack;
 using Discord;
 using Discord.Interactions;
 using System;

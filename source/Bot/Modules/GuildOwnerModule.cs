@@ -1,6 +1,6 @@
 using Bot.Models.ChannelCommunication;
 using Bot.Services;
-using Bot.Services.BlackJack;
+using Bot.Services.Casino.BlackJack;
 using Discord;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
