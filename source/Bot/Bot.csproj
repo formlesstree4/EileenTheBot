@@ -33,168 +33,305 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\10_of_clubs.png">
+    <None Update="Resources\Cards\Basic\10_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\10_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\10_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\10_of_hearts.png">
+    <None Update="Resources\Cards\Basic\10_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\10_of_spades.png">
+    <None Update="Resources\Cards\Basic\10_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\2_of_clubs.png">
+    <None Update="Resources\Cards\Basic\2_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\2_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\2_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\2_of_hearts.png">
+    <None Update="Resources\Cards\Basic\2_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\2_of_spades.png">
+    <None Update="Resources\Cards\Basic\2_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\3_of_clubs.png">
+    <None Update="Resources\Cards\Basic\3_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\3_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\3_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\3_of_hearts.png">
+    <None Update="Resources\Cards\Basic\3_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\3_of_spades.png">
+    <None Update="Resources\Cards\Basic\3_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\4_of_clubs.png">
+    <None Update="Resources\Cards\Basic\4_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\4_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\4_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\4_of_hearts.png">
+    <None Update="Resources\Cards\Basic\4_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\4_of_spades.png">
+    <None Update="Resources\Cards\Basic\4_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\5_of_clubs.png">
+    <None Update="Resources\Cards\Basic\5_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\5_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\5_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\5_of_hearts.png">
+    <None Update="Resources\Cards\Basic\5_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\5_of_spades.png">
+    <None Update="Resources\Cards\Basic\5_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\6_of_clubs.png">
+    <None Update="Resources\Cards\Basic\6_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\6_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\6_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\6_of_hearts.png">
+    <None Update="Resources\Cards\Basic\6_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\6_of_spades.png">
+    <None Update="Resources\Cards\Basic\6_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\7_of_clubs.png">
+    <None Update="Resources\Cards\Basic\7_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\7_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\7_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\7_of_hearts.png">
+    <None Update="Resources\Cards\Basic\7_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\7_of_spades.png">
+    <None Update="Resources\Cards\Basic\7_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\8_of_clubs.png">
+    <None Update="Resources\Cards\Basic\8_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\8_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\8_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\8_of_hearts.png">
+    <None Update="Resources\Cards\Basic\8_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\8_of_spades.png">
+    <None Update="Resources\Cards\Basic\8_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\9_of_clubs.png">
+    <None Update="Resources\Cards\Basic\9_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\9_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\9_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\9_of_hearts.png">
+    <None Update="Resources\Cards\Basic\9_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\9_of_spades.png">
+    <None Update="Resources\Cards\Basic\9_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\ace_of_clubs.png">
+    <None Update="Resources\Cards\Basic\ace_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\ace_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\ace_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\ace_of_hearts.png">
+    <None Update="Resources\Cards\Basic\ace_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\ace_of_spades.png">
+    <None Update="Resources\Cards\Basic\ace_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\back.png">
+    <None Update="Resources\Cards\Basic\back.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\jack_of_clubs.png">
+    <None Update="Resources\Cards\Basic\jack_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\jack_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\jack_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\jack_of_hearts.png">
+    <None Update="Resources\Cards\Basic\jack_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\jack_of_spades.png">
+    <None Update="Resources\Cards\Basic\jack_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\king_of_clubs.png">
+    <None Update="Resources\Cards\Basic\king_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\king_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\king_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\king_of_hearts.png">
+    <None Update="Resources\Cards\Basic\king_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\king_of_spades.png">
+    <None Update="Resources\Cards\Basic\king_of_spades.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\queen_of_clubs.png">
+    <None Update="Resources\Cards\Basic\queen_of_clubs.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\queen_of_diamonds.png">
+    <None Update="Resources\Cards\Basic\queen_of_diamonds.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\queen_of_hearts.png">
+    <None Update="Resources\Cards\Basic\queen_of_hearts.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\queen_of_spades.png">
+    <None Update="Resources\Cards\Basic\queen_of_spades.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20200809_182530.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20200911_000245.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20201110_004652.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20201113_203131.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20201117_071030.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20201206_150030.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20201209_020207.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20201214_120842.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210116_201533.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210118_223224.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210221_181126.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210225_235531.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210319_231758.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210329_120447.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210427_095603.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210601_194559.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210720_103522.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20210910_155301.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20211118_195710.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20211130_001442.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220212_105325.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220225_104732.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220321_111108.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220408_182117.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220415_111637.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220506_184600.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220721_202357.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220721_202522.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220721_202545.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220807_020120.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220813_125056.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220817_183606.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220820_232214.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220820_232405.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220823_105436.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220825_202206.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220825_202414.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\20220827_162743.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\Berserk_Quinn.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\groove.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\IMG_20200818_003551_586.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\IMG_20201026_203122_250.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\Quinn.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\Screenshot_20211225-000509_Instagram.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\unknown-4.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Quinn\Viking_Quinn.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Resources\" />
     <Folder Include="Services\Casino\HoldEm\" />
   </ItemGroup>
   <ItemGroup>
