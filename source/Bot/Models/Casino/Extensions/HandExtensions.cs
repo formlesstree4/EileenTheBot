@@ -50,7 +50,7 @@ namespace Bot.Models.Extensions
             List<Image<Rgba32>> images = new();
             MemoryStream output = new();
 
-            Image<Rgba32> backImage = await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", "back.png"));
+            Image<Rgba32> backImage = await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", "Cards", "Basic", "back.png"));
             Dictionary<string, Image<Rgba32>> cachedImages = new();
 
             var hideIndex = 0;
@@ -65,7 +65,7 @@ namespace Bot.Models.Extensions
                     var key = card.GetImageName;
                     if (!cachedImages.ContainsKey(key))
                     {
-                        cachedImages.Add(key, await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", card.GetImageName)));
+                        cachedImages.Add(key, await SixLabors.ImageSharp.Image.LoadAsync<Rgba32>(Path.Combine("Resources", "Cards", "Basic", card.GetImageName)));
                     }
                     images.Add(cachedImages[key]);
                 }
