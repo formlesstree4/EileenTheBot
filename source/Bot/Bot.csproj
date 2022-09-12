@@ -306,6 +306,9 @@
     <None Update="Resources\Quinn\20220827_162743.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\Quinn\20220908_201921.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\Quinn\Berserk_Quinn.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
