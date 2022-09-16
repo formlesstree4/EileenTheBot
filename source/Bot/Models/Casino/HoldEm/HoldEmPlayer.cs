@@ -1,3 +1,4 @@
+using Bot.Models.Currency;
 using Discord;
 
 namespace Bot.Models.Casino.HoldEm
@@ -8,6 +9,11 @@ namespace Bot.Models.Casino.HoldEm
     /// </summary>
     public sealed class HoldEmPlayer : CasinoPlayer
     {
+
+        /// <summary>
+        /// Gets the <see cref="EileenCurrencyData"/> instance
+        /// </summary>
+        public EileenCurrencyData CurrencyData { get; }
 
         /// <summary>
         /// Gets or sets whether this player has the dealer button
@@ -35,9 +41,10 @@ namespace Bot.Models.Casino.HoldEm
         public int SeatNumber { get; }
 
 
-        public HoldEmPlayer(EileenUserData userData, IUser user, int seatNumber) :
+        public HoldEmPlayer(EileenUserData userData, EileenCurrencyData eileenCurrencyData, IUser user, int seatNumber) :
             base(userData, user)
         {
+            CurrencyData = eileenCurrencyData;
             SeatNumber = seatNumber;
         }
 
