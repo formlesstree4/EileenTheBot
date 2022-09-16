@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Bot.Models.Casino.HoldEm
@@ -10,6 +11,11 @@ namespace Bot.Models.Casino.HoldEm
     {
 
         /// <summary>
+        /// Gets the current applicable pots for the round
+        /// </summary>
+        public Stack<HoldEmPot> Pots { get; } = new Stack<HoldEmPot>();
+
+        /// <summary>
         /// Creates a new <see cref="HoldEmTable"/> with a default deck
         /// </summary>
         public HoldEmTable() :
@@ -17,11 +23,11 @@ namespace Bot.Models.Casino.HoldEm
         { }
 
         /// <summary>
-        /// Creats a new <see cref="HoldEmTable"/> with the specified deck
+        /// Creates a new <see cref="HoldEmTable"/> with the specified deck
         /// </summary>
         /// <param name="deck">The <see cref="Deck"/> to use</param>
         public HoldEmTable(Deck deck) :
-            base(new(null, null, int.MinValue), deck)
+            base(new(null, null, null, int.MinValue), deck)
         { }
 
         /// <summary>
