@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Bot.Services.Casino
 {
-    public abstract class TableRunnerService<TTable, TPlayer, TTableDetails, THand> : IEileenService
+    public abstract class TableRunnerService<THand, TPlayer, TTable, TTableDetails> : IEileenService
         where THand : CasinoHand
         where TPlayer : CasinoPlayer<THand>
         where TTable : CasinoTable<TPlayer, THand>
@@ -17,14 +17,14 @@ namespace Bot.Services.Casino
     {
 
         private readonly ConcurrentDictionary<ulong, TTableDetails> tables = new();
-        private readonly ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, THand>> logger;
+        private readonly ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> logger;
         private readonly UserService userService;
 
 
         /// <summary>
         /// Gets the ILogger associated with this runner service
         /// </summary>
-        public ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, THand>> Logger => logger;
+        public ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> Logger => logger;
 
         /// <summary>
         /// Gets the internal dictionary which contains the collection of active tables
@@ -38,7 +38,7 @@ namespace Bot.Services.Casino
 
         public TableRunnerService(
             CancellationTokenSource cancellationTokenSource,
-            ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, THand>> logger,
+            ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> logger,
             UserService userService)
         {
             this.logger = logger;
