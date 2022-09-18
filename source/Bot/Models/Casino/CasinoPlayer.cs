@@ -6,7 +6,7 @@ namespace Bot.Models.Casino
     /// <summary>
     ///     The base player object that all Casino games have in common
     /// </summary>
-    public abstract class CasinoPlayer
+    public abstract class CasinoPlayer<THand> where THand : CasinoHand
     {
 
         /// <summary>
@@ -27,7 +27,7 @@ namespace Bot.Models.Casino
         /// <summary>
         ///     Gets the User's hand
         /// </summary>
-        public Hand Hand { get; internal set; } = new();
+        public THand Hand { get; internal set; }
 
         /// <summary>
         ///     Indicates if this is the Dealer or not

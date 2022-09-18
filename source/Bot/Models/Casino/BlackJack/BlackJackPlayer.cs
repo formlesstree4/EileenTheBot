@@ -1,24 +1,23 @@
-using Bot.Models.Casino;
 using Discord;
 
 namespace Bot.Models.Casino.BlackJack
 {
     /// <summary>
-    ///     Defines a Player that is sitting at a <see cref="BlackJackTable"/>
+    /// Defines a Player that is sitting at a <see cref="BlackJackTable"/>
     /// </summary>
-    public sealed class BlackJackPlayer : CasinoPlayer
+    public sealed class BlackJackPlayer : CasinoPlayer<BlackJackHand>
     {
 
         /// <summary>
-        ///     Gets if this Player came about as the result of a hand being split
+        /// Gets if this Player came about as the result of a hand being split
         /// </summary>
         /// <remarks>
-        ///     This is used for eventually cleaning up excess players from the list of active players.
+        /// This is used for eventually cleaning up excess players from the list of active players.
         /// </remarks>
         public bool IsFromSplit { get; private set; } = false;
 
         /// <summary>
-        ///     Creates a new Player object
+        /// Creates a new Player object
         /// </summary>
         /// <param name="user">A reference to the <see cref="EileenUserData"/></param>
         /// <param name="discordUser">A reference to the <see cref="IUser"/></param>
@@ -26,13 +25,13 @@ namespace Bot.Models.Casino.BlackJack
             base(user, discordUser) { }
 
         /// <summary>
-        ///     Creates a cloned <see cref="BlackJackPlayer"/> that is setup to indicate its from a split hand
+        /// Creates a cloned <see cref="BlackJackPlayer"/> that is setup to indicate its from a split hand
         /// </summary>
         /// <param name="user">A reference to the <see cref="EileenUserData"/></param>
         /// <param name="discordUser">A reference to the <see cref="IUser"/></param>
         /// <param name="splitHand">The hand to set</param>
         /// <returns><see cref="BlackJackPlayer"/></returns>
-        public static BlackJackPlayer CreateSplit(BlackJackPlayer player, Hand splitHand)
+        public static BlackJackPlayer CreateSplit(BlackJackPlayer player, BlackJackHand splitHand)
         {
             return new BlackJackPlayer(player.User, player.DiscordUser)
             {

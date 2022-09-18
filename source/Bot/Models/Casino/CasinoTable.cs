@@ -6,10 +6,12 @@ namespace Bot.Models.Casino
 {
 
     /// <summary>
-    ///     Defines the basic 
+    /// Contains the basic casino table logic across multiple types of Poker 
     /// </summary>
-    /// <typeparam name="TPlayer"></typeparam>
-    public abstract class CasinoTable<TPlayer> where TPlayer : CasinoPlayer
+    /// <typeparam name="TPlayer">A subclass of <see cref="CasinoPlayer"/></typeparam>
+    public abstract class CasinoTable<TPlayer, THand>
+        where TPlayer : CasinoPlayer<THand>
+        where THand: CasinoHand
     {
 
         private readonly Stack<TPlayer> currentRoundPlayers = new();
@@ -54,12 +56,12 @@ namespace Bot.Models.Casino
         public bool IsGameActive { get; set; } = false;
 
         /// <summary>
-        /// Gets the <see cref="Stack{T}"/> of players that are yet to go for this round
+        /// Gets the <see cref="Stack{TPlayer}"/> of players that are yet to go for this round
         /// </summary>
         public Stack<TPlayer> CurrentRoundPlayers => currentRoundPlayers;
 
         /// <summary>
-        /// Gets the <see cref="Queue{T}"/> of players that have already gone for this round
+        /// Gets the <see cref="Queue{TPlayer}"/> of players that have already gone for this round
         /// </summary>
         public Queue<TPlayer> FinishedRoundPlayers => finishedRoundPlayers;
 
@@ -95,10 +97,10 @@ namespace Bot.Models.Casino
         }
 
         /// <summary>
-        /// Looks for a <see cref="BlackJackPlayer"/> that's either pending to play or playing
+        /// Looks for a <see cref="TPlayer"/> that's either pending to play or playing
         /// </summary>
         /// <param name="playerId">The Player ID to look for</param>
-        /// <returns><see cref="BlackJackPlayer"/> if discovered</returns>
+        /// <returns><see cref="TPlayer"/> if discovered</returns>
         public TPlayer FindPlayer(ulong playerId)
         {
             return PendingPlayers.FirstOrDefault(c => c.User.UserId == playerId) ??

@@ -7,13 +7,26 @@ namespace Bot.Models.Casino.HoldEm
     /// <summary>
     ///     Represents a Texas Hold'Em table
     /// </summary>
-    public sealed class HoldEmTable : CasinoTable<HoldEmPlayer>
+    public sealed class HoldEmTable : CasinoTable<HoldEmPlayer, HoldEmHand>
     {
+
+        /// <summary>
+        /// Gets the small blind amount for this table
+        /// </summary>
+        public ulong SmallBlind { get; } = 0;
+
+        /// <summary>
+        /// Gets the big blind amount for this table
+        /// </summary>
+        public ulong BigBlind { get; } = 0;
+
 
         /// <summary>
         /// Gets the current applicable pots for the round
         /// </summary>
         public Stack<HoldEmPot> Pots { get; } = new Stack<HoldEmPot>();
+
+
 
         /// <summary>
         /// Creates a new <see cref="HoldEmTable"/> with a default deck
@@ -28,7 +41,11 @@ namespace Bot.Models.Casino.HoldEm
         /// <param name="deck">The <see cref="Deck"/> to use</param>
         public HoldEmTable(Deck deck) :
             base(new(null, null, null, int.MinValue), deck)
-        { }
+        {
+            
+        }
+
+
 
         /// <summary>
         /// Sorts the players in their proper turn order for Hold'Em
@@ -46,6 +63,10 @@ namespace Bot.Models.Casino.HoldEm
                 CurrentRoundPlayers.Push(player);
             }
         }
+
+
+
+
 
     }
 

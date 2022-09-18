@@ -19,7 +19,7 @@ namespace Bot.Services.Casino.BlackJack
     /// <summary>
     ///     Provides table and job management to handle running numerous tables
     /// </summary>
-    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackTable, BlackJackPlayer, BlackJackTableDetails>
+    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackTable, BlackJackPlayer, BlackJackTableDetails, BlackJackHand>
     {
 
         private readonly ConcurrentDictionary<ulong, BlackJackTableDetails> tables = new();
@@ -62,7 +62,7 @@ namespace Bot.Services.Casino.BlackJack
             // I'm lazy
             var thread = blackJackTableDetails.ThreadChannel;
             var table = blackJackTableDetails.Table;
-            var token = blackJackTableDetails.CancellationTokenSource.Token;
+            var token = blackJackTableDetails.TokenSource.Token;
             var isFirstRun = true;
 
             // Hook up table level Interaction Buttons
@@ -570,7 +570,7 @@ namespace Bot.Services.Casino.BlackJack
                     await smc.DeferAsync();
                     return;
                 }
-                var newHand = new Hand();
+                var newHand = new BlackJackHand();
                 newHand.Cards.Add(player.Hand.Cards[1]);
                 newHand.Cards.Add(table.Deck.GetNextCard());
                 player.Hand.Cards.RemoveAt(1);

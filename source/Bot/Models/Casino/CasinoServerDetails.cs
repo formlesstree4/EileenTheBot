@@ -1,5 +1,9 @@
 namespace Bot.Models.Casino
 {
+
+    /// <summary>
+    /// Houses server related details about the casino
+    /// </summary>
     public abstract class CasinoServerDetails
     {
 
@@ -9,4 +13,5 @@ namespace Bot.Models.Casino
         public ulong? ChannelId { get; set; } = null;
 
     }
+
 }
