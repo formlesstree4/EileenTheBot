@@ -7,7 +7,7 @@ namespace Bot.Models.Casino.HoldEm
     /// <summary>
     /// Defines a player that is sitting at a Texas Hold'Em table
     /// </summary>
-    public sealed class HoldEmPlayer : CasinoPlayer
+    public sealed class HoldEmPlayer : CasinoPlayer<HoldEmHand>
     {
 
         /// <summary>

@@ -16,22 +16,22 @@ namespace Bot.Models.Extensions
     {
 
         /// <summary>
-        ///     Gets a single image file that is the given <see cref="Hand"/>
+        ///     Gets a single image file that is the given <see cref="CasinoHand"/>
         /// </summary>
         /// <returns>A promise to create a <see cref="FileAttachment"/></returns>
-        public static async Task<FileAttachment> GetHandAsAttachment(this Hand hand, bool hideFirstCard = false)
+        public static async Task<FileAttachment> GetHandAsAttachment(this CasinoHand hand, bool hideFirstCard = false)
         {
             var imageStream = await hand.GetHandAsImage(hideFirstCard);
             return new FileAttachment(imageStream, "hand.png");
         }
 
         /// <summary>
-        ///     Gets a <see cref="Stream"/> that contains the image data for the given <see cref="Hand"/>
+        ///     Gets a <see cref="Stream"/> that contains the image data for the given <see cref="CasinoHand"/>
         /// </summary>
-        /// <param name="hand">The <see cref="Hand"/> to create an image of</param>
+        /// <param name="hand">The <see cref="CasinoHand"/> to create an image of</param>
         /// <param name="hideFirstCard">If true, the first card will be hidden. This is typically used for the dealer</param>
         /// <returns>A promise to create a <see cref="Stream"/> that contains the appropriate image data</returns>
-        public static async Task<Stream> GetHandAsImage(this Hand hand, bool hideFirstCard = false)
+        public static async Task<Stream> GetHandAsImage(this CasinoHand hand, bool hideFirstCard = false)
         {
             var hideMask = Enumerable.Repeat<byte>(0, hand.Cards.Count).ToArray();
             if (hideFirstCard) hideMask[0] = 1;
@@ -39,12 +39,12 @@ namespace Bot.Models.Extensions
         }
 
         /// <summary>
-        ///     Gets a <see cref="Stream"/> that contains the image data for the given <see cref="Hand"/>
+        ///     Gets a <see cref="Stream"/> that contains the image data for the given <see cref="CasinoHand"/>
         /// </summary>
-        /// <param name="hand">The <see cref="Hand"/> to create an image of</param>
-        /// <param name="cardsToHide">A byte array that is the same size as <see cref="Hand.Cards"/> where if the matching index equals to 1, the card is hidden</param>
+        /// <param name="hand">The <see cref="CasinoHand"/> to create an image of</param>
+        /// <param name="cardsToHide">A byte array that is the same size as <see cref="CasinoHand.Cards"/> where if the matching index equals to 1, the card is hidden</param>
         /// <returns>A promise to create a <see cref="Stream"/> that contains the appropriate image data</returns>
-        public static async Task<Stream> GetHandAsImage(this Hand hand, byte[] cardsToHide)
+        public static async Task<Stream> GetHandAsImage(this CasinoHand hand, byte[] cardsToHide)
         {
             if (cardsToHide.Length != hand.Cards.Count) throw new ArgumentException($"Argument size mismatch - {nameof(cardsToHide)} ({cardsToHide.Length}) must be equal in size to number of cards in {nameof(hand)} ({hand.Cards.Count})!", nameof(cardsToHide));
             List<Image<Rgba32>> images = new();

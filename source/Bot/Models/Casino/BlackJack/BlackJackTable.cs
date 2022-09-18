@@ -6,7 +6,7 @@ namespace Bot.Models.Casino.BlackJack
 {
 
 
-    public sealed class BlackJackTable : CasinoTable<BlackJackPlayer>
+    public sealed class BlackJackTable : CasinoTable<BlackJackPlayer, BlackJackHand>
     {
 
         /// <summary>

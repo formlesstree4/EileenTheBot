@@ -9,21 +9,22 @@ using System.Threading.Tasks;
 
 namespace Bot.Services.Casino
 {
-    public abstract class TableRunnerService<TTable, TPlayer, TTableDetails> : IEileenService
-        where TTable : CasinoTable<TPlayer>
-        where TPlayer : CasinoPlayer
-        where TTableDetails : CasinoTableDetails<TTable, TPlayer>
+    public abstract class TableRunnerService<TTable, TPlayer, TTableDetails, THand> : IEileenService
+        where THand : CasinoHand
+        where TPlayer : CasinoPlayer<THand>
+        where TTable : CasinoTable<TPlayer, THand>
+        where TTableDetails : CasinoTableDetails<TTable, TPlayer, THand>
     {
 
         private readonly ConcurrentDictionary<ulong, TTableDetails> tables = new();
-        private readonly ILogger<TableRunnerService<TTable, TPlayer, TTableDetails>> logger;
+        private readonly ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, THand>> logger;
         private readonly UserService userService;
 
 
         /// <summary>
         /// Gets the ILogger associated with this runner service
         /// </summary>
-        public ILogger<TableRunnerService<TTable, TPlayer, TTableDetails>> Logger => logger;
+        public ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, THand>> Logger => logger;
 
         /// <summary>
         /// Gets the internal dictionary which contains the collection of active tables
@@ -37,7 +38,7 @@ namespace Bot.Services.Casino
 
         public TableRunnerService(
             CancellationTokenSource cancellationTokenSource,
-            ILogger<TableRunnerService<TTable, TPlayer, TTableDetails>> logger,
+            ILogger<TableRunnerService<TTable, TPlayer, TTableDetails, THand>> logger,
             UserService userService)
         {
             this.logger = logger;
@@ -46,7 +47,7 @@ namespace Bot.Services.Casino
             {
                 foreach (var table in tables)
                 {
-                    table.Value.CancellationTokenSource.Cancel();
+                    table.Value.TokenSource.Cancel();
                 }
             });
         }
@@ -102,7 +103,7 @@ namespace Bot.Services.Casino
             if (tables.TryGetValue(threadId, out var t))
             {
                 logger.LogInformation("Attempting to stop the game loop for thread {threadId}", threadId);
-                t.CancellationTokenSource.Cancel();
+                t.TokenSource.Cancel();
                 tables.TryRemove(threadId, out _);
                 logger.LogInformation("A cancellation request for {threadId} has been initiated; logs will indicate if this was successful", threadId);
             }

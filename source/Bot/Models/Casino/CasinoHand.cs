@@ -7,7 +7,7 @@ namespace Bot.Models.Casino
     /// <summary>
     ///     Defines a Hand in a BlackJack game
     /// </summary>
-    public sealed class Hand
+    public abstract class CasinoHand
     {
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace Bot.Models.Casino
         public List<Card> Cards { get; private set; } = new();
 
         /// <summary>
-        ///     Calculates the current value of the <see cref="Hand"/>
+        ///     Calculates the current value of the <see cref="CasinoHand"/>
         /// </summary>
         /// <returns></returns>
         public int Value => CalculateHandValue();
@@ -25,44 +25,6 @@ namespace Bot.Models.Casino
         /// Calculates the hidden dealer hand
         /// </summary>
         public int MaskedValue(int masked) => CalculateHandValue(Cards.Skip(masked).ToList());
-
-        /// <summary>
-        ///     Gets whether or not this hand is a bust.
-        /// </summary>
-        public bool IsBust
-        {
-            get
-            {
-                return Value > 21;
-            }
-        }
-
-        /// <summary>
-        ///     Gets whether this hand is blackjack or not.
-        /// </summary>
-        public bool IsBlackJack
-        {
-            get
-            {
-                return Cards.Count == 2 && Value == 21;
-            }
-        }
-
-        /// <summary>
-        ///     Gets whether this Hand can be split into two hands.
-        /// </summary>
-        public bool IsSplittable
-        {
-            get
-            {
-                return Cards.Count == 2 && Cards[0].Face == Cards[1].Face;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets whether this was from a split
-        /// </summary>
-        public bool IsFromSplit { get; } = false;
 
         /// <summary>
         /// Gets the evaluation string to be used by the hand evaluation engine

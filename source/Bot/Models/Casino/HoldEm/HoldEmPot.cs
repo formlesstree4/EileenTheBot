@@ -15,22 +15,22 @@ namespace Bot.Models.Casino.HoldEm
         /// <summary>
         /// Gets the name of the pot
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = "";
 
         /// <summary>
         /// Gets the current value of the pot
         /// </summary>
-        public ulong Value { get; set; }
+        public ulong Value { get; set; } = 0;
 
         /// <summary>
         /// Gets the maximum value for this pot
         /// </summary>
-        public ulong MaxValue { get; private set; }
+        public ulong MaxValue { get; } = 0;
 
         /// <summary>
         /// Gets the maximum value that an individual player (inside <see cref="VestedPlayers"/>) can put in the pot
         /// </summary>
-        public ulong MaxIndividualValue { get; private set; }
+        public ulong MaxIndividualValue { get; } = 0;
 
 
 
@@ -42,7 +42,8 @@ namespace Bot.Models.Casino.HoldEm
         {
             Name = name;
             VestedPlayers = new ReadOnlyDictionary<HoldEmPlayer, ulong>(players.ToDictionary(p => p, p => 0UL));
-            MaxValue = players.Max(c => c.CurrencyData.Currency);
+            MaxIndividualValue = players.Min(c => c.CurrencyData.Currency);
+            MaxValue = MaxIndividualValue * (ulong)VestedPlayers.Count;
         }
 
     }
