@@ -6,7 +6,6 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,12 +16,11 @@ namespace Bot.Services.Casino.BlackJack
 {
 
     /// <summary>
-    ///     Provides table and job management to handle running numerous tables
+    /// Provides table and job management to handle running numerous tables
     /// </summary>
-    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackTable, BlackJackPlayer, BlackJackTableDetails, BlackJackHand>
+    public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackHand, BlackJackPlayer, BlackJackTable, BlackJackTableDetails>
     {
 
-        private readonly ConcurrentDictionary<ulong, BlackJackTableDetails> tables = new();
         private readonly CurrencyService currencyService;
         private readonly DiscordSocketClient client;
         private readonly InteractionHandlingService interactionHandlingService;
@@ -42,7 +40,7 @@ namespace Bot.Services.Casino.BlackJack
             {
                 Logger.LogTrace("A user has left a thread. Lookign to see if it is a thread we are concerned with...");
                 var thread = smc.Thread;
-                if (tables.TryGetValue(thread.Id, out var details))
+                if (Tables.TryGetValue(thread.Id, out var details))
                 {
                     Logger.LogInformation("A user {username} has left the thread {thread}; removing them from the table (if they were even involved)", smc.Username, thread.Name);
                     RemovePlayerSafelyFromTable(details.Table, smc);
