@@ -38,7 +38,7 @@ namespace Bot.Services.Casino.BlackJack
             this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
             this.client.ThreadMemberLeft += smc =>
             {
-                Logger.LogTrace("A user has left a thread. Lookign to see if it is a thread we are concerned with...");
+                Logger.LogTrace("A user has left a thread. Looking to see if it is a thread we are concerned with...");
                 var thread = smc.Thread;
                 if (Tables.TryGetValue(thread.Id, out var details))
                 {
@@ -502,6 +502,11 @@ namespace Bot.Services.Casino.BlackJack
             var playerId = player.User.UserId;
             var hasProcessedBust = false;
             var hasStood = false;
+            var hasPlayerTimedOut = false;
+            var playerTimeout = new Timer(_ =>
+            {
+                hasPlayerTimedOut = true;
+            }, null, TimeSpan.Zero, TimeSpan.FromMinutes(2));
 
             var playerHand = await ShowHandToChannel(thread, player,
                 message: player.Hand.IsBlackJack ?
@@ -587,8 +592,10 @@ namespace Bot.Services.Casino.BlackJack
 
             if (!player.Hand.IsBlackJack)
             {
-                SpinWait.SpinUntil(() => player.Hand.IsBust && hasProcessedBust || hasStood);
+                SpinWait.SpinUntil(() => (player.Hand.IsBust && hasProcessedBust || hasStood) || hasPlayerTimedOut);
             }
+            playerTimeout.Change(Timeout.Infinite, Timeout.Infinite);
+            await playerTimeout.DisposeAsync();
         }
 
         private void RemovePlayerBettingInteractions(IThreadChannel thread, BlackJackPlayer player)
