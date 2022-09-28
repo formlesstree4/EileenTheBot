@@ -1,4 +1,4 @@
-using Bot.Models;
+using Bot.Models.Eileen;
 using Bot.Services.Communication;
 using Bot.Services.RavenDB;
 using Discord;

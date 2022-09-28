@@ -1,4 +1,4 @@
-using Bot.Models;
+using Bot.Models.Booru;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

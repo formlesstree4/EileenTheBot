@@ -1,6 +1,6 @@
-using Bot.Models;
 using Bot.Models.Casino;
 using Bot.Models.Casino.BlackJack;
+using Bot.Models.Eileen;
 using Bot.Models.Extensions;
 using Discord;
 using Discord.WebSocket;
@@ -122,6 +122,11 @@ namespace Bot.Services.Casino.BlackJack
                     await thread.SendMessageAsync("The round of BlackJack has concluded! The round will pause for approximately 15 seconds for bid adjustments before resuming", components: GetJoinLeaveAndBidButtonComponents(thread.Id).Build());
                     await Task.Delay(TimeSpan.FromSeconds(15));
                 }
+            }
+            catch (ObjectDisposedException ode)
+            {
+                Logger.LogWarning(ode, "The token was somehow disposed before a proper cancellation was thrown");
+                await thread.SendMessageAsync("Attention Players - The BlackJack Runner Service has encountered an unrecoverable error and is immediately shutting down the game table. Please contact the Administrator.");
             }
             catch (OperationCanceledException oce)
             {

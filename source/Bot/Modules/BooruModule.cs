@@ -1,5 +1,5 @@
 using AutoMapper;
-using Bot.Models;
+using Bot.Models.Booru;
 using Bot.Services;
 using Bot.Services.Booru;
 using Discord;

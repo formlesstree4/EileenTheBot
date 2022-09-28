@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Bot.Models
+namespace Bot.Models.Responders
 {
 
     public sealed class MarkovContent

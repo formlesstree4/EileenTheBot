@@ -1,3 +1,4 @@
+using Bot.Models.Booru;
 using System.Collections.Generic;
 
 namespace Bot.Models.Raven
