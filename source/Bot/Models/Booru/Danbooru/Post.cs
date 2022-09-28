@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace Bot.Models.Danbooru
+namespace Bot.Models.Booru.Danbooru
 {
     /// <summary>
     ///     The object representation of a Danbooru Image Post.

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Bot.Models.Safebooru
+namespace Bot.Models.Booru.Safebooru
 {
 
     public sealed class Post

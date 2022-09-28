@@ -1,4 +1,4 @@
-using Bot.Models.Danbooru;
+using Bot.Models.Booru.Danbooru;
 using Discord.Commands;
 using System.Collections.Generic;
 
