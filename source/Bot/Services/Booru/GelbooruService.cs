@@ -1,4 +1,4 @@
-using Bot.Models.Gelbooru;
+using Bot.Models.Booru.Gelbooru;
 using Discord.Commands;
 using System.Collections.Generic;
 

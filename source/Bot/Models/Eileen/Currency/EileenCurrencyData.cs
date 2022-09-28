@@ -1,6 +1,6 @@
 using System;
 
-namespace Bot.Models.Currency
+namespace Bot.Models.Eileen.Currency
 {
 
 
