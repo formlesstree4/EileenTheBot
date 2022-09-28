@@ -2,9 +2,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace Bot.Models.Yandere
+namespace Bot.Models.Booru.Yandere
 {
-
     public class FlagDetail
     {
 
