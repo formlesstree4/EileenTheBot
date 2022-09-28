@@ -73,20 +73,18 @@ namespace Bot.Services.Casino.BlackJack
             var bjChannel = blackJackDetails[guild.Id].ChannelId;
             if (bjChannel is null) return null; // fuck it I don't care
             var channel = await discordSocketClient.GetChannelAsync((ulong)bjChannel) as ITextChannel;
+            IThreadChannel thread;
             if (threadId is null)
             {
-                var thread = await channel.CreateThreadAsync("BlackJack Table");
-                var table = blackJackTableRunnerService.GetOrCreateTable(thread);
-                blackJackTableRunnerService.StartTableForChannel(thread);
-                return table;
+                thread = await channel.CreateThreadAsync("BlackJack Table");
             }
             else
             {
-                var thread = await discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
-                var table = blackJackTableRunnerService.GetOrCreateTable(thread);
-                blackJackTableRunnerService.StartTableForChannel(thread);
-                return table;
+                thread = await discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
             }
+            var table = blackJackTableRunnerService.GetOrCreateTable(thread);
+            blackJackTableRunnerService.StartTableForChannel(thread);
+            return table;
         }
 
         public void SetBlackJackChannel(IGuild guild, IChannel channel)
