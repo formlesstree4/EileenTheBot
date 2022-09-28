@@ -1,5 +1,6 @@
 using AutoMapper;
 using Bot.Models.Booru;
+using Bot.Models.Booru.Gelbooru;
 
 namespace Bot.Profiles
 {
@@ -9,7 +10,7 @@ namespace Bot.Profiles
 
         public GelbooruProfile()
         {
-            CreateMap<Models.Gelbooru.Post, EmbedPost>()
+            CreateMap<Post, EmbedPost>()
                 .ForMember(dest => dest.ArtistName, opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.Owner) ? "N/A" : src.Owner))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.FileUrl))
                 .ForMember(dest => dest.PageUrl, opt => opt.MapFrom(src => $"https://gelbooru.com/index.php?page=post&s=view&id={src.Id}"));
