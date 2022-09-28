@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Bot.Models.e621
+namespace Bot.Models.Booru.e621
 {
     public class Sample
     {

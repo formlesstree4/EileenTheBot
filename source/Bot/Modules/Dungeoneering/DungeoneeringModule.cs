@@ -1,5 +1,6 @@
 using Bot.Models;
 using Bot.Models.Dungeoneering.Special.Equipment;
+using Bot.Models.Eileen;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Dungeoneering;
