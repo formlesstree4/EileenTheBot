@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Bot.Models;
+using Bot.Models.Responders;
 using Bot.Services.Markov;
 using Bot.Services.RavenDB;
 using Discord;

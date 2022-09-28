@@ -1,5 +1,5 @@
-using Bot.Models;
 using Bot.Models.Dungeoneering;
+using Bot.Models.Eileen;
 using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;

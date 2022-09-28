@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace Bot.Models
+namespace Bot.Models.Eileen
 {
 
     /// <summary>

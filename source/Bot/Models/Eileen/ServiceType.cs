@@ -1,6 +1,6 @@
 using System;
 
-namespace Bot.Models
+namespace Bot.Models.Eileen
 {
     public enum ServiceType
     {
@@ -14,7 +14,7 @@ namespace Bot.Models
 
         public ServiceType ServiceType { get; init; }
 
-        public ServiceTypeAttribute(ServiceType type) => this.ServiceType = type;
+        public ServiceTypeAttribute(ServiceType type) => ServiceType = type;
 
     }
 

@@ -1,5 +1,5 @@
-using Bot.Models;
 using Bot.Models.Currency;
+using Bot.Models.Eileen;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;

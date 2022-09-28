@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
-namespace Bot.Models
+namespace Bot.Models.Eileen
 {
 
 
@@ -32,9 +32,9 @@ namespace Bot.Models
         {
             if (!Tags.ContainsKey(tagName))
             {
-                this.SetTagData(tagName, addFunc());
+                SetTagData(tagName, addFunc());
             }
-            return this.GetTagData<T>(tagName);
+            return GetTagData<T>(tagName);
         }
 
         public bool HasTagData(string tagName) => Tags.ContainsKey(tagName);

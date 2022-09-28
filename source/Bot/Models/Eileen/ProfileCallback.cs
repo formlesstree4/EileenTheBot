@@ -1,6 +1,6 @@
 using Discord;
 
-namespace Bot.Models
+namespace Bot.Models.Eileen
 {
 
     /// <summary>

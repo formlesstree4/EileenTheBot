@@ -1,4 +1,5 @@
 using Bot.Models.Currency;
+using Bot.Models.Eileen;
 using Discord;
 
 namespace Bot.Models.Casino.HoldEm

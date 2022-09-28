@@ -1,4 +1,5 @@
 using Bot.Models.ChannelCommunication;
+using Bot.Models.Eileen;
 using Bot.Preconditions;
 using Bot.Services;
 using Bot.Services.Communication.Responders;
@@ -39,12 +40,12 @@ namespace Bot.Modules
             switch (type.ToLower())
             {
                 case "gpt":
-                    scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.GPT;
+                    scs.ResponderType = ServerConfigurationData.AutomatedResponseType.GPT;
                     await serverConfigurationService.SaveServiceAsync();
                     await RespondAsync($"This Guild is now using {scs.ResponderType}");
                     break;
                 case "markov":
-                    scs.ResponderType = Models.ServerConfigurationData.AutomatedResponseType.Markov;
+                    scs.ResponderType = ServerConfigurationData.AutomatedResponseType.Markov;
                     await serverConfigurationService.SaveServiceAsync();
                     await RespondAsync($"This Guild is now using {scs.ResponderType}");
                     break;

@@ -1,5 +1,5 @@
-using Bot.Models;
 using Bot.Models.Casino;
+using Bot.Models.Eileen;
 using Discord;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Bot.Models
+namespace Bot.Models.Booru
 {
 
     public sealed class CredentialsEntry

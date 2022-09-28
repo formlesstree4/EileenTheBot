@@ -1,3 +1,4 @@
+using Bot.Models.Eileen;
 using Discord;
 
 namespace Bot.Models.Casino.BlackJack
