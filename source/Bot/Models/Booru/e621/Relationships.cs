@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace Bot.Models.e621
+namespace Bot.Models.Booru.e621
 {
     public class Relationships
     {

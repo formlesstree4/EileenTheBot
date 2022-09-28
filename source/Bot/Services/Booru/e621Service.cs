@@ -1,4 +1,4 @@
-using Bot.Models.e621;
+using Bot.Models.Booru.e621;
 using Discord.Commands;
 using System.Collections.Generic;
 
