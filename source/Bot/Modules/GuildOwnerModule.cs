@@ -52,7 +52,7 @@ namespace Bot.Modules
             [SlashCommand("set", "Sets the current room as the BlackJack room for this Guild")]
             public async Task SetBlackJackChannel()
             {
-                blackJackService.SetBlackJackChannel(Context.Guild, Context.Channel);
+                blackJackService.SetGameChannel(Context.Guild, Context.Channel);
                 await RespondAsync($"This channel has now been set as the BlackJack hub for this Guild", ephemeral: true);
             }
         }
