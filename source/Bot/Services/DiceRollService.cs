@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
-using Bot.Services.Markov;
 
 namespace Bot.Services
 {
@@ -38,14 +37,17 @@ namespace Bot.Services
     }
 
     /// <summary>
-    ///     I found this somewhere on the Internet. It's awesome. Whomever made this is a saint.
+    ///     I found this somewhere on the Internet. It's awesome. Whoever made this is a saint.
     /// </summary>
     /// <remarks>
-    ///     <expr> :=   <expr> + <expr>
-    ///               | <expr> - <expr>
-    ///               | [<number>]d(<number>|%)
-    ///               | <number>
-    ///     <number> := positive integer
+    /// <![CDATA[
+    /// <expr> :=   <expr> + <expr>
+    ///  | <expr> - <expr>
+    ///  | [<number>]d(<number>|%)
+    ///  | <number>
+    ///    <number> := positive integer
+    /// ]]>
+
     /// </remarks>
     public sealed class DiceExpression
     {
@@ -56,9 +58,9 @@ namespace Bot.Services
         public static DiceExpression Zero { get; } = new DiceExpression("0");
 
 
-        private readonly Regex numberToken = new("^[0-9]+$", RegexOptions.Compiled);
-        private readonly Regex diceRollToken = new("^([0-9]*)d([0-9]+|%)$", RegexOptions.Compiled);
-        private readonly List<KeyValuePair<long, IDiceExpressionNode>> nodes = new();
+        private readonly Regex _numberToken = new("^[0-9]+$", RegexOptions.Compiled);
+        private readonly Regex _diceRollToken = new("^([0-9]*)d([0-9]+|%)$", RegexOptions.Compiled);
+        private readonly List<KeyValuePair<long, IDiceExpressionNode>> _nodes = new();
 
 
 
@@ -66,24 +68,17 @@ namespace Bot.Services
         ///     Gets a readonly collection of the parsed <see cref="IDiceExpressionNode"/>.
         /// </summary>
         /// <remarks>
-        ///     The key in the returned <see cref="KeyValuePair{TKey, TValue}"/> indicates whether or not the <see cref="IDiceExpressionNode"/> associated with it is to be added or subtracted from the running total.
+        ///     The key in the returned <see cref="KeyValuePair{TKey, TValue}"/> indicates whether the <see cref="IDiceExpressionNode"/> associated with it is to be added or subtracted from the running total.
         /// </remarks>
-        public IReadOnlyCollection<KeyValuePair<long, IDiceExpressionNode>> Expressions => nodes.AsReadOnly();
+        public IReadOnlyCollection<KeyValuePair<long, IDiceExpressionNode>> Expressions => _nodes.AsReadOnly();
 
-
-
-        /// <summary>
-        ///     Creates a new instance of the <see cref="DiceExpression"/> class.
-        /// </summary>
-        /// <param name="expression">The string expression to parse.</param>
-        public DiceExpression(string expression) : this(expression, DiceExpressionOptions.None) { }
 
         /// <summary>
         ///     Creates a new instance of the <see cref="DiceExpression"/> class.
         /// </summary>
         /// <param name="expression">The string expression to parse.</param>
         /// <param name="options"><see cref="DiceExpressionOptions"/></param>
-        public DiceExpression(string expression, DiceExpressionOptions options)
+        public DiceExpression(string expression, DiceExpressionOptions options = DiceExpressionOptions.None)
         {
             // A well-formed dice expression's tokens will be either +, -, an integer, or XdY.
             var tokens = expression.Replace("+", " + ").Replace("-", " - ").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -118,16 +113,16 @@ namespace Bot.Services
                 }
                 long multiplier = token == "+" ? +1 : -1;
 
-                if (numberToken.IsMatch(nextToken))
+                if (_numberToken.IsMatch(nextToken))
                 {
-                    nodes.Add(new KeyValuePair<long, IDiceExpressionNode>(multiplier, new NumberNode(long.Parse(nextToken))));
+                    _nodes.Add(new KeyValuePair<long, IDiceExpressionNode>(multiplier, new NumberNode(long.Parse(nextToken))));
                 }
-                else if (diceRollToken.IsMatch(nextToken))
+                else if (_diceRollToken.IsMatch(nextToken))
                 {
-                    var match = diceRollToken.Match(nextToken);
+                    var match = _diceRollToken.Match(nextToken);
                     long numberOfDice = Math.Min(10, match.Groups[1].Value == string.Empty ? 1 : long.Parse(match.Groups[1].Value));
                     long diceType = Math.Min(100, match.Groups[2].Value == "%" ? 100 : long.Parse(match.Groups[2].Value));
-                    nodes.Add(new KeyValuePair<long, IDiceExpressionNode>(multiplier, new DiceRollNode(numberOfDice, diceType)));
+                    _nodes.Add(new KeyValuePair<long, IDiceExpressionNode>(multiplier, new DiceRollNode(numberOfDice, diceType)));
                 }
                 else
                 {
@@ -136,13 +131,15 @@ namespace Bot.Services
             }
 
             // Sort the nodes in an aesthetically-pleasing fashion.
-            var diceRollNodes = nodes.Where(pair => pair.Value.GetType() == typeof(DiceRollNode))
+            var diceRollNodes = _nodes.Where(pair => pair.Value is DiceRollNode)
                                           .OrderByDescending(node => node.Key)
                                           .ThenByDescending(node => ((DiceRollNode)node.Value).DiceType)
-                                          .ThenByDescending(node => ((DiceRollNode)node.Value).NumberOfDice);
-            var numberNodes = nodes.Where(pair => pair.Value.GetType() == typeof(NumberNode))
+                                          .ThenByDescending(node => ((DiceRollNode)node.Value).NumberOfDice)
+                                          .ToList();
+            var numberNodes = _nodes.Where(pair => pair.Value is NumberNode)
                                         .OrderByDescending(node => node.Key)
-                                        .ThenByDescending(node => node.Value.Evaluate());
+                                        .ThenByDescending(node => node.Value.Evaluate())
+                                        .ToList();
 
             // If desired, merge all number nodes together, and merge dice nodes of the same type together.
             if (options == DiceExpressionOptions.SimplifyStringValue)
@@ -154,17 +151,16 @@ namespace Bot.Services
                                               where numDiceOfThisType != 0
                                               let multiplicand = numDiceOfThisType > 0 ? +1 : -1
                                               let absNumDice = Math.Abs(numDiceOfThisType)
-                                              orderby multiplicand descending
-                                              orderby type descending
+                                              orderby multiplicand descending, type descending
                                               select new KeyValuePair<long, IDiceExpressionNode>(multiplicand, new DiceRollNode(absNumDice, type));
 
-                nodes = (number == 0 ? normalizedDiceRollNodes
+                _nodes = (number == 0 ? normalizedDiceRollNodes
                                           : normalizedDiceRollNodes.Concat(new[] { new KeyValuePair<long, IDiceExpressionNode>(number > 0 ? +1 : -1, new NumberNode(number)) })).ToList();
             }
             // Otherwise, just put the dice-roll nodes first, then the number nodes.
             else
             {
-                nodes = diceRollNodes.Concat(numberNodes).ToList();
+                _nodes = diceRollNodes.Concat(numberNodes).ToList();
             }
         }
 
@@ -180,7 +176,7 @@ namespace Bot.Services
         public long Evaluate()
         {
             long result = 0;
-            foreach (var pair in nodes)
+            foreach (var pair in _nodes)
             {
                 result += pair.Key * pair.Value.Evaluate();
             }
@@ -191,7 +187,7 @@ namespace Bot.Services
         public Dictionary<string, List<long>> EvaluateWithDetails()
         {
             var result = new Dictionary<string, List<long>>();
-            foreach (var pair in nodes)
+            foreach (var pair in _nodes)
             {
                 // result += pair.Key * pair.Value.Evaluate();
                 result.Add($"{pair.Value}", pair.Value.EvaluateWithDetails());
@@ -206,7 +202,7 @@ namespace Bot.Services
         public decimal GetCalculatedAverage()
         {
             decimal result = 0;
-            foreach (var pair in nodes)
+            foreach (var pair in _nodes)
             {
                 result += pair.Key * pair.Value.GetCalculatedAverage();
             }
@@ -219,8 +215,8 @@ namespace Bot.Services
         /// <returns></returns>
         public override string ToString()
         {
-            string result = (nodes[0].Key == -1 ? "-" : string.Empty) + nodes[0].Value.ToString();
-            foreach (var pair in nodes.Skip(1))
+            var result = (_nodes[0].Key == -1 ? "-" : string.Empty) + _nodes[0].Value;
+            foreach (var pair in _nodes.Skip(1))
             {
                 result += pair.Key == +1 ? " + " : " − "; // NOTE: unicode minus sign, not hyphen-minus '-'.
                 result += pair.Value.ToString();
@@ -237,7 +233,7 @@ namespace Bot.Services
             decimal GetCalculatedAverage();
         }
 
-        public sealed class NumberNode : IDiceExpressionNode
+        private sealed class NumberNode : IDiceExpressionNode
         {
             private readonly long _theNumber;
             public NumberNode(long theNumber)
@@ -265,22 +261,20 @@ namespace Bot.Services
         }
         public sealed class DiceRollNode : IDiceExpressionNode
         {
-            private static readonly Random roller = new SecureRandom();
+            private static readonly Random Roller = new Random();
 
-            private readonly long _numberOfDice;
-            private readonly long _diceType;
             public DiceRollNode(long numberOfDice, long diceType)
             {
-                _numberOfDice = numberOfDice;
-                _diceType = diceType;
+                NumberOfDice = numberOfDice;
+                DiceType = diceType;
             }
 
             public long Evaluate()
             {
                 long total = 0;
-                for (long i = 0; i < _numberOfDice; ++i)
+                for (long i = 0; i < NumberOfDice; ++i)
                 {
-                    total += roller.Next(1, (int)_diceType + 1);
+                    total += Roller.Next(1, (int)DiceType + 1);
                 }
                 return total;
             }
@@ -288,31 +282,26 @@ namespace Bot.Services
             public List<long> EvaluateWithDetails()
             {
                 var result = new List<long>();
-                for (long i = 0; i < _numberOfDice; ++i)
+                for (long i = 0; i < NumberOfDice; ++i)
                 {
-                    result.Add(roller.Next(1, (int)_diceType + 1));
+                    result.Add(Roller.Next(1, (int)DiceType + 1));
                 }
                 return result;
             }
 
             public decimal GetCalculatedAverage()
             {
-                return _numberOfDice * ((_diceType + 1.0m) / 2.0m);
+                return NumberOfDice * ((DiceType + 1.0m) / 2.0m);
             }
 
             public override string ToString()
             {
-                return string.Format("{0}d{1}", _numberOfDice, _diceType);
+                return $"{NumberOfDice}d{DiceType}";
             }
 
-            public long NumberOfDice
-            {
-                get { return _numberOfDice; }
-            }
-            public long DiceType
-            {
-                get { return _diceType; }
-            }
+            public long NumberOfDice { get; }
+
+            public long DiceType { get; }
         }
     }
 }

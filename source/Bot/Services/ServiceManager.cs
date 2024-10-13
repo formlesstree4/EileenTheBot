@@ -12,26 +12,26 @@ namespace Bot.Services
     public sealed class ServiceManager
     {
 
-        private readonly IEnumerable<Type> eileenServices;
-        private readonly IServiceProvider provider;
+        private readonly IEnumerable<Type> _eileenServices;
+        private readonly IServiceProvider _provider;
 
         public ServiceManager(IServiceProvider provider)
         {
-            eileenServices = (from assemblies in AppDomain.CurrentDomain.GetAssemblies()
+            _eileenServices = (from assemblies in AppDomain.CurrentDomain.GetAssemblies()
                               let types = assemblies.GetTypes()
                               let services = (from t in types
                                               where t.IsAssignableTo(typeof(IEileenService)) &&
                                               !t.IsAbstract && !t.IsInterface
                                               select t)
                               select services).SelectMany(c => c).ToList();
-            this.provider = provider;
+            _provider = provider;
         }
 
         /// <summary>
         /// Returns a collection of service names
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<string> GetServiceNames() => eileenServices.Select(c => c.Name);
+        public IEnumerable<string> GetServiceNames() => _eileenServices.Select(c => c.Name);
 
         /// <summary>
         /// Retrieves the service type for the given name
@@ -40,7 +40,7 @@ namespace Bot.Services
         /// <returns>The Type representation</returns>
         public Type GetServiceType(string name)
         {
-            return eileenServices.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return _eileenServices.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -50,11 +50,11 @@ namespace Bot.Services
         /// <returns>IEileenService</returns>
         public IEileenService GetServiceByName(string name)
         {
-            var serviceType = (from type in eileenServices
+            var serviceType = (from type in _eileenServices
                                where type.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
                                select type).FirstOrDefault();
             if (serviceType is null) return null;
-            var service = provider.GetRequiredService(serviceType);
+            var service = _provider.GetRequiredService(serviceType);
             if (service is null) return null;
             return service as IEileenService;
         }
@@ -65,9 +65,9 @@ namespace Bot.Services
         /// <returns>A collection of IEileenService references</returns>
         public IEnumerable<IEileenService> GetServices()
         {
-            foreach (var type in eileenServices)
+            foreach (var type in _eileenServices)
             {
-                yield return (IEileenService)provider.GetRequiredService(type);
+                yield return (IEileenService)_provider.GetRequiredService(type);
             }
         }
 

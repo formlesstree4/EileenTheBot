@@ -13,12 +13,12 @@ namespace Bot.Models.Casino
         /// <summary>
         ///     Gets the current User
         /// </summary>
-        public EileenUserData User { get; private set; }
+        public EileenUserData User { get; }
 
         /// <summary>
         ///     Gets the <see cref="IUser"/> associated with this Player
         /// </summary>
-        public IUser DiscordUser { get; private set; }
+        public IUser DiscordUser { get; }
 
         /// <summary>
         /// Gets the name of the Player
@@ -28,7 +28,7 @@ namespace Bot.Models.Casino
         /// <summary>
         ///     Gets the User's hand
         /// </summary>
-        public THand Hand { get; internal set; }
+        public THand Hand { get; internal init; }
 
         /// <summary>
         ///     Indicates if this is the Dealer or not
@@ -43,7 +43,7 @@ namespace Bot.Models.Casino
 
 
         /// <summary>
-        /// Creates a new <see cref="CasinoPlayer"/>
+        /// Creates a new <see cref="CasinoPlayer{THand}"/>
         /// </summary>
         /// <param name="userData"><see cref="EileenUserData"/></param>
         /// <param name="user"><see cref="IUser"/></param>

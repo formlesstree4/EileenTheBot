@@ -26,10 +26,9 @@ namespace Bot.Models.Casino.BlackJack
             base(user, discordUser) { }
 
         /// <summary>
-        /// Creates a cloned <see cref="BlackJackPlayer"/> that is setup to indicate its from a split hand
+        /// Creates a cloned <see cref="BlackJackPlayer"/> that is set up to indicate it's from a split hand
         /// </summary>
-        /// <param name="user">A reference to the <see cref="EileenUserData"/></param>
-        /// <param name="discordUser">A reference to the <see cref="IUser"/></param>
+        /// <param name="player">A reference to the <see cref="BlackJackPlayer"/></param>
         /// <param name="splitHand">The hand to set</param>
         /// <returns><see cref="BlackJackPlayer"/></returns>
         public static BlackJackPlayer CreateSplit(BlackJackPlayer player, BlackJackHand splitHand)
@@ -42,7 +41,7 @@ namespace Bot.Models.Casino.BlackJack
             };
         }
 
-
+        /// <inheritdoc cref="System.Object.ToString"/>
         public override string ToString() => Name;
 
     }

@@ -8,8 +8,8 @@ namespace Bot.Models.Casino
     /// <summary>
     /// Tracks table details in a single object
     /// </summary>
-    /// <typeparam name="TTable">A subclass of <see cref="CasinoTable{TPlayer}"/></typeparam>
-    /// <typeparam name="TPlayer">A subclass of <see cref="CasinoPlayer"/></typeparam>
+    /// <typeparam name="TTable">A subclass of <see cref="CasinoTable{TPlayer, THand}"/></typeparam>
+    /// <typeparam name="TPlayer">A subclass of <see cref="CasinoPlayer{THand}"/></typeparam>
     public abstract class CasinoTableDetails<TTable, TPlayer, THand>
         where TTable : CasinoTable<TPlayer, THand>
         where TPlayer : CasinoPlayer<THand>
@@ -29,7 +29,7 @@ namespace Bot.Models.Casino
         public IThreadChannel ThreadChannel { get; }
 
         /// <summary>
-        /// Gets or sets whether or not the game is currently running
+        /// Gets or sets whether the game is currently running
         /// </summary>
         public bool IsThreadCurrentlyRunning { get; set; } = false;
 
@@ -61,6 +61,9 @@ namespace Bot.Models.Casino
             Table = table ?? throw new ArgumentNullException(nameof(table));
             ThreadChannel = threadChannel ?? throw new ArgumentNullException(nameof(threadChannel));
         }
+
+
+
 
     }
 }

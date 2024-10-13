@@ -20,21 +20,21 @@ namespace Bot.Services
     [Summary("A simplified pagination service that handles rotating embeds using Reactions")]
     public sealed class BetterPaginationService : IDisposable, IEileenService
     {
-        private const string FIRST = "⏮";
-        private const string BACK = "◀";
-        private const string NEXT = "▶";
-        private const string END = "⏭";
-        private const string STOP = "⏹";
+        private const string First = "⏮";
+        private const string Back = "◀";
+        private const string Next = "▶";
+        private const string End = "⏭";
+        private const string Stop = "⏹";
 
 
-        private readonly Color ErrorColor = new(237, 67, 55);
-        private readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
+        private readonly Color _errorColor = new(237, 67, 55);
+        private readonly TimeSpan _timeout = TimeSpan.FromMinutes(5);
 
 
         private readonly ConcurrentDictionary<ulong, BetterPaginationMessage> _messages;
         private readonly DiscordSocketClient _client;
-        private readonly ILogger<BetterPaginationService> logger;
-        private readonly InteractionHandlingService interactionHandlingService;
+        private readonly ILogger<BetterPaginationService> _logger;
+        private readonly InteractionHandlingService _interactionHandlingService;
         private readonly Timer _maintenanceTimer;
 
 
@@ -43,6 +43,7 @@ namespace Bot.Services
         /// </summary>
         /// <param name="dsc">A reference to the <see cref="DiscordSocketClient"/></param>
         /// <param name="logger">A logging function</param>
+        /// <param name="interactionHandlingService">A reference to the <see cref="InteractionHandlingService"/></param>
         public BetterPaginationService(
             DiscordSocketClient dsc,
             ILogger<BetterPaginationService> logger,
@@ -52,8 +53,8 @@ namespace Bot.Services
             _maintenanceTimer = new Timer(HandleMaintenance, null, 2000, 2000);
             logger.LogInformation("Initializing...");
             _client = dsc;
-            this.logger = logger;
-            this.interactionHandlingService = interactionHandlingService;
+            _logger = logger;
+            _interactionHandlingService = interactionHandlingService;
             _client.MessageDeleted += OnMessageDeleted;
             logger.LogInformation("{reaction} and {message} have been hooked", nameof(_client.ReactionAdded), nameof(_client.MessageDeleted));
         }
@@ -76,15 +77,15 @@ namespace Bot.Services
         /// <returns>A promise of the <see cref="IUserMessage"/></returns>
         public async Task<IUserMessage> Send(IInteractionContext context, IMessageChannel channel, BetterPaginationMessage message)
         {
-            logger.LogInformation("Sending paginated message to {channel}", channel.Name);
+            _logger.LogInformation("Sending paginated message to {channel}", channel.Name);
             try
             {
-                logger.LogTrace("{message}", message.ToJson());
+                _logger.LogTrace("{message}", message.ToJson());
                 return await CreateUserMessageAndButtons(context, message);
             }
             catch (Discord.Net.HttpException httpEx)
             {
-                logger.LogError(httpEx, "An error occurred sending the paginated message");
+                _logger.LogError(httpEx, "An error occurred sending the paginated message");
                 return null;
             }
         }
@@ -102,26 +103,26 @@ namespace Bot.Services
                 var message = await messageParam.GetOrDownloadAsync();
                 if (message is null)
                 {
-                    logger.LogTrace("{messageId} was not found in cache and could not be downloaded", messageParam.Id);
+                    _logger.LogTrace("{messageId} was not found in cache and could not be downloaded", messageParam.Id);
                     _messages.TryRemove(messageParam.Id, out var _);
                     return;
                 }
                 var removed = _messages.TryRemove(messageParam.Id, out BetterPaginationMessage betterMessage);
                 if (!removed)
                 {
-                    logger.LogTrace("{messageId} was not a tracked message. Disregard", message.Id);
+                    _logger.LogTrace("{messageId} was not a tracked message. Disregard", message.Id);
                     return;
                 }
-                logger.LogTrace("{messageId} was removed from the internal tracking system.", message.Id);
+                _logger.LogTrace("{messageId} was removed from the internal tracking system.", message.Id);
                 return;
             }
             catch (NullReferenceException nre)
             {
-                logger.LogError(nre, "A null reference exception was generated and caught while processing {eventName}", nameof(OnMessageDeleted));
+                _logger.LogError(nre, "A null reference exception was generated and caught while processing {eventName}", nameof(OnMessageDeleted));
             }
             catch (Exception e)
             {
-                logger.LogError(e, "A generic error was caught while processing {eventName}", nameof(OnMessageDeleted));
+                _logger.LogError(e, "A generic error was caught while processing {eventName}", nameof(OnMessageDeleted));
             }
         }
 
@@ -133,7 +134,7 @@ namespace Bot.Services
             {
                 var messageId = messageIds[index];
                 var message = messages[index];
-                if ((DateTime.UtcNow - message.Created).Duration() > Timeout)
+                if ((DateTime.UtcNow - message.Created).Duration() > _timeout)
                 {
                     _messages.Remove(messageId, out _);
                 }
@@ -157,41 +158,41 @@ namespace Bot.Services
         {
             _messages.TryAdd(discordMessage.Id, message);
 
-            interactionHandlingService.RegisterCallbackHandler($"FIRST-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"FIRST-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex = 0;
                 await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"BACK-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"BACK-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex--;
                 await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"NEXT-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"NEXT-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex++;
                 await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"END-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"END-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 m.CurrentPageIndex = m.Pages.Count - 1;
                 await smc.UpdateAsync(p => { p.Embed = m.CurrentPage; p.Components = CreateButtonBuilder(message, messageGuid).Build(); });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"STOP-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"STOP-{messageGuid}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (!_messages.TryGetValue(smc.Message.Id, out var m)) return;
                 if (m.User != null && m.User.Id != smc.User.Id) return;
                 _messages.TryRemove(smc.Message.Id, out _);
                 await smc.Message.DeleteAsync();
-                interactionHandlingService.RemoveButtonCallbacks(
+                _interactionHandlingService.RemoveButtonCallbacks(
                     $"FIRST-{messageGuid}",
                     $"BACK-{messageGuid}",
                     $"NEXT-{messageGuid}",
@@ -203,11 +204,11 @@ namespace Bot.Services
         private static ComponentBuilder CreateButtonBuilder(BetterPaginationMessage message, Guid messageGuid)
         {
             return new ComponentBuilder()
-                .WithButton(emote: new Emoji(FIRST), customId: $"FIRST-{messageGuid}")
-                .WithButton(emote: new Emoji(BACK), customId: $"BACK-{messageGuid}", disabled: message.CurrentPageIndex == 0)
-                .WithButton(emote: new Emoji(NEXT), customId: $"NEXT-{messageGuid}", disabled: message.CurrentPageIndex == message.Pages.Count - 1)
-                .WithButton(emote: new Emoji(END), customId: $"END-{messageGuid}")
-                .WithButton(emote: new Emoji(STOP), customId: $"STOP-{messageGuid}");
+                .WithButton(emote: new Emoji(First), customId: $"FIRST-{messageGuid}")
+                .WithButton(emote: new Emoji(Back), customId: $"BACK-{messageGuid}", disabled: message.CurrentPageIndex == 0)
+                .WithButton(emote: new Emoji(Next), customId: $"NEXT-{messageGuid}", disabled: message.CurrentPageIndex == message.Pages.Count - 1)
+                .WithButton(emote: new Emoji(End), customId: $"END-{messageGuid}")
+                .WithButton(emote: new Emoji(Stop), customId: $"STOP-{messageGuid}");
         }
 
 

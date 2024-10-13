@@ -7,23 +7,18 @@ namespace Bot.Models.Casino
         public Suit Suit { get; }
 
         /// <summary>
-        ///     Gets the represented value of this card.
+        /// Gets the represented value of this card.
         /// </summary>
         /// <remarks>
-        ///     If <see cref="Face"/> is <see cref="Face.Ace"/> then <see cref="Value"/> returns 11. It will not ever return 1.
+        /// If <see cref="Face"/> is <see cref="Face.Ace"/> then <see cref="Value"/> returns 11. It will not ever return 1.
         /// </remarks>
-        public int Value
-        {
-            get
+        public int Value =>
+            Face switch
             {
-                return Face switch
-                {
-                    Face.Ace => 11,
-                    Face.King or Face.Queen or Face.Jack => 10,
-                    _ => (int)Face,
-                };
-            }
-        }
+                Face.Ace => 11,
+                Face.King or Face.Queen or Face.Jack => 10,
+                _ => (int)Face,
+            };
 
         public Card(Face face, Suit suit)
         {
@@ -35,16 +30,14 @@ namespace Bot.Models.Casino
 
         public string GetDisplayName => $"{Face} of {Suit}";
 
-        public string GetEvaulationString => $"{GetFaceCharacter(Face)}{GetSuitCharacter(Suit)}";
+        public string GetEvaluationString => $"{GetFaceCharacter(Face)}{GetSuitCharacter(Suit)}";
 
-        private static string FixTheFace(Face face)
-        {
-            return face switch
+        private static string FixTheFace(Face face) =>
+            face switch
             {
                 Face.Ace or Face.King or Face.Queen or Face.Jack => face.ToString().ToLowerInvariant(),
                 _ => ((int)face).ToString(),
             };
-        }
 
         private static char GetFaceCharacter(Face face) => FixTheFace(face)[0];
 

@@ -1,7 +1,6 @@
 using Bot.Models.Casino;
 using Bot.Models.Casino.BlackJack;
 using Bot.Models.Eileen;
-using Bot.Models.Extensions;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
@@ -11,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Bot.Models.Casino.Extensions;
 
 namespace Bot.Services.Casino.BlackJack
 {
@@ -21,9 +21,9 @@ namespace Bot.Services.Casino.BlackJack
     public sealed class BlackJackTableRunnerService : TableRunnerService<BlackJackHand, BlackJackPlayer, BlackJackTable, BlackJackTableDetails>
     {
 
-        private readonly CurrencyService currencyService;
-        private readonly DiscordSocketClient client;
-        private readonly InteractionHandlingService interactionHandlingService;
+        private readonly CurrencyService _currencyService;
+        private readonly DiscordSocketClient _client;
+        private readonly InteractionHandlingService _interactionHandlingService;
 
         public BlackJackTableRunnerService(
             CancellationTokenSource cancellationTokenSource,
@@ -33,10 +33,10 @@ namespace Bot.Services.Casino.BlackJack
             ILogger<BlackJackTableRunnerService> logger,
             UserService userService) : base(cancellationTokenSource, logger, userService)
         {
-            this.currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
-            this.client = client ?? throw new ArgumentNullException(nameof(client));
-            this.interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
-            this.client.ThreadMemberLeft += smc =>
+            _currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
+            _client.ThreadMemberLeft += smc =>
             {
                 Logger.LogTrace("A user has left a thread. Looking to see if it is a thread we are concerned with...");
                 var thread = smc.Thread;
@@ -204,7 +204,7 @@ namespace Bot.Services.Casino.BlackJack
                 if (await CanPlayerChangeCurrentBet(currentTable, smc))
                 {
                     var player = currentTable.FindPlayer(smc.User.Id);
-                    var currencyData = currencyService.GetOrCreateCurrencyData(player.User);
+                    var currencyData = _currencyService.GetOrCreateCurrencyData(player.User);
 
                     var oldBet = player.CurrentBet;
                     amountSetterAction(player);
@@ -223,7 +223,7 @@ namespace Bot.Services.Casino.BlackJack
                     }
                 }
             }
-            interactionHandlingService.RegisterCallbackHandler($"join-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"join-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 Logger.LogTrace("Join event for {threadId}", threadId);
                 if (await AddPlayerSafelyToTable(table, smc.User))
@@ -237,7 +237,7 @@ namespace Bot.Services.Casino.BlackJack
                     await smc.RespondAsync("Couldn't add you to the table. Have you already joined?");
                 }
             }));
-            interactionHandlingService.RegisterCallbackHandler($"leave-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"leave-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 Logger.LogTrace("Leave event for {threadId}", threadId);
                 if (RemovePlayerSafelyFromTable(table, smc.User))
@@ -249,19 +249,19 @@ namespace Bot.Services.Casino.BlackJack
                     await smc.RespondAsync("Couldn't remove you from the table. Have you already left?", ephemeral: true);
                 }
             }));
-            interactionHandlingService.RegisterCallbackHandler($"bid-1-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"bid-1-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 await HandleChangingPlayerBet(table, smc, bjp => bjp.CurrentBet = 1);
             }));
-            interactionHandlingService.RegisterCallbackHandler($"bid-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"bid-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 await HandleChangingPlayerBet(table, smc, bjp => bjp.CurrentBet = 5);
             }));
-            interactionHandlingService.RegisterCallbackHandler($"bid-10-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"bid-10-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 await HandleChangingPlayerBet(table, smc, bjp => bjp.CurrentBet = 10);
             }));
-            interactionHandlingService.RegisterCallbackHandler($"bid-add-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"bid-add-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 await HandleChangingPlayerBet(table, smc, bjp =>
                 {
@@ -269,7 +269,7 @@ namespace Bot.Services.Casino.BlackJack
                     bjp.CurrentBet += 5;
                 });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"bid-rem-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"bid-rem-5-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 await HandleChangingPlayerBet(table, smc, bjp =>
                 {
@@ -277,7 +277,7 @@ namespace Bot.Services.Casino.BlackJack
                     if ((bjp.CurrentBet -= 5) > currentValue) bjp.CurrentBet = 0;
                 });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"hand-{threadId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"hand-{threadId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (table.IsGameActive)
                 {
@@ -297,7 +297,7 @@ namespace Bot.Services.Casino.BlackJack
         private void RemoveTableLevelInteractions(ulong threadId)
         {
             Logger.LogInformation("Removing interaction callbacks for {threadId}", threadId);
-            interactionHandlingService.RemoveButtonCallbacks(
+            _interactionHandlingService.RemoveButtonCallbacks(
                 $"join-{threadId}",
                 $"leave-{threadId}",
                 $"bid-1-{threadId}",
@@ -404,8 +404,8 @@ namespace Bot.Services.Casino.BlackJack
             for (var playerIndex = table.Players.Count - 1; playerIndex >= 0; playerIndex--)
             {
                 var currentPlayer = table.Players[playerIndex];
-                var playerCurrency = currencyService.GetOrCreateCurrencyData(currentPlayer.User);
-                currentPlayer.CurrentBet = Math.Min(currentPlayer.CurrentBet, playerCurrency.Currency);
+                var playerCurrency = currentPlayer.User.Money;
+                currentPlayer.CurrentBet = Math.Min(currentPlayer.CurrentBet, playerCurrency);
                 if (currentPlayer.CurrentBet == 0)
                 {
                     Logger.LogInformation("Player {player} is being moved to Pending Players as they are not ready to play yet!", currentPlayer.Name);
@@ -474,14 +474,14 @@ namespace Bot.Services.Casino.BlackJack
 
             foreach (var winner in winners)
             {
-                var winnerCurrency = currencyService.GetOrCreateCurrencyData(winner.User);
+                var winnerCurrency = _currencyService.GetOrCreateCurrencyData(winner.User);
                 var winnings = winner.Hand.IsBlackJack ? (ulong)Math.Round(winner.CurrentBet * 1.5) : winner.CurrentBet;
                 roundResultBuilder.AppendLine($"{winner.Name}: {winnings}");
             }
 
             foreach (var loser in losers)
             {
-                var loserCurrency = currencyService.GetOrCreateCurrencyData(loser.User);
+                var loserCurrency = _currencyService.GetOrCreateCurrencyData(loser.User);
                 loserCurrency.Currency -= loser.CurrentBet;
                 roundResultBuilder.AppendLine($"{loser.Name}: -{loser.CurrentBet}");
             }
@@ -519,7 +519,7 @@ namespace Bot.Services.Casino.BlackJack
                     $"It is now {player.DiscordUser.Mention}'s turn! Their hand currently showing {player.Hand.Value}.",
                 component: GetHandComponents(thread.Id, player).Build());
 
-            interactionHandlingService.RegisterCallbackHandler($"hit-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"hit-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (smc.User.Id != playerId)
                 {
@@ -554,7 +554,7 @@ namespace Bot.Services.Casino.BlackJack
                     properties.Content = content;
                 });
             }));
-            interactionHandlingService.RegisterCallbackHandler($"stand-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"stand-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (smc.User.Id != playerId)
                 {
@@ -571,7 +571,7 @@ namespace Bot.Services.Casino.BlackJack
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 hasStood = true;
             }));
-            interactionHandlingService.RegisterCallbackHandler($"split-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
+            _interactionHandlingService.RegisterCallbackHandler($"split-{threadId}-{playerId}", new InteractionButtonCallbackProvider(async smc =>
             {
                 if (smc.User.Id != playerId)
                 {
@@ -607,7 +607,7 @@ namespace Bot.Services.Casino.BlackJack
         {
             var threadId = thread.Id;
             var playerId = player.User.UserId;
-            interactionHandlingService.RemoveButtonCallbacks($"hit-{threadId}-{playerId}", $"stand-{threadId}-{playerId}", $"split-{threadId}-{playerId}");
+            _interactionHandlingService.RemoveButtonCallbacks($"hit-{threadId}-{playerId}", $"stand-{threadId}-{playerId}", $"split-{threadId}-{playerId}");
         }
 
         private static void RemoveSplitSourcePlayers(BlackJackTable table)

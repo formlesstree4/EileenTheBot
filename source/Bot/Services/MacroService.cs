@@ -13,15 +13,15 @@ namespace Bot.Services
 
         private const string MacroTag = "serverMacros";
 
-        private readonly ServerConfigurationService serverConfigurationService;
-        private readonly ILogger<MacroService> logger;
+        private readonly ServerConfigurationService _serverConfigurationService;
+        private readonly ILogger<MacroService> _logger;
 
         public MacroService(
             ServerConfigurationService serverConfigurationService,
             ILogger<MacroService> logger)
         {
-            this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
 
@@ -31,7 +31,7 @@ namespace Bot.Services
 
         public async Task<(bool, MacroEntry)> TryGetMacroAsync(ulong guildId, string macro)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             var macroTags = configuration.GetOrAddTagData(MacroTag, () => new MacroServerEntries());
             var macroTag = macroTags.Entries.FirstOrDefault(c => c.Macro.Equals(macro, StringComparison.OrdinalIgnoreCase));
             return (macroTag != null, macroTag);
@@ -42,7 +42,7 @@ namespace Bot.Services
 
         public async Task AddNewMacroAsync(ulong guildId, MacroEntry entry)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             var macroTags = configuration.GetOrAddTagData(MacroTag, () => new MacroServerEntries());
             if (macroTags.Entries.FirstOrDefault(c => c.Macro.Equals(entry.Macro, StringComparison.OrdinalIgnoreCase)) != null)
             {
@@ -57,7 +57,7 @@ namespace Bot.Services
 
         public async Task RemoveMacroAsync(ulong guildId, string macro)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             var macroTags = configuration.GetOrAddTagData(MacroTag, () => new MacroServerEntries());
             var tagToRemove = macroTags.Entries.FirstOrDefault(c => c.Macro.Equals(macro, StringComparison.OrdinalIgnoreCase));
             if (tagToRemove == null) return;
@@ -70,7 +70,7 @@ namespace Bot.Services
 
         public async Task<IEnumerable<MacroEntry>> GetServerMacros(ulong guildId)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             return configuration.GetOrAddTagData(MacroTag, () => new MacroServerEntries()).Entries;
         }
 

@@ -16,11 +16,11 @@ namespace Bot.Services.Casino
         where TTableDetails : CasinoTableDetails<TTable, TPlayer, THand>
         where TService : TableRunnerService<THand, TPlayer, TTable, TTableDetails>
     {
-        protected internal readonly ILogger<CasinoService<THand, TPlayer, TTable, TTableDetails, TServerDetails, TService>> logger;
-        protected internal readonly TService tableRunnerService;
-        protected internal readonly DiscordSocketClient discordSocketClient;
-        protected internal readonly ServerConfigurationService serverConfigurationService;
-        protected internal readonly Dictionary<ulong, TServerDetails> details = new();
+        protected internal readonly ILogger<CasinoService<THand, TPlayer, TTable, TTableDetails, TServerDetails, TService>> Logger;
+        private readonly TService _tableRunnerService;
+        private readonly DiscordSocketClient _discordSocketClient;
+        private readonly ServerConfigurationService _serverConfigurationService;
+        private readonly Dictionary<ulong, TServerDetails> _details = new();
 
         protected abstract string ServiceName { get; }
 
@@ -30,21 +30,21 @@ namespace Bot.Services.Casino
             DiscordSocketClient discordSocketClient,
             ServerConfigurationService serverConfigurationService)
         {
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
-            this.serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
-            this.tableRunnerService = tableRunnerService;
-            this.discordSocketClient.Ready += HandleClientIsReady;
-            this.discordSocketClient.ThreadDeleted += HandleThreadDeleted;
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
+            _serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
+            _tableRunnerService = tableRunnerService;
+            _discordSocketClient.Ready += HandleClientIsReady;
+            _discordSocketClient.ThreadDeleted += HandleThreadDeleted;
         }
 
         private async Task HandleClientIsReady()
         {
-            foreach (var guild in discordSocketClient.Guilds)
+            foreach (var guild in _discordSocketClient.Guilds)
             {
-                var serverDetails = await serverConfigurationService.GetOrCreateConfigurationAsync(guild);
+                var serverDetails = await _serverConfigurationService.GetOrCreateConfigurationAsync(guild);
                 var details = serverDetails.GetOrAddTagData(ServiceName, () => CreateDefaultDetails());
-                this.details.Add(guild.Id, details);
+                _details.Add(guild.Id, details);
                 if (details.ChannelId == null) continue;
                 foreach (var thread in guild.ThreadChannels)
                 {
@@ -57,7 +57,7 @@ namespace Bot.Services.Casino
         private Task HandleThreadDeleted(Cacheable<SocketThreadChannel, ulong> arg)
         {
             var threadId = arg.Id;
-            tableRunnerService.StopAndRemoveTable(threadId);
+            _tableRunnerService.StopAndRemoveTable(threadId);
             return Task.CompletedTask;
         }
 
@@ -69,9 +69,9 @@ namespace Bot.Services.Casino
 
         public virtual async Task<TTable> CreateNewGame(IGuild guild, ulong? threadId = null)
         {
-            var tableChannelId = details[guild.Id].ChannelId;
+            var tableChannelId = _details[guild.Id].ChannelId;
             if (tableChannelId is null) return null; // fuck it I don't care
-            var tableChannel = await discordSocketClient.GetChannelAsync((ulong)tableChannelId) as ITextChannel;
+            var tableChannel = await _discordSocketClient.GetChannelAsync((ulong)tableChannelId) as ITextChannel;
             IThreadChannel thread;
             if (threadId is null)
             {
@@ -79,16 +79,16 @@ namespace Bot.Services.Casino
             }
             else
             {
-                thread = await discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
+                thread = await _discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
             }
-            var table = tableRunnerService.GetOrCreateTable(thread);
-            tableRunnerService.StartTableForChannel(thread);
+            var table = _tableRunnerService.GetOrCreateTable(thread);
+            _tableRunnerService.StartTableForChannel(thread);
             return table;
         }
 
         public virtual void SetGameChannel(IGuild guild, IChannel channel)
         {
-            if (details.TryGetValue(guild.Id, out var serverDetails))
+            if (_details.TryGetValue(guild.Id, out var serverDetails))
             {
                 serverDetails.ChannelId = channel.Id;
             }
@@ -96,14 +96,14 @@ namespace Bot.Services.Casino
 
         public virtual TTable FindGame(IThreadChannel thread)
         {
-            return tableRunnerService.GetOrCreateTable(thread);
+            return _tableRunnerService.GetOrCreateTable(thread);
         }
 
         public virtual async Task SaveServiceAsync()
         {
-            foreach (var bjd in details)
+            foreach (var bjd in _details)
             {
-                var serverDetails = await serverConfigurationService.GetOrCreateConfigurationAsync(bjd.Key);
+                var serverDetails = await _serverConfigurationService.GetOrCreateConfigurationAsync(bjd.Key);
                 serverDetails.SetTagData(ServiceName, bjd.Value);
             }
         }

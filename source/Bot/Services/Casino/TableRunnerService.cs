@@ -16,15 +16,15 @@ namespace Bot.Services.Casino
         where TTableDetails : CasinoTableDetails<TTable, TPlayer, THand>
     {
 
-        private readonly ConcurrentDictionary<ulong, TTableDetails> tables = new();
-        private readonly ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> logger;
-        private readonly UserService userService;
+        private readonly ConcurrentDictionary<ulong, TTableDetails> _tables = new();
+        private readonly ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> _logger;
+        private readonly UserService _userService;
 
 
         /// <summary>
         /// Gets the ILogger associated with this runner service
         /// </summary>
-        public ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> Logger => logger;
+        public ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> Logger => _logger;
 
         /// <summary>
         /// Gets the internal dictionary which contains the collection of active tables
@@ -32,7 +32,7 @@ namespace Bot.Services.Casino
         /// <remarks>
         /// The Key is the ThreadId where the table is running. The value is the 
         /// </remarks>
-        public ConcurrentDictionary<ulong, TTableDetails> Tables => tables;
+        public ConcurrentDictionary<ulong, TTableDetails> Tables => _tables;
 
 
 
@@ -41,11 +41,11 @@ namespace Bot.Services.Casino
             ILogger<TableRunnerService<THand, TPlayer, TTable, TTableDetails>> logger,
             UserService userService)
         {
-            this.logger = logger;
-            this.userService = userService;
+            _logger = logger;
+            _userService = userService;
             cancellationTokenSource.Token.Register(() =>
             {
-                foreach (var table in tables)
+                foreach (var table in _tables)
                 {
                     table.Value.TokenSource.Cancel();
                 }
@@ -60,14 +60,14 @@ namespace Bot.Services.Casino
         /// <returns><typeparamref name="TTable"/></returns>
         public virtual TTable GetOrCreateTable(IThreadChannel threadChannel)
         {
-            if (!tables.TryGetValue(threadChannel.Id, out var t))
+            if (!_tables.TryGetValue(threadChannel.Id, out var t))
             {
-                logger.LogInformation("Creating a new BlackJack table for thread {threadId}", threadChannel.Id);
+                _logger.LogInformation("Creating a new BlackJack table for thread {threadId}", threadChannel.Id);
                 var table = CreateNewTable(threadChannel);
-                tables.TryAdd(threadChannel.Id, CreateTableDetails(table, threadChannel));
+                _tables.TryAdd(threadChannel.Id, CreateTableDetails(table, threadChannel));
                 return table;
             }
-            logger.LogInformation("Returning an already created table for thread {threadId}", threadChannel.Id);
+            _logger.LogInformation("Returning an already created table for thread {threadId}", threadChannel.Id);
             return t.Table;
         }
 
@@ -78,11 +78,11 @@ namespace Bot.Services.Casino
         /// <returns>Boolean value to indicate whether or not the thread has been started (or is already started)</returns>
         public virtual bool StartTableForChannel(IThreadChannel threadChannel)
         {
-            logger.LogInformation("Attempting to start the game loop for thread {threadId}", threadChannel.Id);
-            if (!tables.TryGetValue(threadChannel.Id, out var details)) return false;
+            _logger.LogInformation("Attempting to start the game loop for thread {threadId}", threadChannel.Id);
+            if (!_tables.TryGetValue(threadChannel.Id, out var details)) return false;
             if (details.IsThreadCurrentlyRunning) return true;
             ThreadPool.QueueUserWorkItem(async tableDetails => { await TableRunnerLoop(tableDetails); }, details, false);
-            logger.LogInformation("The game loop for thread {threadId} has begun", threadChannel.Id);
+            _logger.LogInformation("The game loop for thread {threadId} has begun", threadChannel.Id);
             return true;
         }
 
@@ -100,12 +100,12 @@ namespace Bot.Services.Casino
         /// <param name="threadId">The thread ID to stop</param>
         public virtual void StopAndRemoveTable(ulong threadId)
         {
-            if (tables.TryGetValue(threadId, out var t))
+            if (_tables.TryGetValue(threadId, out var t))
             {
-                logger.LogInformation("Attempting to stop the game loop for thread {threadId}", threadId);
+                _logger.LogInformation("Attempting to stop the game loop for thread {threadId}", threadId);
                 t.TokenSource.Cancel();
-                tables.TryRemove(threadId, out _);
-                logger.LogInformation("A cancellation request for {threadId} has been initiated; logs will indicate if this was successful", threadId);
+                _tables.TryRemove(threadId, out _);
+                _logger.LogInformation("A cancellation request for {threadId} has been initiated; logs will indicate if this was successful", threadId);
             }
         }
 
@@ -120,7 +120,7 @@ namespace Bot.Services.Casino
             if (!table.PendingPlayers.Any(pp => pp.User.UserId == user.Id) &&
                 !table.Players.Any(p => p.User.UserId == user.Id))
             {
-                var userData = await userService.GetOrCreateUserData(user);
+                var userData = await _userService.GetOrCreateUserData(user);
                 var blackJackPlayer = CreatePlayer(userData, user);
                 if (table.IsGameActive)
                 {

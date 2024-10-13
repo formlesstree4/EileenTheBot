@@ -13,10 +13,7 @@ namespace Bot.Services
     {
         private const int PoolSize = 4096;
         private const string Base36 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ‏";
-        private static readonly ThreadLocal<byte[]> BytePoolProvider = new(() =>
-        {
-            return RandomNumberGenerator.GetBytes(PoolSize);
-        });
+        private static readonly ThreadLocal<byte[]> BytePoolProvider = new(() => RandomNumberGenerator.GetBytes(PoolSize));
         private static readonly ThreadLocal<int> CurrentIndex = new(() => -1); // This is incremented before use.
 
 

@@ -4,18 +4,18 @@ using System.Linq;
 
 namespace Bot.Models.Casino
 {
-
     /// <summary>
-    /// Contains the basic casino table logic across multiple types of Poker 
+    /// Contains the basic casino table logic across multiple types of Poker
     /// </summary>
-    /// <typeparam name="TPlayer">A subclass of <see cref="CasinoPlayer"/></typeparam>
+    /// <typeparam name="TPlayer">A subclass of <see cref="CasinoPlayer{THand}"/></typeparam>
+    /// <typeparam name="THand">A subclass of <see cref="CasinoHand"/></typeparam>
     public abstract class CasinoTable<TPlayer, THand>
         where TPlayer : CasinoPlayer<THand>
         where THand: CasinoHand
     {
 
-        private readonly Stack<TPlayer> currentRoundPlayers = new();
-        private readonly Queue<TPlayer> finishedRoundPlayers = new();
+        private readonly Stack<TPlayer> _currentRoundPlayers = new();
+        private readonly Queue<TPlayer> _finishedRoundPlayers = new();
 
         /// <summary>
         ///     Gets the unique Table ID
@@ -28,7 +28,7 @@ namespace Bot.Models.Casino
         /// <summary>
         ///     Gets the Dealer for this table
         /// </summary>
-        public TPlayer Dealer { get; private set; }
+        public TPlayer Dealer { get; }
 
         /// <summary>
         ///     Gets the list of current active players
@@ -58,12 +58,12 @@ namespace Bot.Models.Casino
         /// <summary>
         /// Gets the <see cref="Stack{TPlayer}"/> of players that are yet to go for this round
         /// </summary>
-        public Stack<TPlayer> CurrentRoundPlayers => currentRoundPlayers;
+        public Stack<TPlayer> CurrentRoundPlayers => _currentRoundPlayers;
 
         /// <summary>
         /// Gets the <see cref="Queue{TPlayer}"/> of players that have already gone for this round
         /// </summary>
-        public Queue<TPlayer> FinishedRoundPlayers => finishedRoundPlayers;
+        public Queue<TPlayer> FinishedRoundPlayers => _finishedRoundPlayers;
 
 
 
@@ -86,13 +86,13 @@ namespace Bot.Models.Casino
         /// <returns>If true, <paramref name="nextPlayer"/> is a Player. If false, <paramref name="nextPlayer"/> is the Dealer</returns>
         public bool GetNextPlayer(out TPlayer nextPlayer)
         {
-            if (currentRoundPlayers.Count == 0)
+            if (_currentRoundPlayers.Count == 0)
             {
                 nextPlayer = Dealer;
                 return false;
             }
-            nextPlayer = currentRoundPlayers.Pop();
-            finishedRoundPlayers.Enqueue(nextPlayer);
+            nextPlayer = _currentRoundPlayers.Pop();
+            _finishedRoundPlayers.Enqueue(nextPlayer);
             return true;
         }
 
@@ -114,7 +114,7 @@ namespace Bot.Models.Casino
         {
             foreach (var player in Players.Reverse<TPlayer>())
             {
-                currentRoundPlayers.Push(player);
+                _currentRoundPlayers.Push(player);
             }
         }
 

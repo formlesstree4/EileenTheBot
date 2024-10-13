@@ -9,21 +9,21 @@ namespace Bot.Modules
     [Group("blackjack", "Groups all BlackJack commands together")]
     public sealed class BlackJackModule : InteractionModuleBase
     {
-        private readonly BlackJackService blackJackService;
-        private readonly BlackJackTableRunnerService blackJackTableRunnerService;
+        private readonly BlackJackService _blackJackService;
+        private readonly BlackJackTableRunnerService _blackJackTableRunnerService;
 
         public BlackJackModule(
             BlackJackService blackJackService,
             BlackJackTableRunnerService blackJackTableRunnerService)
         {
-            this.blackJackService = blackJackService ?? throw new ArgumentNullException(nameof(blackJackService));
-            this.blackJackTableRunnerService = blackJackTableRunnerService ?? throw new ArgumentNullException(nameof(blackJackTableRunnerService));
+            _blackJackService = blackJackService ?? throw new ArgumentNullException(nameof(blackJackService));
+            _blackJackTableRunnerService = blackJackTableRunnerService ?? throw new ArgumentNullException(nameof(blackJackTableRunnerService));
         }
 
         [SlashCommand("begin", "Opens a new BlackJack Table")]
         public async Task CreateTable()
         {
-            await blackJackService.CreateNewGame(Context.Guild);
+            await _blackJackService.CreateNewGame(Context.Guild);
             await RespondAsync("A new game table has been created!");
         }
 
@@ -32,8 +32,8 @@ namespace Bot.Modules
         {
             if (Context.Channel is IThreadChannel tc)
             {
-                var game = blackJackService.FindGame(tc);
-                await blackJackTableRunnerService.AddPlayerSafelyToTable(game, Context.User);
+                var game = _blackJackService.FindGame(tc);
+                await _blackJackTableRunnerService.AddPlayerSafelyToTable(game, Context.User);
                 await RespondAsync($"Welcome to the table {Context.User.Mention}! Here are a few preset Bid buttons to interact with. Alternately you set your Bid directly with `/blackjack bid <amount>` to set your Bid to any number",
                     ephemeral: true, components: BlackJackTableRunnerService.GetBidButtonComponents(tc.Id).Build());
             }
@@ -48,8 +48,8 @@ namespace Bot.Modules
         {
             if (Context.Channel is IThreadChannel tc)
             {
-                var game = blackJackService.FindGame(tc);
-                if (blackJackTableRunnerService.RemovePlayerSafelyFromTable(game, Context.User))
+                var game = _blackJackService.FindGame(tc);
+                if (_blackJackTableRunnerService.RemovePlayerSafelyFromTable(game, Context.User))
                 {
                     await RespondAsync($"You have been removed from the table! Thank you for playing.", ephemeral: true);
                 }
@@ -70,7 +70,7 @@ namespace Bot.Modules
         {
             if (Context.Channel is IThreadChannel tc)
             {
-                var currentTable = blackJackService.FindGame(tc);
+                var currentTable = _blackJackService.FindGame(tc);
                 if (!currentTable.CanPlayerAlterBet(Context.User.Id))
                 {
                     await RespondAsync("Sorry, you can't change your bet right now!", ephemeral: true);

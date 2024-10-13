@@ -1,5 +1,4 @@
 using Bot.Models.Eileen;
-using Bot.Services.RavenDB;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -7,6 +6,7 @@ using Hangfire;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Bot.Services
@@ -15,69 +15,53 @@ namespace Bot.Services
     [Summary("Maintains all Guild related information (command prefix, sub-service configuration data, permissions), including detecting when the Bot joins a new Guild and must setup the defaults.")]
     public sealed class ServerConfigurationService : IEileenService
     {
-        private readonly DiscordSocketClient client;
-        private readonly RavenDatabaseService ravenDatabaseService;
-        private readonly ConcurrentDictionary<ulong, ServerConfigurationData> configurations;
-        private readonly ILogger<ServerConfigurationService> logger;
+        private readonly DiscordSocketClient _client;
+        private readonly ConcurrentDictionary<ulong, ServerConfigurationData> _configurations;
+        private readonly ILogger<ServerConfigurationService> _logger;
 
 
         public ServerConfigurationService(
             DiscordSocketClient client,
-            RavenDatabaseService ravenDatabaseService,
             ILogger<ServerConfigurationService> logger)
         {
-            this.client = client ?? throw new ArgumentNullException(nameof(client));
-            this.ravenDatabaseService = ravenDatabaseService ?? throw new ArgumentNullException(nameof(ravenDatabaseService));
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.configurations = new ConcurrentDictionary<ulong, ServerConfigurationData>();
-            this.client.Connected += OnClientConnected;
-            this.client.Disconnected += OnClientDisconnected;
-            this.client.JoinedGuild += OnGuildJoined;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configurations = new ConcurrentDictionary<ulong, ServerConfigurationData>();
+            _client.Connected += OnClientConnected;
+            _client.Disconnected += OnClientDisconnected;
+            _client.JoinedGuild += OnGuildJoined;
             RecurringJob.AddOrUpdate("serverConfigAutoSave", () => SaveServiceAsync(), Cron.Hourly);
         }
 
         public async Task SaveServiceAsync()
         {
-            logger.LogInformation($"Saving...");
-            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession())
-            {
-                foreach (var configuration in configurations)
-                {
-                    logger.LogTrace("Saving {configuration}...", configuration.Key);
-                    await session.StoreAsync(
-                        entity: configuration.Value,
-                        id: configuration.Key.ToString());
-                    logger.LogTrace("Saved {configuration}!", configuration.Key);
-                }
-                logger.LogTrace($"Flushing changes to RavenDB...");
-                await session.SaveChangesAsync();
-            }
-            logger.LogInformation($"Saved!");
+            _logger.LogInformation($"Saving...");
+
+            _logger.LogInformation($"Saved!");
         }
 
         private async Task OnGuildJoined(SocketGuild arg)
         {
-            logger.LogInformation($"A new guild has been detected. Creating defaults...");
+            _logger.LogInformation($"A new guild has been detected. Creating defaults...");
             await GetOrCreateConfigurationAsync(arg);
-            logger.LogInformation($"Guild configuration created.");
+            _logger.LogInformation($"Guild configuration created.");
         }
 
         private async Task OnClientConnected()
         {
-            logger.LogInformation("{eventName} has been invoked. Loading configuration for {guilds} guild(s)", nameof(OnClientConnected), client.Guilds.Count);
+            _logger.LogInformation("{eventName} has been invoked. Loading configuration for {guilds} guild(s)", nameof(OnClientConnected), _client.Guilds.Count);
             await LoadServerConfigurations();
-            logger.LogInformation($"Configurations have been loaded!");
+            _logger.LogInformation($"Configurations have been loaded!");
         }
 
         private async Task LoadServerConfigurations()
         {
-            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession();
-            foreach (var guild in client.Guilds)
+            foreach (var guild in _client.Guilds)
             {
-                logger.LogTrace("Initial load for {guildId}", guild.Id);
-                var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
-                configurations.AddOrUpdate(guild.Id, (guildId) => data, (guildId, original) => data);
-                logger.LogTrace("Loaded {guildId}!", guild.Id);
+                _logger.LogTrace("Initial load for {guildId}", guild.Id);
+                //var data = await session.LoadAsync<ServerConfigurationData>(id: guild.Id.ToString());
+                //_configurations.AddOrUpdate(guild.Id, (guildId) => data, (guildId, original) => data);
+                _logger.LogTrace("Loaded {guildId}!", guild.Id);
             }
         }
 
@@ -92,26 +76,27 @@ namespace Bot.Services
 
         public async Task<ServerConfigurationData> GetOrCreateConfigurationAsync(ulong id)
         {
-            logger.LogTrace("Fetching Guild Configuration Data...");
-            return await Task.FromResult(configurations.GetOrAdd(id, guildId => new ServerConfigurationData
+            _logger.LogTrace("Fetching Guild Configuration Data...");
+            return await Task.FromResult(_configurations.GetOrAdd(id, guildId => new ServerConfigurationData
             {
                 ServerId = guildId,
-                CommandPrefix = ravenDatabaseService.Configuration.CommandPrefix
+                TrustedUsers = new List<ulong>(),
+                Enabled = true
             }));
         }
 
         public async Task ReloadAll()
         {
-            logger.LogInformation($"Reloading ALL server configurations");
+            _logger.LogInformation($"Reloading ALL server configurations");
             await LoadServerConfigurations();
-            logger.LogInformation($"All configurations loaded successfully");
+            _logger.LogInformation($"All configurations loaded successfully");
         }
 
         public async Task ReloadGuild(ulong guildId)
         {
-            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession();
-            var data = await session.LoadAsync<ServerConfigurationData>(id: guildId.ToString());
-            configurations.AddOrUpdate(guildId, (guildId) => data, (guildId, original) => data);
+            //using var session = _ravenDatabaseService.GetOrAddDocumentStore("erector_core").OpenAsyncSession();
+            //var data = await session.LoadAsync<ServerConfigurationData>(id: guildId.ToString());
+            //_configurations.AddOrUpdate(guildId, (guildId) => data, (guildId, original) => data);
         }
 
         public async Task ReloadGuild(IGuild guild) => await ReloadGuild(guild.Id);

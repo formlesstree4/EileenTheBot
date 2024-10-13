@@ -10,14 +10,14 @@ namespace Bot.TypeReaders
     public sealed class StringArrayTypeReader : TypeReader
     {
 
-        private readonly Regex CommandParseExpression = new("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'", RegexOptions.Compiled);
+        private readonly Regex _commandParseExpression = new("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'", RegexOptions.Compiled);
 
         public override Task<TypeReaderResult> ReadAsync(
             ICommandContext context,
             string input,
             IServiceProvider services)
         {
-            var content = CommandParseExpression.Matches(input);
+            var content = _commandParseExpression.Matches(input);
             var result = new List<string>();
             foreach (Match item in content)
             {
@@ -33,7 +33,7 @@ namespace Bot.TypeReaders
         /// </summary>
         /// <param name="input">The input string to attempt additional sanitizations with</param>
         /// <returns>Cleaned up string</returns>
-        private string ApplyAdditionalEscapes(string input)
+        private static string ApplyAdditionalEscapes(string input)
         {
             return input.Replace("\u200B", "");
         }
@@ -51,7 +51,7 @@ namespace Bot.TypeConverters
     public sealed class StringArrayTypeConverter : TypeConverter
     {
 
-        private readonly Regex CommandParseExpression = new("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'", RegexOptions.Compiled);
+        private readonly Regex _commandParseExpression = new("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'", RegexOptions.Compiled);
 
         public override bool CanConvertTo(Type type)
         {
@@ -69,7 +69,7 @@ namespace Bot.TypeConverters
             IApplicationCommandInteractionDataOption option,
             IServiceProvider services)
         {
-            var content = CommandParseExpression.Matches(context.Interaction.Data.ToString());
+            var content = _commandParseExpression.Matches(context.Interaction.Data.ToString()!);
             var result = new List<string>();
             foreach (Match item in content)
             {
@@ -85,12 +85,11 @@ namespace Bot.TypeConverters
         /// </summary>
         /// <param name="input">The input string to attempt additional sanitizations with</param>
         /// <returns>Cleaned up string</returns>
-        private string ApplyAdditionalEscapes(string input)
+        private static string ApplyAdditionalEscapes(string input)
         {
             return input.Replace("\u200B", "");
         }
 
     }
-
 
 }

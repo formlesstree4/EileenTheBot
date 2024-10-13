@@ -20,14 +20,14 @@ namespace Bot.Services
     public sealed class UserService : IEileenService
     {
 
-        private readonly ILogger<UserService> logger;
-        private readonly RavenDatabaseService ravenDatabaseService;
-        private readonly BetterPaginationService paginationService;
-        private readonly DiscordSocketClient client;
-        private readonly StupidTextService stupidTextService;
-        private readonly HangfireToDiscordComm hangfireToDiscordComm;
-        private readonly ConcurrentDictionary<ulong, EileenUserData> userContent;
-        private readonly List<Func<ProfileCallback, Task<ProfileCallback>>> profilePageCallbacks;
+        private readonly ILogger<UserService> _logger;
+        private readonly RavenDatabaseService _ravenDatabaseService;
+        private readonly BetterPaginationService _paginationService;
+        private readonly DiscordSocketClient _client;
+        private readonly StupidTextService _stupidTextService;
+        private readonly HangfireToDiscordComm _hangfireToDiscordComm;
+        private readonly ConcurrentDictionary<ulong, EileenUserData> _userContent;
+        private readonly List<Func<ProfileCallback, Task<ProfileCallback>>> _profilePageCallbacks;
 
         public UserService(
             RavenDatabaseService ravenDatabaseService,
@@ -37,50 +37,50 @@ namespace Bot.Services
             HangfireToDiscordComm hangfireToDiscordComm,
             ILogger<UserService> logger)
         {
-            this.userContent = new ConcurrentDictionary<ulong, EileenUserData>();
-            this.profilePageCallbacks = new List<Func<ProfileCallback, Task<ProfileCallback>>>();
-            this.ravenDatabaseService = ravenDatabaseService;
-            this.paginationService = paginationService;
-            this.client = client;
-            this.stupidTextService = stupidTextService;
-            this.hangfireToDiscordComm = hangfireToDiscordComm;
-            this.logger = logger;
+            _userContent = new ConcurrentDictionary<ulong, EileenUserData>();
+            _profilePageCallbacks = new List<Func<ProfileCallback, Task<ProfileCallback>>>();
+            _ravenDatabaseService = ravenDatabaseService;
+            _paginationService = paginationService;
+            _client = client;
+            _stupidTextService = stupidTextService;
+            _hangfireToDiscordComm = hangfireToDiscordComm;
+            _logger = logger;
         }
 
         public async Task InitializeService()
         {
-            logger.LogInformation("Initializing the UserService");
+            _logger.LogInformation("Initializing the UserService");
             await LoadServiceAsync();
-            logger.LogInformation("Setting up recurring jobs...");
+            _logger.LogInformation("Setting up recurring jobs...");
             RecurringJob.AddOrUpdate("usersAutoSave", () => SaveServiceAsync(), Cron.Hourly());
             RecurringJob.AddOrUpdate("usersUpdateServerPresence", () => UpdateUserDataServerAwareness(), Cron.Hourly());
-            RecurringJob.AddOrUpdate("tellCoolswiftHello", () => hangfireToDiscordComm.SendMessageToUser(143551309776289792, "Hey mom!"), Cron.Hourly);
-            logger.LogInformation("UserService has been initialized");
+            RecurringJob.AddOrUpdate("tellCoolswiftHello", () => _hangfireToDiscordComm.SendMessageToUser(143551309776289792, "Hey mom!"), Cron.Hourly);
+            _logger.LogInformation("UserService has been initialized");
             await Task.Yield();
         }
 
         public async Task SaveServiceAsync()
         {
-            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
-            logger.LogInformation("Saving User Data to RavenDB...");
-            foreach (var entry in userContent)
+            using var session = _ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
+            _logger.LogInformation("Saving User Data to RavenDB...");
+            foreach (var entry in _userContent)
             {
-                logger.LogTrace("Saving {entry}...", entry.Key);
+                _logger.LogTrace("Saving {entry}...", entry.Key);
                 await session.StoreAsync(entry.Value, entry.Key.ToString());
             }
             await session.SaveChangesAsync();
-            logger.LogInformation("User Data has been saved");
+            _logger.LogInformation("User Data has been saved");
         }
 
         public async Task LoadServiceAsync()
         {
-            using var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
-            logger.LogInformation("Loading User Data from RavenDB...");
+            using var session = _ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession();
+            _logger.LogInformation("Loading User Data from RavenDB...");
             var c = await session.Query<EileenUserData>().ToListAsync();
-            logger.LogInformation("Discovered {count} item(s) to load!", c.Count);
+            _logger.LogInformation("Discovered {count} item(s) to load!", c.Count);
             foreach (var userData in c)
             {
-                userContent.TryAdd(userData.UserId, userData);
+                _userContent.TryAdd(userData.UserId, userData);
             }
         }
 
@@ -91,10 +91,10 @@ namespace Bot.Services
 
         public async Task<EileenUserData> GetOrCreateUserData(ulong userId)
         {
-            logger.LogInformation("Retrieving UserData for {userId}", userId);
-            if (!userContent.ContainsKey(userId))
+            _logger.LogInformation("Retrieving UserData for {userId}", userId);
+            if (!_userContent.ContainsKey(userId))
             {
-                userContent.TryAdd(userId, await (CreateUserContent(userId)));
+                _userContent.TryAdd(userId, await (CreateUserContent(userId)));
             }
             return GetUserData(userId);
         }
@@ -104,9 +104,9 @@ namespace Bot.Services
 
         public async Task CreateUserProfileMessage(ulong userId, IInteractionContext context)
         {
-            logger.LogInformation($"Generating the User Profile message...");
+            _logger.LogInformation($"Generating the User Profile message...");
             var userData = await GetOrCreateUserData(userId);
-            var discordInfo = await (client as IDiscordClient).GetUserAsync(userId);
+            var discordInfo = await (_client as IDiscordClient).GetUserAsync(userId);
             var mainProfilePageBuilder =
                 new EmbedBuilder()
                     .WithTitle("About Me")
@@ -125,39 +125,39 @@ namespace Bot.Services
             EnsureDefaults(mainProfilePageBuilder, discordInfo, userData);
             var mainProfilePage = mainProfilePageBuilder.Build();
             var profilePages = new List<Embed> { mainProfilePage };
-            foreach (var callback in profilePageCallbacks)
+            foreach (var callback in _profilePageCallbacks)
             {
                 var pcb = new ProfileCallback(userData, discordInfo, new EmbedBuilder());
                 var pcbResult = await callback(pcb);
                 EnsureDefaults(pcbResult.PageBuilder, discordInfo, userData);
                 profilePages.Add(pcbResult.PageBuilder.Build());
             }
-            await paginationService.Send(context, context.Channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, context.User));
+            await _paginationService.Send(context, context.Channel, new BetterPaginationMessage(profilePages, profilePages.Count > 1, context.User));
         }
 
         public async Task UpdateUserDataServerAwareness()
         {
-            logger.LogInformation("Synchronizing Users Server List with available Guilds");
-            var servers = client.Guilds.ToList();
-            foreach (var ud in userContent)
+            _logger.LogInformation("Synchronizing Users Server List with available Guilds");
+            var servers = _client.Guilds.ToList();
+            foreach (var ud in _userContent)
             {
-                logger.LogTrace("Identifying Servers {userId} is located on", ud.Key);
+                _logger.LogTrace("Identifying Servers {userId} is located on", ud.Key);
                 ud.Value.ServersOn = (from c in servers
                                       where c.GetUser(ud.Key) is not null
                                       select c.Id).ToList();
             }
-            logger.LogTrace($"Synchronization Complete");
-            BackgroundJob.Schedule(() => hangfireToDiscordComm.SendMessageToUser(105497358833336320, "Awareness Updated!"), TimeSpan.FromSeconds(1));
+            _logger.LogTrace($"Synchronization Complete");
+            BackgroundJob.Schedule(() => _hangfireToDiscordComm.SendMessageToUser(105497358833336320, "Awareness Updated!"), TimeSpan.FromSeconds(1));
             await Task.Yield();
         }
 
         public void RegisterProfileCallback(Func<ProfileCallback, Task<ProfileCallback>> callback)
         {
-            logger.LogTrace("A profile callback is being registered with the UserService");
-            profilePageCallbacks.Add(callback);
+            _logger.LogTrace("A profile callback is being registered with the UserService");
+            _profilePageCallbacks.Add(callback);
         }
 
-        public IEnumerable<EileenUserData> WalkUsers() => userContent.Values.ToList();
+        public IEnumerable<EileenUserData> WalkUsers() => _userContent.Values.ToList();
 
         private void EnsureDefaults(EmbedBuilder builder, IUser discordInfo, EileenUserData userData)
         {
@@ -166,7 +166,7 @@ namespace Bot.Services
                     .WithIconUrl(discordInfo.GetAvatarUrl() ?? discordInfo.GetDefaultAvatarUrl()))
                     .WithColor(new Color(152, 201, 124))
                     .WithCurrentTimestamp()
-                    .WithFooter(stupidTextService.GetRandomStupidText());
+                    .WithFooter(_stupidTextService.GetRandomStupidText());
             if (!string.IsNullOrWhiteSpace(userData.ProfileImage) && string.IsNullOrWhiteSpace(builder.ThumbnailUrl))
             {
                 builder.WithThumbnailUrl(userData.ProfileImage);
@@ -175,8 +175,8 @@ namespace Bot.Services
 
         private EileenUserData GetUserData(ulong userId)
         {
-            logger.LogInformation("Retrieving UserData for {userId} from cache (aka NOT going to RavenDB)", userId);
-            if (!userContent.TryGetValue(userId, out var d))
+            _logger.LogInformation("Retrieving UserData for {userId} from cache (aka NOT going to RavenDB)", userId);
+            if (!_userContent.TryGetValue(userId, out var d))
             {
                 throw new ArgumentException(null, nameof(userId));
             }
@@ -185,9 +185,9 @@ namespace Bot.Services
 
         private async Task<EileenUserData> CreateUserContent(ulong userId)
         {
-            logger.LogInformation("Creating new UserData for {userId}", userId);
+            _logger.LogInformation("Creating new UserData for {userId}", userId);
             var userData = new EileenUserData { UserId = userId };
-            using (var session = ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
+            using (var session = _ravenDatabaseService.GetOrAddDocumentStore("erector_users").OpenAsyncSession())
             {
                 await session.StoreAsync(userData, userId.ToString());
                 await session.SaveChangesAsync();

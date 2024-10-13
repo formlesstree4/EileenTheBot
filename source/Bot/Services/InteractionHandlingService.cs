@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,15 +15,15 @@ namespace Bot.Services
     /// </summary>
     public sealed class InteractionHandlingService : IEileenService
     {
-        private readonly InteractionService interactionService;
-        private readonly DiscordSocketClient client;
-        private readonly ILogger<InteractionHandlingService> logger;
-        private readonly CancellationTokenSource cts;
-        private readonly IServiceProvider provider;
+        private readonly InteractionService _interactionService;
+        private readonly DiscordSocketClient _client;
+        private readonly ILogger<InteractionHandlingService> _logger;
+        private readonly CancellationTokenSource _cts;
+        private readonly IServiceProvider _provider;
 
-        private readonly ConcurrentDictionary<string, InteractionModalCallbackProvider> modalCallbacks;
-        private readonly ConcurrentDictionary<string, InteractionButtonCallbackProvider> buttonCallbacks;
-        private readonly ConcurrentDictionary<string, InteractionSelectionCallbackProvider> selectionCallbacks;
+        private readonly ConcurrentDictionary<string, InteractionModalCallbackProvider> _modalCallbacks;
+        private readonly ConcurrentDictionary<string, InteractionButtonCallbackProvider> _buttonCallbacks;
+        private readonly ConcurrentDictionary<string, InteractionSelectionCallbackProvider> _selectionCallbacks;
 
 
         public bool AutoInitialize() => false;
@@ -37,87 +36,87 @@ namespace Bot.Services
             CancellationTokenSource cts,
             IServiceProvider provider)
         {
-            this.interactionService = interactionService;
-            this.client = client;
-            this.logger = logger;
-            this.cts = cts;
-            this.provider = provider;
-            modalCallbacks = new ConcurrentDictionary<string, InteractionModalCallbackProvider>();
-            buttonCallbacks = new ConcurrentDictionary<string, InteractionButtonCallbackProvider>();
-            selectionCallbacks = new ConcurrentDictionary<string, InteractionSelectionCallbackProvider>();
+            _interactionService = interactionService;
+            _client = client;
+            _logger = logger;
+            _cts = cts;
+            _provider = provider;
+            _modalCallbacks = new ConcurrentDictionary<string, InteractionModalCallbackProvider>();
+            _buttonCallbacks = new ConcurrentDictionary<string, InteractionButtonCallbackProvider>();
+            _selectionCallbacks = new ConcurrentDictionary<string, InteractionSelectionCallbackProvider>();
         }
 
         public async Task InitializeService()
         {
-            client.Ready += async () =>
+            _client.Ready += async () =>
             {
                 try
                 {
-                    logger.LogInformation("Client is READY for interactions... registering...");
-                    interactionService.AddTypeConverter<string[]>(new TypeConverters.StringArrayTypeConverter());
-                    await interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
+                    _logger.LogInformation("Client is READY for interactions... registering...");
+                    _interactionService.AddTypeConverter<string[]>(new TypeConverters.StringArrayTypeConverter());
+                    await _interactionService.AddModulesAsync(Assembly.GetExecutingAssembly(), _provider);
 
-                    foreach (var guild in client.Guilds)
+                    foreach (var guild in _client.Guilds)
                     {
-                        await interactionService.RegisterCommandsToGuildAsync(guild.Id);
+                        await _interactionService.RegisterCommandsToGuildAsync(guild.Id);
                     }
-                    logger.LogInformation("Registered GUILD commands, setting up event hooks...");
+                    _logger.LogInformation("Registered GUILD commands, setting up event hooks...");
 
 
-                    client.InteractionCreated += async interaction =>
+                    _client.InteractionCreated += async interaction =>
                     {
-                        var ctx = new SocketInteractionContext(client, interaction);
-                        await interactionService.ExecuteCommandAsync(ctx, provider);
+                        var ctx = new SocketInteractionContext(_client, interaction);
+                        await _interactionService.ExecuteCommandAsync(ctx, _provider);
                     };
-                    client.ModalSubmitted += async modalSubmitted =>
+                    _client.ModalSubmitted += async modalSubmitted =>
                     {
                         var modalKey = modalSubmitted.Data.CustomId;
 
-                        if (modalCallbacks.TryGetValue(modalKey, out var callbackProvider))
+                        if (_modalCallbacks.TryGetValue(modalKey, out var callbackProvider))
                         {
                             if (callbackProvider.SingleUse)
                             {
-                                modalCallbacks.TryRemove(modalKey, out var _);
+                                _modalCallbacks.TryRemove(modalKey, out var _);
                             }
                             await callbackProvider.Callback(modalSubmitted);
                         }
                     };
-                    client.ButtonExecuted += async buttonClicked =>
+                    _client.ButtonExecuted += async buttonClicked =>
                     {
                         var buttonLookupKey = buttonClicked.Data.CustomId;
-                        if (buttonCallbacks.TryGetValue(buttonLookupKey, out var callbackProvider))
+                        if (_buttonCallbacks.TryGetValue(buttonLookupKey, out var callbackProvider))
                         {
                             if (callbackProvider.SingleUse)
                             {
-                                buttonCallbacks.TryRemove(buttonLookupKey, out var _);
+                                _buttonCallbacks.TryRemove(buttonLookupKey, out var _);
                             }
                             await callbackProvider.Callback(buttonClicked);
                         }
                     };
-                    client.SelectMenuExecuted += async menuItemSelected =>
+                    _client.SelectMenuExecuted += async menuItemSelected =>
                     {
                         var menuKey = menuItemSelected.Data.CustomId;
-                        if (selectionCallbacks.TryGetValue(menuKey, out var callbackProvider))
+                        if (_selectionCallbacks.TryGetValue(menuKey, out var callbackProvider))
                         {
                             if (callbackProvider.SingleUse)
                             {
-                                selectionCallbacks.TryRemove(menuKey, out var _);
+                                _selectionCallbacks.TryRemove(menuKey, out var _);
                             }
                             await callbackProvider.Callback(menuItemSelected);
                         }
                     };
 
-                    interactionService.SlashCommandExecuted += async (command, context, result) =>
+                    _interactionService.SlashCommandExecuted += async (command, context, result) =>
                     {
                         if (result.IsSuccess) return;
                         await context.Interaction.RespondAsync($"Error: {result.ErrorReason}");
                     };
-                    logger.LogInformation("Hooked successfully!");
+                    _logger.LogInformation("Hooked successfully!");
                 }
                 catch (Exception exception)
                 {
-                    logger.LogError(exception, "Failed to register interaction commands and/or hook the events (somehow????)");
-                    cts.Cancel();
+                    _logger.LogError(exception, "Failed to register interaction commands and/or hook the events (somehow????)");
+                    _cts.Cancel();
                 }
             };
             await Task.CompletedTask;
@@ -127,28 +126,28 @@ namespace Bot.Services
 
         public void RegisterCallbackHandler(string name, InteractionModalCallbackProvider provider, bool replace = false)
         {
-            if (modalCallbacks.ContainsKey(name) && !replace) return;
-            modalCallbacks.TryAdd(name, provider);
+            if (_modalCallbacks.ContainsKey(name) && !replace) return;
+            _modalCallbacks.TryAdd(name, provider);
         }
 
         public void RegisterCallbackHandler(string name, InteractionButtonCallbackProvider provider, bool replace = false)
         {
-            if (buttonCallbacks.ContainsKey(name) && !replace) return;
-            buttonCallbacks[name] = provider;
-            buttonCallbacks.TryAdd(name, provider);
+            if (_buttonCallbacks.ContainsKey(name) && !replace) return;
+            _buttonCallbacks[name] = provider;
+            _buttonCallbacks.TryAdd(name, provider);
         }
 
         public void RegisterCallbackHandler(string name, InteractionSelectionCallbackProvider provider, bool replace = false)
         {
-            if (selectionCallbacks.ContainsKey(name) && !replace) return;
-            selectionCallbacks.TryAdd(name, provider);
+            if (_selectionCallbacks.ContainsKey(name) && !replace) return;
+            _selectionCallbacks.TryAdd(name, provider);
         }
 
         public void RemoveModalCallbacks(params string[] names)
         {
             foreach(var name in names)
             {
-                modalCallbacks.TryRemove(name, out var _);
+                _modalCallbacks.TryRemove(name, out var _);
             }
         }
 
@@ -156,7 +155,7 @@ namespace Bot.Services
         {
             foreach(var name in names)
             {
-                buttonCallbacks.TryRemove(name, out var _);
+                _buttonCallbacks.TryRemove(name, out var _);
             }
         }
 
@@ -164,7 +163,7 @@ namespace Bot.Services
         {
             foreach(var name in names)
             {
-                selectionCallbacks.TryRemove(name, out var _);
+                _selectionCallbacks.TryRemove(name, out var _);
             }
         }
 

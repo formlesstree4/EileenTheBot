@@ -30,9 +30,9 @@ namespace Bot.Models.Casino
             }
         }
 
-        private readonly List<Card> deck;
-        private readonly Random random;
-        private Queue<Card> cards;
+        private readonly List<Card> _deck;
+        private readonly Random _random;
+        private Queue<Card> _cards;
 
         /// <summary>
         /// Creates a new Deck of cards that is composed of four decks of cards shuffled together
@@ -40,12 +40,12 @@ namespace Bot.Models.Casino
         /// <param name="random">Optional <see cref="Random"/></param>
         public Deck(Random random = null)
         {
-            deck = new List<Card>();
-            deck.AddRange(StandardDeck);
-            deck.AddRange(StandardDeck);
-            deck.AddRange(StandardDeck);
-            deck.AddRange(StandardDeck);
-            this.random = random ?? new Random();
+            _deck = new List<Card>();
+            _deck.AddRange(StandardDeck);
+            _deck.AddRange(StandardDeck);
+            _deck.AddRange(StandardDeck);
+            _deck.AddRange(StandardDeck);
+            _random = random ?? new Random();
             Shuffle();
         }
 
@@ -56,8 +56,8 @@ namespace Bot.Models.Casino
         /// <param name="random">Optional <see cref="Random"/></param>
         public Deck(IEnumerable<Card> cards, Random random = null)
         {
-            deck = cards.ToList();
-            this.random = random ?? new Random();
+            _deck = cards.ToList();
+            _random = random ?? new Random();
             Shuffle();
         }
 
@@ -66,8 +66,8 @@ namespace Bot.Models.Casino
         /// </summary>
         public void Shuffle()
         {
-            deck.Shuffle(random);
-            cards = new(deck);
+            _deck.Shuffle(_random);
+            _cards = new(_deck);
         }
 
         /// <summary>
@@ -79,8 +79,8 @@ namespace Bot.Models.Casino
         /// </remarks>
         public Card GetNextCard()
         {
-            Card card = cards.Dequeue();
-            if (cards.Count == 0)
+            Card card = _cards.Dequeue();
+            if (_cards.Count == 0)
             {
                 Shuffle();
             }

@@ -33,16 +33,16 @@ namespace Bot.Models.Casino.HoldEm
         public ulong MaxIndividualValue { get; } = 0;
 
 
-
         /// <summary>
         /// Creates a new Pot for Hold 'Em
         /// </summary>
+        /// <param name="name"></param>
         /// <param name="players">The players that care about this pot</param>
         public HoldEmPot(string name, IEnumerable<HoldEmPlayer> players)
         {
             Name = name;
             VestedPlayers = new ReadOnlyDictionary<HoldEmPlayer, ulong>(players.ToDictionary(p => p, p => 0UL));
-            MaxIndividualValue = players.Min(c => c.CurrencyData.Currency);
+            MaxIndividualValue = players.Min(c => c.User.Money);
             MaxValue = MaxIndividualValue * (ulong)VestedPlayers.Count;
         }
 

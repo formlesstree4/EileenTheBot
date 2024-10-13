@@ -16,25 +16,25 @@ namespace Bot.Services
     {
 
         private readonly List<string> _statements = new();
-        private readonly RavenDatabaseService rdbs;
-        private readonly Random random;
-        private readonly ILogger<StupidTextService> logger;
+        private readonly RavenDatabaseService _rdbs;
+        private readonly Random _random;
+        private readonly ILogger<StupidTextService> _logger;
 
         public StupidTextService(
             RavenDatabaseService rdbs,
             Random random,
             ILogger<StupidTextService> logger)
         {
-            this.rdbs = rdbs ?? throw new ArgumentNullException(nameof(rdbs));
-            this.random = random ?? throw new ArgumentNullException(nameof(random));
-            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _rdbs = rdbs ?? throw new ArgumentNullException(nameof(rdbs));
+            _random = random ?? throw new ArgumentNullException(nameof(random));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
 
         public async Task InitializeService()
         {
-            logger.LogInformation("Retrieving captions.txt from RavenDB");
-            using var captionFile = await rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
+            _logger.LogInformation("Retrieving captions.txt from RavenDB");
+            using var captionFile = await _rdbs.GetOrAddDocumentStore("erector_core").Operations.SendAsync(new GetAttachmentOperation(
                 documentId: "configuration",
                 name: "captions.txt",
                 type: AttachmentType.Document,
@@ -50,7 +50,7 @@ namespace Bot.Services
         {
             lock (this)
             {
-                return _statements[random.Next(0, _statements.Count - 1)];
+                return _statements[_random.Next(0, _statements.Count - 1)];
             }
         }
     }

@@ -17,10 +17,10 @@ namespace Bot.Services
 
         public const byte MaximumLevel = 30;
 
-        private readonly UserService userService;
-        private readonly DiscordSocketClient client;
-        private readonly StupidTextService stupidTextService;
-        private readonly ILogger<CurrencyService> logger;
+        private readonly UserService _userService;
+        private readonly DiscordSocketClient _client;
+        private readonly StupidTextService _stupidTextService;
+        private readonly ILogger<CurrencyService> _logger;
 
 
         public CurrencyService(
@@ -29,20 +29,20 @@ namespace Bot.Services
             StupidTextService stupidTextService,
             ILogger<CurrencyService> logger)
         {
-            this.userService = userService;
-            this.client = client;
-            this.stupidTextService = stupidTextService;
-            this.logger = logger;
+            _userService = userService;
+            _client = client;
+            _stupidTextService = stupidTextService;
+            _logger = logger;
         }
 
 
         public async Task InitializeService()
         {
-            logger.LogInformation($"Initializing and creating background job(s)");
+            _logger.LogInformation($"Initializing and creating background job(s)");
             RecurringJob.AddOrUpdate("currencyUpdate", () => UpdateUserCurrency(), Cron.Hourly);
             RecurringJob.AddOrUpdate("currencyDailyReset", () => ResetDailyClaim(), Cron.Daily);
-            logger.LogInformation($"Registering profile service callback");
-            userService.RegisterProfileCallback(async (embedDetails) =>
+            _logger.LogInformation($"Registering profile service callback");
+            _userService.RegisterProfileCallback(async (embedDetails) =>
             {
                 var currencyData = GetOrCreateCurrencyData(embedDetails.UserData);
                 embedDetails.PageBuilder
@@ -65,13 +65,13 @@ namespace Bot.Services
                     .WithTitle("Currency Overview");
                 return await Task.FromResult(embedDetails);
             });
-            logger.LogInformation("Initialization has finished");
+            _logger.LogInformation("Initialization has finished");
             await Task.Yield();
         }
 
         public async Task UpdateUserCurrency()
         {
-            logger.LogInformation("Running hourly task of updating user currency...");
+            _logger.LogInformation("Running hourly task of updating user currency...");
 
             // Inside each UserData object is a Tag instance of the CurrencyData.
             // This currency data is solely responsible for holding things like:
@@ -79,29 +79,29 @@ namespace Bot.Services
             //  2. The User's current currency value
             //  3. The User's current prestige value
             //  4. The User's soft-cap for currency
-            foreach (var userData in userService.WalkUsers())
+            foreach (var userData in _userService.WalkUsers())
             {
                 var currencyData = GetOrCreateCurrencyData(userData);
-                logger.LogTrace("Performing passive check for {userId}...", userData.UserId);
+                _logger.LogTrace("Performing passive check for {userId}...", userData.UserId);
                 if (currencyData.Currency >= currencyData.PassiveCurrencyCap) continue;
                 ulong currencyToAdd = CalculatePassiveCurrency(currencyData);
-                logger.LogTrace("The check was passed. Incrementing the currency by {currencyToAdd}", currencyToAdd.ToString("N0"));
+                _logger.LogTrace("The check was passed. Incrementing the currency by {currencyToAdd}", currencyToAdd.ToString("N0"));
                 currencyData.Currency += currencyToAdd;
             }
-            logger.LogInformation("All user currency data has been updated");
+            _logger.LogInformation("All user currency data has been updated");
             await Task.Yield();
         }
 
         public async Task ResetDailyClaim()
         {
-            logger.LogInformation("Running Daily Task of resetting the daily claim...");
-            foreach (var userData in userService.WalkUsers())
+            _logger.LogInformation("Running Daily Task of resetting the daily claim...");
+            foreach (var userData in _userService.WalkUsers())
             {
                 var currencyData = GetOrCreateCurrencyData(userData);
-                logger.LogTrace("Resetting {userId}...", userData.UserId);
+                _logger.LogTrace("Resetting {userId}...", userData.UserId);
                 currencyData.DailyClaim = null;
             }
-            logger.LogTrace("Daily Task has been concluded");
+            _logger.LogTrace("Daily Task has been concluded");
             await Task.Yield();
         }
 
@@ -125,7 +125,7 @@ namespace Bot.Services
 
         private EileenCurrencyData CreateNewCurrencyData()
         {
-            logger.LogTrace($"New currency data is being created...");
+            _logger.LogTrace($"New currency data is being created...");
             // This sets the pace
             return new EileenCurrencyData
             {

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Bot.Services;
 
 namespace Bot.Preconditions
 {
@@ -16,7 +17,8 @@ namespace Bot.Preconditions
             ICommandInfo commandInfo,
             IServiceProvider services)
         {
-            var ravenDatabaseService = services.GetRequiredService<RavenDatabaseService>();
+            var service = services.GetRequiredService<ServerConfigurationService>();
+
             var configuration = ravenDatabaseService.Configuration;
             return Task.FromResult(configuration.TrustedUsers.Contains(context.User.Id) ?
                 PreconditionResult.FromSuccess() :

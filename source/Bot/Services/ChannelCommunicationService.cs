@@ -5,7 +5,6 @@ using Hangfire;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bot.Services
@@ -13,22 +12,22 @@ namespace Bot.Services
 
     public sealed class ChannelCommunicationService : IEileenService
     {
-        private readonly ILogger<ChannelCommunicationService> logger;
-        private readonly ServerConfigurationService serverConfigurationService;
-        private readonly DiscordSocketClient client;
+        private readonly ILogger<ChannelCommunicationService> _logger;
+        private readonly ServerConfigurationService _serverConfigurationService;
+        private readonly DiscordSocketClient _client;
 
         public ChannelCommunicationService(
             ILogger<ChannelCommunicationService> logger,
             ServerConfigurationService serverConfigurationService,
             DiscordSocketClient client)
         {
-            this.logger = logger;
-            this.serverConfigurationService = serverConfigurationService;
-            this.client = client;
+            _logger = logger;
+            _serverConfigurationService = serverConfigurationService;
+            _client = client;
 
-            this.client.JoinedGuild += OnGuildJoined;
-            this.client.LeftGuild += OnGuildLeft;
-            this.client.Ready += OnClientReady;
+            _client.JoinedGuild += OnGuildJoined;
+            _client.LeftGuild += OnGuildLeft;
+            _client.Ready += OnClientReady;
         }
 
 
@@ -39,7 +38,7 @@ namespace Bot.Services
 
         public async Task ScheduleNewTask(ulong guildId, ChannelCommuncationJobEntry jobEntry)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             var jobs = configuration.GetOrAddTagData("commJobs", () => new List<ChannelCommuncationJobEntry>());
             jobs.Add(jobEntry);
             HandleJobScheduling(jobEntry);
@@ -52,7 +51,7 @@ namespace Bot.Services
 
         public async Task<List<ChannelCommuncationJobEntry>> GetServerJobs(ulong guildId)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             return configuration.GetOrAddTagData("commJobs", () => new List<ChannelCommuncationJobEntry>());
         }
 
@@ -63,7 +62,7 @@ namespace Bot.Services
 
         public async Task RemoveJob(ulong guildId, string jobName)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guildId);
             var jobs = configuration.GetOrAddTagData("commJobs", () => new List<ChannelCommuncationJobEntry>());
             var job = jobs.Find(entry => entry.JobName.Equals(jobName, StringComparison.OrdinalIgnoreCase));
             if (job is not null)
@@ -95,7 +94,7 @@ namespace Bot.Services
         private async Task RunJobTask(ChannelCommuncationJobEntry job)
         {
             if (job.HasRun) return;
-            var channel = await client.GetChannelAsync(job.ChannelId) as ITextChannel;
+            var channel = await _client.GetChannelAsync(job.ChannelId) as ITextChannel;
             await channel.SendMessageAsync(job.Message);
             if (!job.Repeats)
             {
@@ -106,9 +105,9 @@ namespace Bot.Services
 
         private async Task OnClientReady()
         {
-            foreach (var guild in client.Guilds)
+            foreach (var guild in _client.Guilds)
             {
-                var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(guild.Id);
+                var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(guild.Id);
                 var jobs = configuration.GetOrAddTagData("commJobs", () => new List<ChannelCommuncationJobEntry>());
                 foreach (var job in jobs.Where(j => !j.HasRun)) HandleJobScheduling(job);
             }
@@ -116,7 +115,7 @@ namespace Bot.Services
 
         private async Task OnGuildLeft(SocketGuild arg)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(arg.Id);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(arg.Id);
             var jobs = configuration.GetOrAddTagData("commJobs", () => new List<ChannelCommuncationJobEntry>());
             foreach (var job in jobs.Where(j => !j.HasRun && j.Repeats))
             {
@@ -126,7 +125,7 @@ namespace Bot.Services
 
         private async Task OnGuildJoined(SocketGuild arg)
         {
-            var configuration = await serverConfigurationService.GetOrCreateConfigurationAsync(arg.Id);
+            var configuration = await _serverConfigurationService.GetOrCreateConfigurationAsync(arg.Id);
             var jobs = configuration.GetOrAddTagData("commJobs", () => new List<ChannelCommuncationJobEntry>());
             foreach (var job in jobs.Where(j => !j.HasRun && j.Repeats))
             {

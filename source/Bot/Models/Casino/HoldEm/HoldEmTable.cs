@@ -40,9 +40,9 @@ namespace Bot.Models.Casino.HoldEm
         /// </summary>
         /// <param name="deck">The <see cref="Deck"/> to use</param>
         public HoldEmTable(Deck deck) :
-            base(new(null, null, null, int.MinValue), deck)
+            base(new(null, null, int.MinValue), deck)
         {
-            
+
         }
 
 

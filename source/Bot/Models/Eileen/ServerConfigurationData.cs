@@ -1,23 +1,16 @@
+using System.Collections.Generic;
+
 namespace Bot.Models.Eileen
 {
 
 
-    public sealed class ServerConfigurationData : TagEntry
+    public sealed class ServerConfigurationData
     {
-
         public ulong ServerId { get; set; }
 
-        public char CommandPrefix { get; set; }
+        public IList<ulong> TrustedUsers { get; set; }
 
-        public AutomatedResponseType ResponderType { get; set; } = AutomatedResponseType.Markov;
-
-
-        public enum AutomatedResponseType
-        {
-            GPT = 0,
-            Markov = 1
-        }
-
+        public bool Enabled { get; set; } = true;
     }
 
 

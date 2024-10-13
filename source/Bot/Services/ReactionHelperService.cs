@@ -9,11 +9,11 @@ namespace Bot.Services
     public sealed class ReactionHelperService : IEileenService
     {
 
-        private readonly Emoji disapprovalEmoji = new("👎");
+        private readonly Emoji _disapprovalEmoji = new("👎");
 
-        private readonly Emoji approvalEmoji = new("👍");
+        private readonly Emoji _approvalEmoji = new("👍");
 
-        private readonly Emoji thinkEmoji = new("🤔");
+        private readonly Emoji _thinkEmoji = new("🤔");
 
 
         public async Task AddMessageReaction(IMessage message, ReactionType type)
@@ -21,13 +21,13 @@ namespace Bot.Services
             switch (type)
             {
                 case ReactionType.Approval:
-                    await message.AddReactionAsync(approvalEmoji);
+                    await message.AddReactionAsync(_approvalEmoji);
                     break;
                 case ReactionType.Denial:
-                    await message.AddReactionAsync(disapprovalEmoji);
+                    await message.AddReactionAsync(_disapprovalEmoji);
                     break;
                 case ReactionType.Think:
-                    await message.AddReactionAsync(thinkEmoji);
+                    await message.AddReactionAsync(_thinkEmoji);
                     break;
             }
         }
