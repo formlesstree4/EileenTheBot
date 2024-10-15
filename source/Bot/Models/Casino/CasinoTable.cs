@@ -13,58 +13,53 @@ namespace Bot.Models.Casino
         where TPlayer : CasinoPlayer<THand>
         where THand: CasinoHand
     {
-
-        private readonly Stack<TPlayer> _currentRoundPlayers = new();
-        private readonly Queue<TPlayer> _finishedRoundPlayers = new();
-
         /// <summary>
-        ///     Gets the unique Table ID
+        /// Gets the unique Table ID
         /// </summary>
         /// <remarks>
-        ///     This may not even stick around; it's really not very useful
+        /// This may not even stick around; it's really not very useful
         /// </remarks>
         public Guid TableId { get; } = Guid.NewGuid();
 
         /// <summary>
-        ///     Gets the Dealer for this table
+        /// Gets the Dealer for this table
         /// </summary>
         public TPlayer Dealer { get; }
 
         /// <summary>
-        ///     Gets the list of current active players
+        /// Gets the list of current active players
         /// </summary>
         public List<TPlayer> Players { get; } = new();
 
         /// <summary>
-        ///     Gets the list of players that are waiting to join on the next round.
+        /// Gets the list of players that are waiting to join on the next round.
         /// </summary>
         public List<TPlayer> PendingPlayers { get; } = new();
 
         /// <summary>
-        ///     Gets the list of players that are waiting to leave at the end of the round.
+        /// Gets the list of players that are waiting to leave at the end of the round.
         /// </summary>
         public List<TPlayer> LeavingPlayers { get; } = new();
 
         /// <summary>
-        ///     Gets the <see cref="Deck"/> used at the table.
+        /// Gets the <see cref="Deck"/> used at the table.
         /// </summary>
         public Deck Deck { get; private set; }
 
         /// <summary>
-        ///     Gets whether or not the table is currently playing a game.
+        /// Gets whether the table is currently playing a game.
         /// </summary>
-        public bool IsGameActive { get; set; } = false;
+        public bool IsGameActive { get; set; }
 
         /// <summary>
         /// Gets the <see cref="Stack{TPlayer}"/> of players that are yet to go for this round
         /// </summary>
-        public Stack<TPlayer> CurrentRoundPlayers => _currentRoundPlayers;
+        protected Stack<TPlayer> CurrentRoundPlayers { get; } = new();
 
         /// <summary>
         /// Gets the <see cref="Queue{TPlayer}"/> of players that have already gone for this round
         /// </summary>
-        public Queue<TPlayer> FinishedRoundPlayers => _finishedRoundPlayers;
-
+        protected Queue<TPlayer> FinishedRoundPlayers { get; } = new();
 
 
         /// <summary>
@@ -72,7 +67,7 @@ namespace Bot.Models.Casino
         /// </summary>
         /// <param name="dealer"><see cref="TPlayer"/></param>
         /// <param name="deck"><see cref="Casino.Deck"/></param>
-        public CasinoTable(TPlayer dealer, Deck deck)
+        protected CasinoTable(TPlayer dealer, Deck deck)
         {
             Dealer = dealer;
             Deck = deck;
@@ -86,13 +81,13 @@ namespace Bot.Models.Casino
         /// <returns>If true, <paramref name="nextPlayer"/> is a Player. If false, <paramref name="nextPlayer"/> is the Dealer</returns>
         public bool GetNextPlayer(out TPlayer nextPlayer)
         {
-            if (_currentRoundPlayers.Count == 0)
+            if (CurrentRoundPlayers.Count == 0)
             {
                 nextPlayer = Dealer;
                 return false;
             }
-            nextPlayer = _currentRoundPlayers.Pop();
-            _finishedRoundPlayers.Enqueue(nextPlayer);
+            nextPlayer = CurrentRoundPlayers.Pop();
+            FinishedRoundPlayers.Enqueue(nextPlayer);
             return true;
         }
 
@@ -101,7 +96,7 @@ namespace Bot.Models.Casino
         /// </summary>
         /// <param name="playerId">The Player ID to look for</param>
         /// <returns><see cref="TPlayer"/> if discovered</returns>
-        public TPlayer FindPlayer(ulong playerId)
+        public TPlayer? FindPlayer(ulong playerId)
         {
             return PendingPlayers.FirstOrDefault(c => c.User.UserId == playerId) ??
                 Players.FirstOrDefault(c => c.User.UserId == playerId);
@@ -114,7 +109,7 @@ namespace Bot.Models.Casino
         {
             foreach (var player in Players.Reverse<TPlayer>())
             {
-                _currentRoundPlayers.Push(player);
+                CurrentRoundPlayers.Push(player);
             }
         }
 

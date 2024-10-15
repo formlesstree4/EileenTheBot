@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using Discord.Commands;
 using Discord.Interactions;
+using Microsoft.Extensions.Configuration;
 
 namespace Bot
 {
@@ -149,6 +150,14 @@ namespace Bot
         }
 
         public static string ToJson<T>(this T obj) => JsonSerializer.Serialize(obj);
+
+
+        public static string GenerateConnectionString(this IConfiguration configuration)
+        {
+            var databaseConfiguration = configuration.GetSection("Database");
+            var connString = $"User ID={databaseConfiguration["Username"]};Password={databaseConfiguration["Password"]};Host={databaseConfiguration["Hostname"]};Port=5432;Database={databaseConfiguration["Database"]};Pooling=true;";
+            return connString;
+        }
 
     }
 }

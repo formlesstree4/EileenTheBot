@@ -1,24 +1,19 @@
 using Bot.Models.Casino.BlackJack;
-using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Bot.Services.Casino.BlackJack
 {
 
     /// <summary>
-    ///     Servces as a buffer, of sorts, between Discord and <see cref="BlackJackTableRunnerService"/>
+    /// Serves as a buffer, of sorts, between Discord and <see cref="BlackJackTableRunnerService"/>
     /// </summary>
     public sealed class BlackJackService : CasinoService<BlackJackHand, BlackJackPlayer, BlackJackTable, BlackJackTableDetails, BlackJackServerDetails, BlackJackTableRunnerService>
     {
         public BlackJackService(
             ILogger<CasinoService<BlackJackHand, BlackJackPlayer, BlackJackTable, BlackJackTableDetails, BlackJackServerDetails, BlackJackTableRunnerService>> logger,
             BlackJackTableRunnerService tableRunnerService,
-            DiscordSocketClient discordSocketClient,
-            ServerConfigurationService serverConfigurationService) : base(logger, tableRunnerService, discordSocketClient, serverConfigurationService)
+            DiscordSocketClient discordSocketClient) : base(logger, tableRunnerService, discordSocketClient)
         { }
 
         protected override string ServiceName => nameof(BlackJackService);

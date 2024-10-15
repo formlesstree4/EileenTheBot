@@ -22,6 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Bot.Database.Repositories;
 using Npgsql;
 
 namespace Bot
@@ -34,7 +35,7 @@ namespace Bot
 
         private LogSeverity _currentLogLevel = LogSeverity.Info;
 
-        private ILogger<Program> _logger;
+        private ILogger<Program> _logger = null!;
 
         private async Task MainAsync()
         {
@@ -161,13 +162,13 @@ namespace Bot
         private async Task InitializeServices(ServiceProvider services, IEnumerable<Type> serviceTypes)
         {
             // Manually start up UserService first. Then handle everything else.
-            await services.GetRequiredService<UserService>().InitializeService();
             foreach (var type in serviceTypes)
             {
                 var service = services.GetRequiredService(type);
-                if (!((service as IEileenService)?.AutoInitialize() ?? false)) continue;
+                if (service is not IEileenService s) continue;
+                if (!s.AutoInitialize()) continue;
                 _logger.LogInformation("Initializing {typeName}...", type.Name);
-                await (service as IEileenService).InitializeService();
+                await s.InitializeService();
             }
             await services.GetRequiredService<InteractionHandlingService>().InitializeService();
         }
@@ -263,8 +264,13 @@ namespace Bot
                     case ServiceType.Singleton:
                         svc.AddSingleton(s);
                         break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
+            // add in the repositories
+            svc.AddSingleton<BlackJackRepository>();
+            svc.AddSingleton<DiscordRepository>();
             return (svc.BuildServiceProvider(), eileenServices);
         }
 

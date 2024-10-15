@@ -28,7 +28,7 @@ namespace Bot.Services
         Task LoadServiceAsync() => Task.CompletedTask;
 
         /// <summary>
-        /// Determines whether or not this service should be auto-initialized by the runtime
+        /// Determines whether this service should be auto-initialized by the runtime
         /// </summary>
         /// <returns>bool</returns>
         bool AutoInitialize() => true;

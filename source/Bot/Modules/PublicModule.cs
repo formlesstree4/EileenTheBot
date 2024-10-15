@@ -1,7 +1,6 @@
 using Bot.Services;
 using Discord;
 using Discord.Interactions;
-using Discord.WebSocket;
 using System;
 using System.Linq;
 using System.Text;
@@ -14,16 +13,13 @@ namespace Bot.Modules
     {
 
         private readonly DiceRollService _rollService;
-        private readonly ChannelCommunicationService _channelCommunicationService;
         private readonly InteractionHandlingService _interactionHandlingService;
 
         public GlobalModule(
             DiceRollService rollService,
-            ChannelCommunicationService channelCommunicationService,
             InteractionHandlingService interactionHandlingService)
         {
             _rollService = rollService ?? throw new ArgumentNullException(nameof(rollService));
-            _channelCommunicationService = channelCommunicationService;
             _interactionHandlingService = interactionHandlingService ?? throw new ArgumentNullException(nameof(interactionHandlingService));
         }
 

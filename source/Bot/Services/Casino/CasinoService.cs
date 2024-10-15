@@ -19,7 +19,6 @@ namespace Bot.Services.Casino
         protected internal readonly ILogger<CasinoService<THand, TPlayer, TTable, TTableDetails, TServerDetails, TService>> Logger;
         private readonly TService _tableRunnerService;
         private readonly DiscordSocketClient _discordSocketClient;
-        private readonly ServerConfigurationService _serverConfigurationService;
         private readonly Dictionary<ulong, TServerDetails> _details = new();
 
         protected abstract string ServiceName { get; }
@@ -27,18 +26,15 @@ namespace Bot.Services.Casino
         protected CasinoService(
             ILogger<CasinoService<THand, TPlayer, TTable, TTableDetails, TServerDetails, TService>> logger,
             TService tableRunnerService,
-            DiscordSocketClient discordSocketClient,
-            ServerConfigurationService serverConfigurationService)
+            DiscordSocketClient discordSocketClient)
         {
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
-            _serverConfigurationService = serverConfigurationService ?? throw new ArgumentNullException(nameof(serverConfigurationService));
             _tableRunnerService = tableRunnerService;
-            _discordSocketClient.Ready += HandleClientIsReady;
             _discordSocketClient.ThreadDeleted += HandleThreadDeleted;
         }
 
-        private async Task HandleClientIsReady()
+        /*private async Task HandleClientIsReady()
         {
             foreach (var guild in _discordSocketClient.Guilds)
             {
@@ -52,7 +48,7 @@ namespace Bot.Services.Casino
                     await CreateNewGame(guild, thread.Id);
                 }
             }
-        }
+        }*/
 
         private Task HandleThreadDeleted(Cacheable<SocketThreadChannel, ulong> arg)
         {
@@ -75,11 +71,11 @@ namespace Bot.Services.Casino
             IThreadChannel thread;
             if (threadId is null)
             {
-                thread = await tableChannel.CreateThreadAsync(GetNextTableName());
+                thread = await tableChannel!.CreateThreadAsync(GetNextTableName());
             }
             else
             {
-                thread = await _discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel;
+                thread = await _discordSocketClient.GetChannelAsync(threadId.Value) as IThreadChannel ?? throw new InvalidOperationException();
             }
             var table = _tableRunnerService.GetOrCreateTable(thread);
             _tableRunnerService.StartTableForChannel(thread);
@@ -99,14 +95,14 @@ namespace Bot.Services.Casino
             return _tableRunnerService.GetOrCreateTable(thread);
         }
 
-        public virtual async Task SaveServiceAsync()
+        /*public virtual async Task SaveServiceAsync()
         {
             foreach (var bjd in _details)
             {
                 var serverDetails = await _serverConfigurationService.GetOrCreateConfigurationAsync(bjd.Key);
                 serverDetails.SetTagData(ServiceName, bjd.Value);
             }
-        }
+        }*/
 
     }
 }

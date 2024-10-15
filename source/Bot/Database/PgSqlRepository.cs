@@ -78,7 +78,7 @@ public abstract class PgSqlRepository<TRepository>
     /// <param name="defaultConnectionString">The default connection string to use</param>
     /// <param name="configuration"><see cref="IConfiguration"/></param>
     /// <param name="logger"><see cref="ILogger{TCategoryName}"/></param>
-    public PgSqlRepository(
+    protected PgSqlRepository(
         string? defaultConnectionString,
         IConfiguration configuration,
         ILogger<TRepository> logger)
@@ -104,7 +104,7 @@ public abstract class PgSqlRepository<TRepository>
     /// <param name="key">The lookup key for the procedure in the configuration file</param>
     /// <param name="default">The default value to return if there is no available entry in the configuration file</param>
     /// <returns>String</returns>
-    protected string GetProcedureName(string key, string @default) => GetRepositoryConfiguration().GetValue(key, @default) ?? @default;
+    protected string GetProcedureName(string key, string @default) => GetRepositoryConfiguration().GetValue(key, @default);
 
     /// <summary>
     /// Adds a given value to the supplied parameters
@@ -138,12 +138,12 @@ public abstract class PgSqlRepository<TRepository>
     /// <param name="parameters"><see cref="DynamicParameters"/></param>
     /// <param name="connectionString">An optional connection string to override with</param>
     /// <returns>A promise to execute a stored procedure</returns>
-    public async Task ExecuteAsync(string procedureName, DynamicParameters? parameters = null, string? connectionString = null)
+    protected async Task ExecuteAsync(string procedureName, DynamicParameters? parameters = null, string? connectionString = null)
     {
         try
         {
             await using var connection = await GetConnectionAsync(connectionString);
-            await connection.ExecuteAsync(procedureName, parameters ?? new(), commandType: CommandType.StoredProcedure, commandTimeout: GetCommandTimeout);
+            await connection.ExecuteAsync($"select {procedureName}({GenerateParameterList(parameters)})", parameters ?? new(), commandType: CommandType.StoredProcedure, commandTimeout: GetCommandTimeout);
         }
         catch (Exception exception)
         {
@@ -158,12 +158,12 @@ public abstract class PgSqlRepository<TRepository>
     /// <param name="parameters"><see cref="DynamicParameters"/></param>
     /// <param name="connectionString">An optional connection string to override with</param>
     /// <returns>A promise to execute a stored procedure and return the first column on the first row</returns>
-    public async Task<T?> ExecuteScalarAsync<T>(string procedureName, DynamicParameters? parameters = null, string? connectionString = null)
+    protected async Task<T?> ExecuteScalarAsync<T>(string procedureName, DynamicParameters? parameters = null, string? connectionString = null)
     {
         try
         {
             await using var connection = await GetConnectionAsync(connectionString);
-            return await connection.ExecuteScalarAsync<T>(procedureName, parameters ?? new(), commandType: CommandType.StoredProcedure, commandTimeout: GetCommandTimeout);
+            return await connection.ExecuteScalarAsync<T>($"select * from {procedureName}({GenerateParameterList(parameters)} LIMIT 1)", parameters ?? new(), commandType: CommandType.StoredProcedure, commandTimeout: GetCommandTimeout);
         }
         catch (Exception exception)
         {
@@ -179,12 +179,12 @@ public abstract class PgSqlRepository<TRepository>
     /// <param name="parameters"><see cref="DynamicParameters"/></param>
     /// <param name="connectionString">An optional connection string to override with</param>
     /// <returns>A promise to execute a stored procedure and return the entire result set cast to a collection of type <typeparamref name="T"/></returns>
-    public async Task<IEnumerable<T>> ExecuteQueryAsync<T>(string procedureName, DynamicParameters? parameters = null, string? connectionString = null)
+    protected async Task<IEnumerable<T>> ExecuteQueryAsync<T>(string procedureName, DynamicParameters? parameters = null, string? connectionString = null)
     {
         try
         {
             await using var connection = await GetConnectionAsync(connectionString);
-            return await connection.QueryAsync<T>(procedureName, parameters ?? new(), commandType: CommandType.StoredProcedure, commandTimeout: GetCommandTimeout);
+            return await connection.QueryAsync<T>($"select * from {procedureName}({GenerateParameterList(parameters)})", parameters ?? new(), commandType: CommandType.StoredProcedure, commandTimeout: GetCommandTimeout);
         }
         catch (Exception exception)
         {
@@ -274,8 +274,9 @@ public abstract class PgSqlRepository<TRepository>
     /// <param name="parameters"><see cref="DynamicParameters"/></param>
     /// <returns>A well-formatted string</returns>
     /// <remarks>The order in which parameters are added is VERY important as that is the order in which these get spit out</remarks>
-    private static string GenerateParameterList(DynamicParameters parameters)
+    private static string GenerateParameterList(DynamicParameters? parameters)
     {
+        if (parameters is null) return string.Empty; // this is a bit of a hack but it works
         var formattedNames = parameters.ParameterNames.Select(pn => $"@{pn}");
         var parameterList = string.Join(",", formattedNames);
         return parameterList;
